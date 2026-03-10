@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#42b883" opacity="0.1"/>
+  
+  <!-- Atomic structure - outer ring -->
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#42b883" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Atomic structure - middle ring -->
+  <circle cx="100" cy="100" r="50" fill="none" stroke="#35495e" stroke-width="2" opacity="0.4"/>
+  
+  <!-- Central nucleus -->
+  <circle cx="100" cy="100" r="25" fill="#42b883"/>
+  
+  <!-- Electrons/Components at different levels -->
+  <!-- Atom level -->
+  <circle cx="100" cy="30" r="8" fill="#35495e"/>
+  
+  <!-- Molecule level -->
+  <circle cx="154" cy="70" r="8" fill="#35495e"/>
+  <circle cx="46" cy="70" r="8" fill="#35495e"/>
+  
+  <!-- Organism level -->
+  <circle cx="170" cy="100" r="8" fill="#35495e"/>
+  <circle cx="30" cy="100" r="8" fill="#35495e"/>
+  
+  <!-- Template level -->
+  <circle cx="154" cy="130" r="8" fill="#35495e"/>
+  <circle cx="46" cy="130" r="8" fill="#35495e"/>
+  
+  <!-- Page level -->
+  <circle cx="100" cy="170" r="8" fill="#35495e"/>
+  
+  <!-- Connection lines (orbital paths) -->
+  <path d="M 100 100 L 100 30" stroke="#42b883" stroke-width="1.5" opacity="0.3"/>
+  <path d="M 100 100 L 154 70" stroke="#42b883" stroke-width="1.5" opacity="0.3"/>
+  <path d="M 100 100 L 46 70" stroke="#42b883" stroke-width="1.5" opacity="0.3"/>
+  <path d="M 100 100 L 170 100" stroke="#42b883" stroke-width="1.5" opacity="0.3"/>
+  <path d="M 100 100 L 30 100" stroke="#42b883" stroke-width="1.5" opacity="0.3"/>
+  <path d="M 100 100 L 154 130" stroke="#42b883" stroke-width="1.5" opacity="0.3"/>
+  <path d="M 100 100 L 46 130" stroke="#42b883" stroke-width="1.5" opacity="0.3"/>
+  <path d="M 100 100 L 100 170" stroke="#42b883" stroke-width="1.5" opacity="0.3"/>
+  
+  <!-- Central icon - letter S styled -->
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="35" font-weight="bold" fill="white" text-anchor="middle">S</text>
+</svg>

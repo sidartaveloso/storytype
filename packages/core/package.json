@@ -1,0 +1,37 @@
+{
+  "name": "@storytype/core",
+  "version": "0.1.0",
+  "description": "Core pattern documentation and guidelines for Storytype",
+  "keywords": [
+    "vue3",
+    "typescript",
+    "atomic-design",
+    "components",
+    "documentation"
+  ],
+  "author": "Sidarta Veloso <sidartaveloso@gmail.com>",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./docs/*": "./docs/*"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

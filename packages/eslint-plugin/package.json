@@ -1,0 +1,48 @@
+{
+  "name": "@storytype/eslint-plugin",
+  "version": "0.1.0",
+  "description": "ESLint plugin for enforcing Storytype pattern rules",
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "rules",
+    "storytype",
+    "vue3"
+  ],
+  "author": "Sidarta Veloso <sidartaveloso@gmail.com>",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest"
+  },
+  "peerDependencies": {
+    "eslint": ">=8.0.0"
+  },
+  "dependencies": {
+    "@typescript-eslint/utils": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/eslint": "^8.56.6",
+    "@types/node": "^20.11.30",
+    "eslint": "^8.57.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.4.0"
+  }
+}

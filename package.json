@@ -1,0 +1,43 @@
+{
+  "name": "storytype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A modern Vue 3 component development pattern with TypeScript, Atomic Design, and Storybook",
+  "keywords": [
+    "vue3",
+    "typescript",
+    "storybook",
+    "atomic-design",
+    "component-library",
+    "design-system"
+  ],
+  "author": "Sidarta Veloso <sidartaveloso@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidartaveloso/storytype.git"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.12.3",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,vue,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,vue,json,md}\"",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "docs:dev": "pnpm --filter docs dev",
+    "docs:build": "pnpm --filter docs build",
+    "docs:preview": "pnpm --filter docs preview"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.1",
+    "prettier": "^3.2.5",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.5"
+  }
+}
