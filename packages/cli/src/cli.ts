@@ -6,6 +6,7 @@
 
 import { Command } from 'commander';
 import { version } from '../package.json';
+import { analyzeProject, displayResults } from './analyzer.js';
 
 const program = new Command();
 
@@ -33,6 +34,20 @@ program
   .action(() => {
     console.log('Initializing Storytype...');
     // TODO: Implement initialization logic
+  });
+
+program
+  .command('analyze [path]')
+  .alias('audit')
+  .description('Analyze and score project based on Storytype best practices')
+  .action(async (projectPath?: string) => {
+    try {
+      const result = await analyzeProject(projectPath);
+      displayResults(result);
+    } catch (error) {
+      console.error('Error analyzing project:', error);
+      process.exit(1);
+    }
   });
 
 program.parse();

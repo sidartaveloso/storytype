@@ -25,5 +25,9 @@ export async function initStorytype(projectPath?: string): Promise<void> {
   // TODO: Implement initialization logic
 }
 
+// Export analyzer functions
+export { analyzeProject, displayResults } from './analyzer.js';
+export type { AnalysisResult, CategoryResult, CheckItem } from './analyzer.js';
+
 // Export types
 export * from '@storytype/core';
