@@ -1,4 +1,4 @@
-# Especificação devix-vue-components v1.0
+# Especificação storytype v1.0
 
 **Padrão de Desenvolvimento de Componentes Vue 3 com TypeScript**
 
@@ -26,7 +26,7 @@
 
 ### 1.1 Visão Geral
 
-O **devix-vue-components** é um padrão de arquitetura e desenvolvimento para componentes Vue 3 com TypeScript, focado em criar sistemas de design escaláveis, testáveis e manuteníveis.
+O **storytype** é um padrão de arquitetura e desenvolvimento para componentes Vue 3 com TypeScript, focado em criar sistemas de design escaláveis, testáveis e de fácil manutenção.
 
 Este padrão foi desenvolvido com base nas melhores práticas de projetos como **coworking-ui** e **organiza-ai**, consolidando aprendizados e convenções bem-sucedidas.
 
@@ -352,10 +352,7 @@ export interface ComponentNameSlots {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type {
-  ComponentNameProps,
-  ComponentNameEmits,
-} from './ComponentName.types';
+import type { ComponentNameProps, ComponentNameEmits } from './ComponentName.types';
 
 const props = withDefaults(defineProps<ComponentNameProps>(), {
   variant: 'primary',
@@ -433,10 +430,7 @@ function handleClick(event: MouseEvent) {
 ### 5.5 Template de `*.mock.ts`
 
 ```typescript
-import type {
-  ComponentNameProps,
-  ComponentNameType,
-} from './ComponentName.types';
+import type { ComponentNameProps, ComponentNameType } from './ComponentName.types';
 
 /**
  * Mock do estado padrão
@@ -655,7 +649,7 @@ export const Mobile: Story = {
  * Exemplo com slot customizado
  */
 export const ComSlotCustomizado: Story = {
-  render: (args) => ({
+  render: args => ({
     components: { ComponentName },
     setup() {
       return { args };
@@ -734,8 +728,7 @@ export const TodosEstados: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Visualização de todos os estados possíveis do componente para documentação.',
+        story: 'Visualização de todos os estados possíveis do componente para documentação.',
       },
     },
   },
@@ -1225,18 +1218,9 @@ function handleForgotPassword() {
       </p>
 
       <div class="login-screen__acoes">
-        <q-btn
-          type="submit"
-          label="Entrar"
-          color="primary"
-          :loading="loading"
-        />
+        <q-btn type="submit" label="Entrar" color="primary" :loading="loading" />
 
-        <q-btn
-          flat
-          label="Esqueci minha senha"
-          @click="emit('forgotPassword')"
-        />
+        <q-btn flat label="Esqueci minha senha" @click="emit('forgotPassword')" />
       </div>
     </q-form>
   </q-page>
@@ -1320,7 +1304,7 @@ const config: StorybookConfig = {
     name: '@storybook/vue3-vite',
     options: {},
   },
-  viteFinal: async (config) => {
+  viteFinal: async config => {
     return mergeConfig(config, {
       plugins: [vue()],
       resolve: {
@@ -1352,7 +1336,7 @@ import '@quasar/extras/material-icons/material-icons.css';
 
 const preview: Preview = {
   decorators: [
-    (story) => ({
+    story => ({
       components: { story },
       setup() {
         return { Quasar };
@@ -1452,7 +1436,7 @@ const meta = {
   title: 'Pages/PageLogin',
   component: PageLogin,
   decorators: [
-    (story) => ({
+    story => ({
       components: { story },
       setup() {
         // Fornecer mocks de stores e router
@@ -1748,7 +1732,7 @@ export const TodosEstados: Story = {
 
 ```typescript
 export const Responsividade: Story = {
-  render: (args) => ({
+  render: args => ({
     components: { ComponentName },
     setup() {
       return {
@@ -1868,11 +1852,7 @@ Antes de criar PR, verifique:
 
 ```javascript
 module.exports = {
-  extends: [
-    'plugin:vue/vue3-recommended',
-    '@vue/typescript/recommended',
-    'prettier',
-  ],
+  extends: ['plugin:vue/vue3-recommended', '@vue/typescript/recommended', 'prettier'],
   rules: {
     // Vue
     'vue/multi-word-component-names': 'error',
@@ -1889,14 +1869,7 @@ module.exports = {
     'import/order': [
       'error',
       {
-        groups: [
-          'builtin',
-          'external',
-          'internal',
-          'parent',
-          'sibling',
-          'index',
-        ],
+        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
         'newlines-between': 'always',
         alphabetize: { order: 'asc' },
       },
@@ -2206,10 +2179,7 @@ export interface ItemBuscaUsuarioEmits {
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Avatar } from 'src/components/atomos/Avatar';
-import type {
-  ItemBuscaUsuarioProps,
-  ItemBuscaUsuarioEmits,
-} from './ItemBuscaUsuario.types';
+import type { ItemBuscaUsuarioProps, ItemBuscaUsuarioEmits } from './ItemBuscaUsuario.types';
 
 const props = withDefaults(defineProps<ItemBuscaUsuarioProps>(), {
   selected: false,
@@ -2368,7 +2338,7 @@ Ver seção [8.4 Presentation (Screen)](#84-presentation-screen) para exemplo co
 // plopfile.js
 module.exports = function (plop) {
   plop.setGenerator('component', {
-    description: 'Criar novo componente devix-vue',
+    description: 'Criar novo componente storytype',
     prompts: [
       {
         type: 'input',
@@ -2410,11 +2380,11 @@ module.exports = function (plop) {
 
 ---
 
-**Especificação devix-vue-components v1.0**
+**Especificação storytype v1.0**
 Criada por: Sidarta Veloso
 Data: 9 de março de 2026
 Status: ✅ Ativo
 
 ---
 
-© 2026 devix-vue-components. Este documento pode ser livremente usado e adaptado para projetos internos.
+© 2026 storytype. Este documento pode ser livremente usado e adaptado para projetos internos.

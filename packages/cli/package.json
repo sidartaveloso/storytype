@@ -1,16 +1,29 @@
 {
-  "name": "@storytype/cli",
+  "name": "storytype",
   "version": "0.1.0",
-  "description": "CLI tool for scaffolding Storytype components",
+  "description": "CLI tool for scaffolding Storytype components and analyzing project structure",
   "keywords": [
     "cli",
     "vue3",
     "generator",
     "scaffold",
-    "storytype"
+    "storytype",
+    "atomic-design",
+    "component-analyzer",
+    "vue",
+    "typescript"
   ],
   "author": "Sidarta Veloso <sidartaveloso@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidartaveloso/storytype.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/sidartaveloso/storytype/issues"
+  },
+  "homepage": "https://github.com/sidartaveloso/storytype#readme",
   "type": "module",
   "bin": {
     "storytype": "./dist/cli.js"
@@ -32,10 +45,10 @@
     "build": "tsup src/cli.ts src/index.ts --format esm --dts",
     "dev": "tsup src/cli.ts src/index.ts --format esm --dts --watch",
     "clean": "rm -rf dist",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@storytype/core": "workspace:*",
     "commander": "^12.0.0",
     "prompts": "^2.4.2",
     "chalk": "^5.3.0",

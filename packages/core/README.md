@@ -1,4 +1,4 @@
-# devix-vue-components
+# storytype
 
 **Guia Completo do Padrão de Desenvolvimento de Componentes Vue 3**
 
@@ -6,7 +6,7 @@
 
 ## 📖 Sobre este Guia
 
-O **devix-vue-components** é um padrão arquitetural para criar componentes Vue 3 escaláveis, testáveis e manuteníveis. Este guia fornece documentação completa para implementar o padrão em qualquer projeto Vue 3.
+O **storytype** é um padrão arquitetural para criar componentes Vue 3 escaláveis, testáveis e de fácil manutenção. Este guia fornece documentação completa para implementar o padrão em qualquer projeto Vue 3.
 
 ---
 
@@ -14,7 +14,7 @@ O **devix-vue-components** é um padrão arquitetural para criar componentes Vue
 
 **Novo no padrão?** Comece por aqui:
 
-👉 **[devix-vue-components-readme.md](./devix-vue-components-readme.md)** — Guia de início rápido com exemplos práticos
+👉 **[storytype-readme.md](./storytype-readme.md)** — Guia de início rápido com exemplos práticos
 
 ---
 
@@ -22,19 +22,19 @@ O **devix-vue-components** é um padrão arquitetural para criar componentes Vue
 
 ### Para Desenvolvedores
 
-| Documento                                                         | Descrição                                    | Quando usar                     |
-| ----------------------------------------------------------------- | -------------------------------------------- | ------------------------------- |
-| **[Readme](./devix-vue-components-readme.md)**                    | Guia de início rápido                        | Primeiro contato com o padrão   |
-| **[Especificação](./devix-vue-components-spec.md)**               | Documentação técnica completa (2400+ linhas) | Consulta detalhada, referência  |
-| **[Guia Visual](./devix-vue-components-visual-guide.md)**         | Diagramas e visualizações                    | Aprendizado visual              |
-| **[Guia de Migração](./devix-vue-components-migration-guide.md)** | Passo a passo para migrar projetos           | Adaptar projeto existente       |
-| **[Navegação](./devix-vue-components-navigation.md)**             | Índice por persona e tópico                  | Encontrar informação específica |
+| Documento                                              | Descrição                                    | Quando usar                     |
+| ------------------------------------------------------ | -------------------------------------------- | ------------------------------- |
+| **[Readme](./storytype-readme.md)**                    | Guia de início rápido                        | Primeiro contato com o padrão   |
+| **[Especificação](./storytype-spec.md)**               | Documentação técnica completa (2400+ linhas) | Consulta detalhada, referência  |
+| **[Guia Visual](./storytype-visual-guide.md)**         | Diagramas e visualizações                    | Aprendizado visual              |
+| **[Guia de Migração](./storytype-migration-guide.md)** | Passo a passo para migrar projetos           | Adaptar projeto existente       |
+| **[Navegação](./storytype-navigation.md)**             | Índice por persona e tópico                  | Encontrar informação específica |
 
 ### Para Gestores e Lideranças
 
-| Documento                                                            | Descrição                    | Público                    |
-| -------------------------------------------------------------------- | ---------------------------- | -------------------------- |
-| **[Sumário Executivo](./devix-vue-components-executive-summary.md)** | Business case, ROI, métricas | CTOs, Tech Leads, Gerentes |
+| Documento                                                 | Descrição                    | Público                    |
+| --------------------------------------------------------- | ---------------------------- | -------------------------- |
+| **[Sumário Executivo](./storytype-executive-summary.md)** | Business case, ROI, métricas | CTOs, Tech Leads, Gerentes |
 
 ---
 
@@ -86,8 +86,8 @@ Atomic Design + Container/Presentation
 
 ## 🤝 Como Usar Este Guia em Seus Projetos
 
-1. **Copie esta pasta** `devix-vue-components/` para o repositório do seu projeto
-2. **Coloque em** `docs/devix-vue-components/` ou raiz do repositório
+1. **Copie esta pasta** `storytype/` para o repositório do seu projeto
+2. **Coloque em** `docs/storytype/` ou raiz do repositório
 3. **Compartilhe** o link do README com o time
 4. **Adapte** exemplos e nomenclaturas conforme necessário
 
@@ -101,32 +101,32 @@ Este guia é **agnóstico de projeto** e pode ser usado em qualquer aplicação 
 
 Para quem precisa começar rápido:
 
-1. [Readme](./devix-vue-components-readme.md) (seções: Visão Rápida, Início Rápido, Regras de Ouro)
-2. [Guia Visual](./devix-vue-components-visual-guide.md) (diagramas de arquitetura)
+1. [Readme](./storytype-readme.md) (seções: Visão Rápida, Início Rápido, Regras de Ouro)
+2. [Guia Visual](./storytype-visual-guide.md) (diagramas de arquitetura)
 
 ### 📖 Completo (2-3h)
 
 Para domínio completo do padrão:
 
-1. [Readme](./devix-vue-components-readme.md) — Completo
-2. [Especificação](./devix-vue-components-spec.md) — Capítulos 1-13
-3. [Guia Visual](./devix-vue-components-visual-guide.md) — Completo
+1. [Readme](./storytype-readme.md) — Completo
+2. [Especificação](./storytype-spec.md) — Capítulos 1-13
+3. [Guia Visual](./storytype-visual-guide.md) — Completo
 4. Prática: Criar componente seguindo o padrão
 
 ### 🔄 Migração (4-6h)
 
 Para adaptar projeto existente:
 
-1. [Sumário Executivo](./devix-vue-components-executive-summary.md) — Entender o ROI
-2. [Guia de Migração](./devix-vue-components-migration-guide.md) — Completo
-3. [Especificação](./devix-vue-components-spec.md) — Consulta conforme necessidade
+1. [Sumário Executivo](./storytype-executive-summary.md) — Entender o ROI
+2. [Guia de Migração](./storytype-migration-guide.md) — Completo
+3. [Especificação](./storytype-spec.md) — Consulta conforme necessidade
 4. Prática: Refatorar componente existente
 
 ### 💼 Executivo (15 min)
 
 Para lideranças avaliando adoção:
 
-1. [Sumário Executivo](./devix-vue-components-executive-summary.md) — Completo
+1. [Sumário Executivo](./storytype-executive-summary.md) — Completo
 
 ---
 

@@ -203,8 +203,8 @@ async function analyzeTypeScript(projectPath: string, spinner: Ora): Promise<Cat
     message: hasTypesDir
       ? 'Diretório types/ encontrado'
       : hasTypesFiles
-      ? 'Arquivos types.ts encontrados'
-      : 'Nenhum arquivo de tipos dedicado',
+        ? 'Arquivos types.ts encontrados'
+        : 'Nenhum arquivo de tipos dedicado',
   });
 
   const score = items.reduce((sum, item) => sum + item.points, 0);
@@ -222,10 +222,7 @@ async function analyzeTypeScript(projectPath: string, spinner: Ora): Promise<Cat
 /**
  * Analyze tests and stories coverage
  */
-async function analyzeTestsAndStories(
-  projectPath: string,
-  spinner: Ora
-): Promise<CategoryResult> {
+async function analyzeTestsAndStories(projectPath: string, spinner: Ora): Promise<CategoryResult> {
   spinner.text = 'Analisando testes e stories...';
 
   const items: CheckItem[] = [];
@@ -392,7 +389,8 @@ async function analyzeDocumentation(projectPath: string, spinner: Ora): Promise<
     message: hasReadme ? 'README.md encontrado' : 'README.md não encontrado',
   });
 
-  const hasComponentDocs = fs.existsSync(path.join(projectPath, 'docs')) ||
+  const hasComponentDocs =
+    fs.existsSync(path.join(projectPath, 'docs')) ||
     fs.existsSync(path.join(projectPath, 'documentation'));
   items.push({
     name: 'Documentação do projeto',
@@ -567,11 +565,7 @@ export function displayResults(result: AnalysisResult): void {
 
   // Overall score
   const scoreColor =
-    result.percentage >= 75
-      ? chalk.green
-      : result.percentage >= 60
-      ? chalk.yellow
-      : chalk.red;
+    result.percentage >= 75 ? chalk.green : result.percentage >= 60 ? chalk.yellow : chalk.red;
 
   console.log(
     chalk.bold('Score Geral: ') +
@@ -587,8 +581,8 @@ export function displayResults(result: AnalysisResult): void {
       category.percentage >= 75
         ? chalk.green
         : category.percentage >= 60
-        ? chalk.yellow
-        : chalk.red;
+          ? chalk.yellow
+          : chalk.red;
 
     console.log(
       chalk.bold(`\n${category.name}: `) +
@@ -599,9 +593,7 @@ export function displayResults(result: AnalysisResult): void {
     for (const item of category.items) {
       const icon = item.passed ? chalk.green('✓') : chalk.red('✗');
       const points = item.passed ? chalk.green : chalk.gray;
-      console.log(
-        `  ${icon} ${item.name}: ${points(`${item.points}/${item.maxPoints} pts`)}`
-      );
+      console.log(`  ${icon} ${item.name}: ${points(`${item.points}/${item.maxPoints} pts`)}`);
       if (item.message) {
         console.log(chalk.gray(`     ${item.message}`));
       }
@@ -636,21 +628,15 @@ function generateRecommendations(result: AnalysisResult): string[] {
               'Organize seus componentes em níveis Atomic Design (atoms, molecules, organisms, templates, pages)'
             );
           } else if (item.name === 'Componentes TypeScript') {
-            recommendations.push(
-              'Migre mais componentes para TypeScript para melhor type safety'
-            );
+            recommendations.push('Migre mais componentes para TypeScript para melhor type safety');
           } else if (item.name === 'Cobertura de testes') {
             recommendations.push(
               'Adicione mais testes unitários para seus componentes (meta: 70%+)'
             );
           } else if (item.name === 'Cobertura de stories') {
-            recommendations.push(
-              'Crie stories no Storybook para mais componentes (meta: 70%+)'
-            );
+            recommendations.push('Crie stories no Storybook para mais componentes (meta: 70%+)');
           } else if (item.name === 'Convenção PascalCase') {
-            recommendations.push(
-              'Use PascalCase para nomes de componentes (ex: MyComponent.vue)'
-            );
+            recommendations.push('Use PascalCase para nomes de componentes (ex: MyComponent.vue)');
           } else if (item.name === 'README.md principal') {
             recommendations.push('Adicione um arquivo README.md na raiz do projeto');
           }

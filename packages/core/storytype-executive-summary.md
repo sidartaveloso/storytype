@@ -1,4 +1,4 @@
-# devix-vue-components — Sumário Executivo
+# storytype — Sumário Executivo
 
 **Padrão de Arquitetura para Componentes Vue 3**
 
@@ -8,7 +8,7 @@
 
 ## 🎯 Resumo
 
-O **devix-vue-components** é um padrão arquitetural maduro e testado em produção para desenvolvimento de aplicações Vue 3 com TypeScript. Fornece estrutura, convenções e fluxos de trabalho que aumentam a qualidade, produtividade e manutenibilidade do código.
+O **storytype** é um padrão arquitetural maduro e testado em produção para desenvolvimento de aplicações Vue 3 com TypeScript. Fornece estrutura, convenções e fluxos de trabalho que aumentam a qualidade, produtividade e manutenibilidade do código.
 
 **Origem**: Consolidado a partir de projetos bem-sucedidos (**coworking-ui**, **organiza-ai**)
 **Status**: Pronto para produção (v1.0)
@@ -394,9 +394,9 @@ _Valores ilustrativos baseados em experiências de projetos similares_
 
 ## 📚 Documentação Relacionada
 
-- **[Especificação Completa](./devix-vue-components-spec.md)** — Referência técnica detalhada
-- **[Quick Start](./devix-vue-components-readme.md)** — Guia rápido para desenvolvedores
-- **[Guia Visual](./devix-vue-components-visual-guide.md)** — Diagramas e fluxogramas
+- **[Especificação Completa](./storytype-spec.md)** — Referência técnica detalhada
+- **[Quick Start](./storytype-readme.md)** — Guia rápido para desenvolvedores
+- **[Guia Visual](./storytype-visual-guide.md)** — Diagramas e fluxogramas
 
 ---
 
@@ -494,8 +494,8 @@ const userStore = useUserStore();
 
 ---
 
-**devix-vue-components — Sumário Executivo v1.0**
+**storytype — Sumário Executivo v1.0**
 Preparado por: Sidarta Veloso
 Data: 9 de março de 2026
 
-© 2026 devix-vue-components. Este documento pode ser compartilhado livremente para avaliação e tomada de decisão.
+© 2026 storytype. Este documento pode ser compartilhado livremente para avaliação e tomada de decisão.

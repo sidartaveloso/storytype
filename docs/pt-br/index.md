@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Storytype
   text: Padrão Moderno de Desenvolvimento de Componentes Vue 3
-  tagline: Construa aplicações Vue escaláveis, mantíveis e testáveis com Atomic Design e padrão Container/Presentation
+  tagline: Construa aplicações Vue escaláveis, de fácil manutenção e testáveis com Atomic Design e padrão Container/Presentation
   image:
     src: /logo.svg
     alt: Storytype

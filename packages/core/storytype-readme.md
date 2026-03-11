@@ -1,14 +1,14 @@
-# devix-vue-components
+# storytype
 
 **Padrão de Desenvolvimento de Componentes Vue 3 com TypeScript**
 
-> 📖 **Especificação completa:** [devix-vue-components-spec.md](./devix-vue-components-spec.md)
+> 📖 **Especificação completa:** [storytype-spec.md](./storytype-spec.md)
 
 ---
 
 ## 🎯 Visão Rápida
 
-O **devix-vue-components** é um padrão arquitetural para criar componentes Vue 3 escaláveis, testáveis e manuteníveis, usando:
+O **storytype** é um padrão arquitetural para criar componentes Vue 3 escaláveis, testáveis e de fácil manutenção, usando:
 
 - ✅ **Vue 3** com Composition API (`<script setup>`)
 - ✅ **TypeScript** strict mode
@@ -197,7 +197,7 @@ export const TodosEstados: Story = {
 
 // Responsividade (quando aplicável)
 export const Responsivo: Story = {
-  render: (args) => ({
+  render: args => ({
     components: { Avatar },
     setup() {
       return { args };
@@ -295,10 +295,7 @@ async function handleLogin() {
 <template>
   <q-page>
     <q-form @submit.prevent="emit('submit')">
-      <q-input
-        :model-value="email"
-        @update:model-value="emit('update:email', $event)"
-      />
+      <q-input :model-value="email" @update:model-value="emit('update:email', $event)" />
       <q-input
         :model-value="password"
         type="password"
@@ -340,7 +337,7 @@ const meta = {
   title: 'Pages/PageLogin',
   component: PageLogin,
   decorators: [
-    (story) => ({
+    story => ({
       components: { story },
       setup() {
         provide('authStore', mockAuthStore);
@@ -408,7 +405,7 @@ Para informações detalhadas sobre:
 - Estratégias de migração
 - Exemplos práticos completos
 
-👉 Consulte a [Especificação Completa](./devix-vue-components-spec.md)
+👉 Consulte a [Especificação Completa](./storytype-spec.md)
 
 ---
 
@@ -469,6 +466,6 @@ Este padrão pode ser livremente usado e adaptado para projetos internos.
 
 ---
 
-**devix-vue-components v1.0**
+**storytype v1.0**
 Criado por Sidarta Veloso
 Março 2026

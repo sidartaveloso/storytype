@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'Storytype',
   description: 'A modern Vue 3 component development pattern',
-  
+
   rewrites: {
     'en/:rest*': ':rest*',
   },
@@ -14,9 +14,7 @@ export default defineConfig({
       lang: 'en',
       link: '/',
       themeConfig: {
-        nav: [
-          { text: 'Guide', link: '/en/guide/introduction' },
-        ],
+        nav: [{ text: 'Guide', link: '/en/guide/introduction' }],
         sidebar: {
           '/en/guide/': [
             {
@@ -35,9 +33,7 @@ export default defineConfig({
       lang: 'pt-BR',
       link: '/pt-br/',
       themeConfig: {
-        nav: [
-          { text: 'Guia', link: '/pt-br/guide/introduction' },
-        ],
+        nav: [{ text: 'Guia', link: '/pt-br/guide/introduction' }],
         sidebar: {
           '/pt-br/guide/': [
             {

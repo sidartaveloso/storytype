@@ -16,7 +16,7 @@
 
 ## 🎯 O que é Storytype?
 
-**Storytype** é um padrão abrangente e conjunto de ferramentas para construir componentes Vue 3 escaláveis, testáveis e manuteníveis. Combina as melhores práticas da indústria:
+**Storytype** é um padrão abrangente e conjunto de ferramentas para construir componentes Vue 3 escaláveis, testáveis e de fácil manutenção. Combina as melhores práticas da indústria:
 
 - ✅ **Vue 3** com Composition API (`<script setup>`)
 - ✅ **TypeScript** em modo strict

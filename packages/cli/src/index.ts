@@ -3,8 +3,11 @@
  * Programmatic API for the Storytype CLI
  */
 
+// Component types
+export type ComponentLevel = 'atom' | 'molecule' | 'organism' | 'template' | 'page';
+
 export interface GenerateOptions {
-  level: 'atom' | 'molecule' | 'organism' | 'template' | 'page';
+  level: ComponentLevel;
   name: string;
   path?: string;
 }
@@ -28,6 +31,3 @@ export async function initStorytype(projectPath?: string): Promise<void> {
 // Export analyzer functions
 export { analyzeProject, displayResults } from './analyzer.js';
 export type { AnalysisResult, CategoryResult, CheckItem } from './analyzer.js';
-
-// Export types
-export * from '@storytype/core';

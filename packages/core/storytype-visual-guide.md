@@ -1,6 +1,6 @@
-# Guia Visual — devix-vue-components
+# Guia Visual — storytype
 
-Este documento fornece visualizações e diagramas para facilitar o entendimento do padrão **devix-vue-components**.
+Este documento fornece visualizações e diagramas para facilitar o entendimento do padrão **storytype**.
 
 ---
 
@@ -735,6 +735,6 @@ Score: 27/27 = 100% ✅
 
 ---
 
-**Guia Visual devix-vue-components v1.0**
+**Guia Visual storytype v1.0**
 Criado por: Sidarta Veloso
 Última atualização: 9 de março de 2026

@@ -1,6 +1,6 @@
-# Guia de Migração — devix-vue-components
+# Guia de Migração — storytype
 
-Guia prático passo a passo para migrar componentes legados para o padrão **devix-vue-components**.
+Guia prático passo a passo para migrar componentes legados para o padrão **storytype**.
 
 ---
 
@@ -203,11 +203,7 @@ export const mockAvatarLarge: AvatarProps = {
 // Avatar.stories.ts
 import type { Meta, StoryObj } from '@storybook/vue3';
 import Avatar from './Avatar.vue';
-import {
-  mockAvatarDefault,
-  mockAvatarSmall,
-  mockAvatarLarge,
-} from './Avatar.mock';
+import { mockAvatarDefault, mockAvatarSmall, mockAvatarLarge } from './Avatar.mock';
 
 const meta = {
   title: 'Atomos/Avatar',
@@ -449,11 +445,7 @@ function handleViewDetails(roteiroId: string) {
 </script>
 
 <template>
-  <CardRoteiro
-    id="123"
-    title="Trilha da Pedra Grande"
-    @view-details="handleViewDetails"
-  />
+  <CardRoteiro id="123" title="Trilha da Pedra Grande" @view-details="handleViewDetails" />
 </template>
 ```
 
@@ -762,10 +754,7 @@ export default defineComponent({
 ```vue
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type {
-  MeuComponenteProps,
-  MeuComponenteEmits,
-} from './MeuComponente.types';
+import type { MeuComponenteProps, MeuComponenteEmits } from './MeuComponente.types';
 
 const props = withDefaults(defineProps<MeuComponenteProps>(), {
   contador: 0,
@@ -1011,9 +1000,9 @@ Depois migrar CardComplexo usando os sub-componentes
 
 ### Documentação
 
-- [Especificação Completa](./devix-vue-components-spec.md)
-- [Guia Visual](./devix-vue-components-visual-guide.md)
-- [Quick Start](./devix-vue-components-readme.md)
+- [Especificação Completa](./storytype-spec.md)
+- [Guia Visual](./storytype-visual-guide.md)
+- [Quick Start](./storytype-readme.md)
 
 ### Exemplos de Referência
 
@@ -1043,8 +1032,8 @@ pnpm test
 
 ---
 
-**Guia de Migração devix-vue-components v1.0**
+**Guia de Migração storytype v1.0**
 Criado por: Sidarta Veloso
 Última atualização: 9 de março de 2026
 
-**Precisa de ajuda?** Consulte a [especificação completa](./devix-vue-components-spec.md) ou o [guia visual](./devix-vue-components-visual-guide.md).
+**Precisa de ajuda?** Consulte a [especificação completa](./storytype-spec.md) ou o [guia visual](./storytype-visual-guide.md).

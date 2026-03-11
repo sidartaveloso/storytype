@@ -17,10 +17,12 @@ pnpm add -g @storytype/cli
 Generate a new component following Atomic Design principles.
 
 **Arguments:**
+
 - `level` - Component level: `atom`, `molecule`, `organism`, `template`, or `page`
 - `name` - Component name (PascalCase recommended)
 
 **Options:**
+
 - `-p, --path <path>` - Custom path for the component
 
 **Examples:**
@@ -49,6 +51,7 @@ storytype init
 Analyze and score your project based on Storytype best practices.
 
 **Arguments:**
+
 - `path` - Project path to analyze (defaults to current directory)
 
 **What it analyzes:**
@@ -134,7 +137,7 @@ import { generateComponent, initStorytype, analyzeProject, displayResults } from
 await generateComponent({
   level: 'atom',
   name: 'Button',
-  path: 'src/components'
+  path: 'src/components',
 });
 
 // Initialize project
