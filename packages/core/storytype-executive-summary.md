@@ -10,10 +10,6 @@
 
 O **storytype** é um padrão arquitetural maduro e testado em produção para desenvolvimento de aplicações Vue 3 com TypeScript. Fornece estrutura, convenções e fluxos de trabalho que aumentam a qualidade, produtividade e manutenibilidade do código.
 
-**Origem**: Consolidado a partir de projetos bem-sucedidos (**coworking-ui**, **organiza-ai**)
-**Status**: Pronto para produção (v1.0)
-**Compatibilidade**: Vue 3.5+, TypeScript 5+, Quasar 2+, Storybook 10+
-
 ---
 
 ## 💼 Benefícios de Negócio
@@ -41,37 +37,6 @@ O **storytype** é um padrão arquitetural maduro e testado em produção para d
 - Múltiplos desenvolvedores trabalham em paralelo sem conflitos
 - Componentes compartilhados sem acoplamento
 - Facilita especialização (front-end vs full-stack)
-
----
-
-## 📊 ROI em Projetos Reais
-
-### Case: coworking-ui
-
-**Contexto:**
-
-- 11 páginas refatoradas
-- 44 componentes Screen criados
-- 91+ stories implementadas
-
-**Resultados:**
-
-- ✅ **Zero erros** TypeScript/ESLint após refatoração
-- ✅ **100% cobertura** de documentação visual
-- ✅ **-70% tempo** para criar novas páginas similares
-- ✅ **+300%** facilidade de testes (componentes isolados)
-
-**Tempo de Implementação:**
-
-- Setup inicial: 2 dias (Storybook + configuração)
-- Refatoração média/componente: 1-2 horas
-- Treinamento da equipe: 1 dia
-
-**ROI Estimado:**
-
-- Investimento: ~15 dias/desenvolvedor
-- Retorno: ~45 dias economizados no primeiro ano
-- **ROI de 200%** no primeiro ano
 
 ---
 
@@ -397,15 +362,6 @@ _Valores ilustrativos baseados em experiências de projetos similares_
 - **[Especificação Completa](./storytype-spec.md)** — Referência técnica detalhada
 - **[Quick Start](./storytype-readme.md)** — Guia rápido para desenvolvedores
 - **[Guia Visual](./storytype-visual-guide.md)** — Diagramas e fluxogramas
-
----
-
-## 👥 Equipe e Suporte
-
-**Autor da Especificação:** Sidarta Veloso
-**Base de Conhecimento:** Projetos coworking-ui, organiza-ai
-**Status:** Pronto para produção
-**Suporte:** Documentação completa + exemplos práticos
 
 ---
 

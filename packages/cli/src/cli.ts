@@ -40,10 +40,11 @@ program
   .command('analyze [path]')
   .alias('audit')
   .description('Analyze and score project based on Storytype best practices')
-  .action(async (projectPath?: string) => {
+  .option('-v, --verbose', 'Show per-file issues and how to fix each one')
+  .action(async (projectPath?: string, options?: { verbose?: boolean }) => {
     try {
       const result = await analyzeProject(projectPath);
-      displayResults(result);
+      displayResults(result, { verbose: options?.verbose });
     } catch (error) {
       console.error('Error analyzing project:', error);
       process.exit(1);

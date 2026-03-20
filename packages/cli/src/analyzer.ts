@@ -24,12 +24,23 @@ export interface CategoryResult {
   items: CheckItem[];
 }
 
+export interface FileIssue {
+  file: string;
+  issue: string;
+  fix: string;
+}
+
 export interface CheckItem {
   name: string;
   passed: boolean;
   points: number;
   maxPoints: number;
   message?: string;
+  fileIssues?: FileIssue[];
+}
+
+export interface DisplayOptions {
+  verbose?: boolean;
 }
 
 const ATOMIC_LEVELS = ['atoms', 'molecules', 'organisms', 'templates', 'pages'];
@@ -171,7 +182,11 @@ async function analyzeTypeScript(projectPath: string, spinner: Ora): Promise<Cat
 
   const componentsPath = findComponentsDirectory(projectPath);
   if (componentsPath) {
-    const { total, typescript } = countComponentsByLanguage(componentsPath);
+    const allComponents = findAllComponents(componentsPath);
+    const tsComponents = allComponents.filter(f => f.endsWith('.ts') || f.endsWith('.tsx'));
+    const nonTsComponents = allComponents.filter(f => !f.endsWith('.ts') && !f.endsWith('.tsx'));
+    const total = allComponents.length;
+    const typescript = tsComponents.length;
     const tsPercentage = total > 0 ? (typescript / total) * 100 : 0;
 
     items.push({
@@ -180,6 +195,11 @@ async function analyzeTypeScript(projectPath: string, spinner: Ora): Promise<Cat
       points: Math.round((tsPercentage / 100) * 15),
       maxPoints: 15,
       message: `${typescript}/${total} componentes (${Math.round(tsPercentage)}%)`,
+      fileIssues: nonTsComponents.map(f => ({
+        file: f,
+        issue: `Arquivo não usa TypeScript: "${path.basename(f)}"`,
+        fix: `Renomeie para "${path.basename(f, path.extname(f))}.ts" e adicione tipagem`,
+      })),
     });
   } else {
     items.push({
@@ -257,6 +277,12 @@ async function analyzeTestsAndStories(projectPath: string, spinner: Ora): Promis
   const testFiles = findFilesByPattern(componentsPath, TEST_PATTERNS);
   const storyFiles = findFilesByPattern(componentsPath, STORY_PATTERNS);
 
+  const testFileBases = new Set(testFiles.map(f => stripTestSuffix(f, TEST_PATTERNS)));
+  const storyFileBases = new Set(storyFiles.map(f => stripTestSuffix(f, STORY_PATTERNS)));
+
+  const componentsMissingTests = componentFiles.filter(f => !testFileBases.has(stripExt(f)));
+  const componentsMissingStories = componentFiles.filter(f => !storyFileBases.has(stripExt(f)));
+
   const testCoverage =
     componentFiles.length > 0 ? (testFiles.length / componentFiles.length) * 100 : 0;
   const storyCoverage =
@@ -268,6 +294,11 @@ async function analyzeTestsAndStories(projectPath: string, spinner: Ora): Promis
     points: Math.round((Math.min(testCoverage, 100) / 100) * 15),
     maxPoints: 15,
     message: `${testFiles.length}/${componentFiles.length} componentes (${Math.round(testCoverage)}%)`,
+    fileIssues: componentsMissingTests.map(f => ({
+      file: f,
+      issue: 'Sem arquivo de teste',
+      fix: `Crie ${path.join(path.dirname(f), path.basename(f, path.extname(f)) + '.spec.ts')}`,
+    })),
   });
 
   items.push({
@@ -276,6 +307,11 @@ async function analyzeTestsAndStories(projectPath: string, spinner: Ora): Promis
     points: Math.round((Math.min(storyCoverage, 100) / 100) * 15),
     maxPoints: 15,
     message: `${storyFiles.length}/${componentFiles.length} componentes (${Math.round(storyCoverage)}%)`,
+    fileIssues: componentsMissingStories.map(f => ({
+      file: f,
+      issue: 'Sem arquivo de story',
+      fix: `Crie ${path.join(path.dirname(f), path.basename(f, path.extname(f)) + '.stories.ts')}`,
+    })),
   });
 
   const score = items.reduce((sum, item) => sum + item.points, 0);
@@ -329,6 +365,10 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
     const fileName = path.basename(file, path.extname(file));
     return /^[A-Z][a-zA-Z0-9]*$/.test(fileName);
   });
+  const nonPascalFiles = componentFiles.filter(file => {
+    const fileName = path.basename(file, path.extname(file));
+    return !/^[A-Z][a-zA-Z0-9]*$/.test(fileName);
+  });
 
   const pascalCasePercentage =
     componentFiles.length > 0 ? (pascalCaseFiles.length / componentFiles.length) * 100 : 0;
@@ -339,6 +379,19 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
     points: Math.round((pascalCasePercentage / 100) * 10),
     maxPoints: 10,
     message: `${pascalCaseFiles.length}/${componentFiles.length} componentes (${Math.round(pascalCasePercentage)}%)`,
+    fileIssues: nonPascalFiles.map(f => {
+      const oldName = path.basename(f);
+      const ext = path.extname(f);
+      const baseName = path.basename(f, ext);
+      const pascalName = baseName
+        .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
+        .replace(/^(.)/, (_, c: string) => c.toUpperCase());
+      return {
+        file: f,
+        issue: `Nome em formato incorreto: "${oldName}"`,
+        fix: `Renomeie para "${pascalName}${ext}"`,
+      };
+    }),
   });
 
   // Check if components are organized in folders (Component/Component.vue pattern)
@@ -545,6 +598,25 @@ function hasFilesWithPattern(dir: string, pattern: RegExp): boolean {
 }
 
 /**
+ * Helper: Strip extension from file path
+ */
+function stripExt(filePath: string): string {
+  return filePath.replace(/\.[^.]+$/, '');
+}
+
+/**
+ * Helper: Strip test/story suffix from file path to get base component path
+ */
+function stripTestSuffix(filePath: string, patterns: string[]): string {
+  for (const pattern of patterns) {
+    if (filePath.includes(pattern)) {
+      return filePath.replace(pattern, '');
+    }
+  }
+  return stripExt(filePath);
+}
+
+/**
  * Generate summary message based on score
  */
 function generateSummary(percentage: number): string {
@@ -558,7 +630,8 @@ function generateSummary(percentage: number): string {
 /**
  * Display analysis results
  */
-export function displayResults(result: AnalysisResult): void {
+export function displayResults(result: AnalysisResult, options: DisplayOptions = {}): void {
+  const { verbose = false } = options;
   console.log('\n' + '='.repeat(60));
   console.log(chalk.bold.cyan('📊 ANÁLISE DO PROJETO STORYTYPE'));
   console.log('='.repeat(60) + '\n');
@@ -596,6 +669,20 @@ export function displayResults(result: AnalysisResult): void {
       console.log(`  ${icon} ${item.name}: ${points(`${item.points}/${item.maxPoints} pts`)}`);
       if (item.message) {
         console.log(chalk.gray(`     ${item.message}`));
+      }
+      if (verbose && !item.passed && item.fileIssues && item.fileIssues.length > 0) {
+        const MAX_SHOWN = 20;
+        const shown = item.fileIssues.slice(0, MAX_SHOWN);
+        for (const fi of shown) {
+          console.log(chalk.red(`       ✗ ${fi.file}`));
+          console.log(chalk.gray(`         Problema: ${fi.issue}`));
+          console.log(chalk.cyan(`         Como corrigir: ${fi.fix}`));
+        }
+        if (item.fileIssues.length > MAX_SHOWN) {
+          console.log(
+            chalk.gray(`       ... e mais ${item.fileIssues.length - MAX_SHOWN} arquivos`)
+          );
+        }
       }
     }
   }
