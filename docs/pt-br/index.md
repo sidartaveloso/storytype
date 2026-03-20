@@ -65,8 +65,10 @@ export interface PerfilScreenEmits {
 <!-- PerfilScreen.vue - Screen: Apresentação pura, dirigida por props -->
 <template>
   <div class="perfil-screen">
-    <Input v-model="props.usuario.nome" label="Nome" />
-    <Botao @click="emits('salvar', { nome: props.usuario.nome })"> Salvar </Botao>
+    <AtomInput v-model="props.usuario.nome" label="Nome" />
+    <AtomButton @click="emits('salvar', { nome: props.usuario.nome })">
+      Salvar
+    </AtomButton>
   </div>
 </template>
 
