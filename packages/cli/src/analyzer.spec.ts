@@ -29,6 +29,17 @@ describe('Analyzer - Naming Validation', () => {
     const oldName = path.basename(filePath);
     const baseName = getComponentBaseName(filePath);
 
+    // index.ts é uma convenção legítima para arquivos de exportação
+    if (baseName === 'index') {
+      return {
+        needsFix: false,
+        oldName,
+        newName: oldName,
+        baseName,
+        isPascalCase: true,
+      };
+    }
+
     // Check if PascalCase
     const isPascalCase = /^[A-Z][a-zA-Z0-9]*$/.test(baseName);
 
@@ -82,6 +93,22 @@ describe('Analyzer - Naming Validation', () => {
     it('should accept ButtonComponent.stories.ts as valid', () => {
       const result = checkComponentName('src/components/ButtonComponent.stories.ts');
       expect(result.baseName).toBe('ButtonComponent');
+      expect(result.isPascalCase).toBe(true);
+      expect(result.needsFix).toBe(false);
+    });
+
+    it('should accept index.ts as valid (barrel export pattern)', () => {
+      const result = checkComponentName('src/components/MyComponent/index.ts');
+      expect(result.baseName).toBe('index');
+      expect(result.isPascalCase).toBe(true);
+      expect(result.needsFix).toBe(false);
+      expect(result.oldName).toBe('index.ts');
+      expect(result.newName).toBe('index.ts');
+    });
+
+    it('should accept index.tsx as valid (barrel export pattern)', () => {
+      const result = checkComponentName('src/components/index.tsx');
+      expect(result.baseName).toBe('index');
       expect(result.isPascalCase).toBe(true);
       expect(result.needsFix).toBe(false);
     });

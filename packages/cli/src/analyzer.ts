@@ -373,10 +373,14 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
 
   const pascalCaseFiles = componentFiles.filter(file => {
     const baseName = getComponentBaseName(file);
+    // index.ts é uma convenção legítima para arquivos de exportação
+    if (baseName === 'index') return true;
     return /^[A-Z][a-zA-Z0-9]*$/.test(baseName);
   });
   const nonPascalFiles = componentFiles.filter(file => {
     const baseName = getComponentBaseName(file);
+    // index.ts é uma convenção legítima para arquivos de exportação
+    if (baseName === 'index') return false;
     return !/^[A-Z][a-zA-Z0-9]*$/.test(baseName);
   });
 
