@@ -28,8 +28,6 @@
 
 O **storytype** é um padrão de arquitetura e desenvolvimento para componentes Vue 3 com TypeScript, focado em criar sistemas de design escaláveis, testáveis e de fácil manutenção.
 
-Este padrão foi desenvolvido com base nas melhores práticas de projetos como **coworking-ui** e **organiza-ai**, consolidando aprendizados e convenções bem-sucedidas.
-
 ### 1.2 Objetivos
 
 - **Testabilidade**: Componentes isolados e testáveis via Storybook
@@ -2260,11 +2258,6 @@ Ver seção [8.4 Presentation (Screen)](#84-presentation-screen) para exemplo co
 
 - [Container/Presentation Pattern](https://www.patterns.dev/posts/presentational-container-pattern)
 - [Vue Composition API Best Practices](https://vuejs.org/guide/reusability/composables.html)
-
-### 13.4 Projetos de Referência
-
-- **coworking-ui**: Projeto que implementou este padrão com sucesso (11 páginas, 44 screens, 91+ stories)
-- **organiza-ai**: Gerador plop com templates que inspiraram este padrão
 
 ---
 

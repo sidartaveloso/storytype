@@ -1,13 +1,13 @@
-# @storytype/cli
+# storytype
 
 CLI tool for scaffolding Storytype components and analyzing project structure.
 
 ## Installation
 
 ```bash
-npm install -g @storytype/cli
+npm install -g storytype
 # or
-pnpm add -g @storytype/cli
+pnpm add -g storytype
 ```
 
 ## Commands
@@ -54,6 +54,10 @@ Analyze and score your project based on Storytype best practices.
 
 - `path` - Project path to analyze (defaults to current directory)
 
+**Options:**
+
+- `-v, --verbose` - Show per-file issues and how to fix each one
+
 **What it analyzes:**
 
 1. **Estrutura Atomic Design (50 pts)**
@@ -86,6 +90,10 @@ storytype analyze
 
 # Analyze specific project
 storytype analyze /path/to/project
+
+# Show per-file issues and how to fix them
+storytype analyze --verbose
+storytype analyze /path/to/project -v
 
 # Using alias
 storytype audit
@@ -131,7 +139,7 @@ Estrutura Atomic Design: 40/50 (80%)
 You can also use the CLI programmatically:
 
 ```typescript
-import { generateComponent, initStorytype, analyzeProject, displayResults } from '@storytype/cli';
+import { generateComponent, initStorytype, analyzeProject, displayResults } from 'storytype';
 
 // Generate component
 await generateComponent({

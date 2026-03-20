@@ -1,5 +1,5 @@
 /**
- * @storytype/cli
+ * storytype
  * Programmatic API for the Storytype CLI
  */
 
@@ -30,4 +30,10 @@ export async function initStorytype(projectPath?: string): Promise<void> {
 
 // Export analyzer functions
 export { analyzeProject, displayResults } from './analyzer.js';
-export type { AnalysisResult, CategoryResult, CheckItem } from './analyzer.js';
+export type {
+  AnalysisResult,
+  CategoryResult,
+  CheckItem,
+  FileIssue,
+  DisplayOptions,
+} from './analyzer.js';

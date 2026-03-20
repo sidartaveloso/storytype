@@ -445,11 +445,6 @@ pnpm type-check
 
 ## 🎓 Aprendizado
 
-### Projetos de Referência
-
-- **coworking-ui**: 11 páginas, 44 screens, 91+ stories
-- **organiza-ai**: Gerador plop com templates
-
 ### Links Úteis
 
 - [Vue 3 Docs](https://vuejs.org/)
