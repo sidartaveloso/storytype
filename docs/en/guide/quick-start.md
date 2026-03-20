@@ -250,29 +250,29 @@ storytype add organism UserProfile
 Generate a complete page with container and presentation:
 
 ```bash
-storytype add page Perfil
+storytype add page UserProfile
 ```
 
 This creates:
 
-- `PerfilPage.vue` - Container with business logic
-- `PerfilScreen.vue` - Presentation component
-- `PerfilScreen.types.ts` - Component types
-- `PerfilScreen.stories.ts` - Storybook stories
+- `UserProfilePage.vue` - Container with business logic
+- `UserProfileScreen.vue` - Presentation component
+- `UserProfileScreen.types.ts` - Component types
+- `UserProfileScreen.stories.ts` - Storybook stories
 
 ## Best Practices
 
 ### Component Naming
 
-Follow the Portuguese Atomic Design naming:
+Follow the Atomic Design naming convention:
 
 ```
-AtomButton      → Atom component
-MolUserCard     → Molecule component
-OrgNavigation   → Organism component
-TempDashboard   → Template component
-PerfilPage      → Page container
-PerfilScreen    → Screen presentation
+AtomButton         → Atom component
+MolUserCard        → Molecule component
+OrgNavigation      → Organism component
+TempDashboard      → Template component
+UserProfilePage    → Page container
+UserProfileScreen  → Screen presentation
 ```
 
 ### TypeScript
@@ -280,34 +280,34 @@ PerfilScreen    → Screen presentation
 Always define interfaces in separate `.types.ts` file:
 
 ```typescript
-// PerfilScreen.types.ts
-export interface PerfilScreenType {
-  usuario: Usuario;
-  carregando?: boolean;
+// UserProfileScreen.types.ts
+export interface UserProfileScreenType {
+  user: User;
+  loading?: boolean;
 }
 
-export interface PerfilScreenProps {
-  usuario: Usuario;
-  carregando?: boolean;
+export interface UserProfileScreenProps {
+  user: User;
+  loading?: boolean;
 }
 
-export interface PerfilScreenEmits {
-  salvar: [dados: Usuario];
-  cancelar: [];
+export interface UserProfileScreenEmits {
+  save: [data: User];
+  cancel: [];
 }
 ```
 
 ```vue
-<!-- PerfilScreen.vue -->
+<!-- UserProfileScreen.vue -->
 <template>
   <!-- content -->
 </template>
 
 <script setup lang="ts">
-import type { PerfilScreenProps, PerfilScreenEmits } from './PerfilScreen.types';
+import type { UserProfileScreenProps, UserProfileScreenEmits } from './UserProfileScreen.types';
 
-const props = defineProps<PerfilScreenProps>();
-const emits = defineEmits<PerfilScreenEmits>();
+const props = defineProps<UserProfileScreenProps>();
+const emits = defineEmits<UserProfileScreenEmits>();
 </script>
 ```
 
@@ -331,27 +331,27 @@ type Story = StoryObj<typeof MolUserCard>;
 
 export const Default: Story = {
   args: {
-    usuario: {
-      nome: 'João Silva',
-      email: 'joao@example.com',
+    user: {
+      name: 'John Doe',
+      email: 'john@example.com',
       avatar: 'https://i.pravatar.cc/150?img=12',
     },
   },
 };
 
-export const SemAvatar: Story = {
+export const NoAvatar: Story = {
   args: {
-    usuario: {
-      nome: 'Maria Santos',
-      email: 'maria@example.com',
+    user: {
+      name: 'Jane Smith',
+      email: 'jane@example.com',
     },
   },
 };
 
-export const Carregando: Story = {
+export const Loading: Story = {
   args: {
-    usuario: null,
-    carregando: true,
+    user: null,
+    loading: true,
   },
 };
 ```

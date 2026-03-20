@@ -45,58 +45,60 @@ features:
 ## Quick Example
 
 ```typescript
-// PerfilScreen.types.ts
-export interface PerfilScreenType {
-  usuario: { nome: string; email: string };
-  carregando?: boolean;
+// UserProfileScreen.types.ts
+export interface UserProfileScreenType {
+  user: { name: string; email: string };
+  loading?: boolean;
 }
 
-export interface PerfilScreenProps {
-  usuario: { nome: string; email: string };
-  carregando?: boolean;
+export interface UserProfileScreenProps {
+  user: { name: string; email: string };
+  loading?: boolean;
 }
 
-export interface PerfilScreenEmits {
-  salvar: [dados: Partial<PerfilScreenType['usuario']>];
+export interface UserProfileScreenEmits {
+  save: [data: Partial<UserProfileScreenType['user']>];
 }
 ```
 
 ```vue
-<!-- PerfilScreen.vue - Screen: Pure presentation, props-driven -->
+<!-- UserProfileScreen.vue - Screen: Pure presentation, props-driven -->
 <template>
-  <div class="perfil-screen">
-    <AtomInput v-model="props.usuario.nome" label="Nome" />
-    <AtomButton @click="emits('salvar', { nome: props.usuario.nome })"> Salvar </AtomButton>
+  <div class="user-profile-screen">
+    <AtomInput v-model="props.user.name" label="Name" />
+    <AtomButton @click="emits('save', { name: props.user.name })">
+      Save
+    </AtomButton>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { PerfilScreenProps, PerfilScreenEmits } from './PerfilScreen.types';
+import type { UserProfileScreenProps, UserProfileScreenEmits } from './UserProfileScreen.types';
 
-const props = defineProps<PerfilScreenProps>();
-const emits = defineEmits<PerfilScreenEmits>();
+const props = defineProps<UserProfileScreenProps>();
+const emits = defineEmits<UserProfileScreenEmits>();
 </script>
 ```
 
 ```vue
-<!-- PerfilPage.vue - Page: Business logic container -->
+<!-- UserProfilePage.vue - Page: Business logic container -->
 <template>
-  <PerfilScreen
-    :usuario="usuarioStore.usuario"
-    :carregando="usuarioStore.carregando"
-    @salvar="handleSalvar"
+  <UserProfileScreen
+    :user="userStore.user"
+    :loading="userStore.loading"
+    @save="handleSave"
   />
 </template>
 
 <script setup lang="ts">
-import { useUsuarioStore } from '@/store/usuario';
-import PerfilScreen from './PerfilScreen.vue';
-import type { Usuario } from '@/types';
+import { useUserStore } from '@/stores/user';
+import UserProfileScreen from './UserProfileScreen.vue';
+import type { User } from '@/types';
 
-const usuarioStore = useUsuarioStore();
+const userStore = useUserStore();
 
-const handleSalvar = async (dados: Partial<Usuario>) => {
-  await usuarioStore.atualizar(dados);
+const handleSave = async (data: Partial<User>) => {
+  await userStore.update(data);
 };
 </script>
 ```
@@ -124,7 +126,7 @@ storytype add atom Avatar
 storytype add molecule UserCard
 
 # Generate a complete page with screen
-storytype add page Perfil
+storytype add page UserProfile
 ```
 
 ## Learn More
