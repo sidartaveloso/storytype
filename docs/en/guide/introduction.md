@@ -1,6 +1,87 @@
 # What is Storytype?
 
-Storytype is a comprehensive Vue 3 component development pattern that combines **Atomic Design** principles with the **Container/Presentation** pattern to create scalable, maintainable, and testable applications.
+**The type-safe way to build Vue 3 components.** Storytype is a pattern that combines Atomic Design with Container/Presentation to give you fully typed, testable, and maintainable components.
+
+## Show Me the Code
+
+Here's what changes:
+
+::: code-group
+
+```vue [❌ Before: Weak Types]
+<script setup>
+// Props are "any" - no autocomplete, no safety
+defineProps(['user', 'isLoading', 'onUpdate']);
+
+// Business logic mixed with UI
+const store = useUserStore();
+const router = useRouter();
+
+const handleSave = () => {
+  store.update(user); // What if "user" is undefined?
+  router.push('/dashboard');
+};
+</script>
+```
+
+```vue [✅ After: Fully Typed]
+<script setup lang="ts">
+// Props are fully typed - autocomplete everywhere
+interface Props {
+  user: User; // TypeScript knows what properties exist
+  isLoading: boolean;
+}
+
+interface Emits {
+  update: [user: User];
+}
+
+defineProps<Props>();
+const emit = defineEmits<Emits>();
+
+// Pure component - no stores, no router
+const handleSave = () => {
+  emit('update', props.user); // Type-checked!
+};
+</script>
+```
+
+:::
+
+## Type Safety in Action
+
+TypeScript catches mistakes **before** they reach production:
+
+```typescript
+// Define your types once
+export interface UserProfileProps {
+  user: User;
+  loading: boolean;
+}
+
+export interface UserProfileEmits {
+  save: [data: Partial<User>];
+  cancel: [];
+}
+```
+
+Now your editor helps you:
+
+```vue
+<template>
+  <!-- ✅ Autocomplete shows: name, email, avatar -->
+  <h1>{{ user.name }}</h1>
+
+  <!-- ❌ TypeScript error: Property 'foo' does not exist -->
+  <p>{{ user.foo }}</p>
+
+  <!-- ✅ Event payload is type-checked -->
+  <button @click="emit('save', { name: 'New Name' })">
+
+  <!-- ❌ TypeScript error: Expected 1 argument, got 0 -->
+  <button @click="emit('save')">
+</template>
+```
 
 ## The Problem
 
@@ -31,55 +112,98 @@ src/components/
 
 ### 2. Container/Presentation Separation
 
-Each complex feature is split into two parts:
+Each complex feature is split into two typed parts:
 
-- **Pages (Containers)**: Handle business logic, state management, routing
-- **Screens (Presentation)**: Pure presentation components driven by props
-
-```vue
-<!-- PerfilPage.vue: Container -->
-<template>
-  <PerfilScreen :usuario="store.usuario" @salvar="store.atualizar" />
-</template>
-
-<script setup lang="ts">
-import { useUsuarioStore } from '@/store/usuario';
-import PerfilScreen from './PerfilScreen.vue';
-
-const store = useUsuarioStore();
-</script>
-```
+**Step 1: Define your types** (the contract)
 
 ```typescript
-// PerfilScreen.types.ts
-export interface PerfilScreenType {
-  usuario: Usuario;
+// UserProfileScreen.types.ts
+import type { User } from '@/types';
+
+// Props flow DOWN (data)
+export interface UserProfileScreenProps {
+  user: User;
+  loading: boolean;
+  error: string | null;
 }
 
-export interface PerfilScreenProps {
-  usuario: Usuario;
+// Events flow UP (actions)
+export interface UserProfileScreenEmits {
+  save: [data: Partial<User>];
+  cancel: [];
 }
 
-export interface PerfilScreenEmits {
-  (e: 'salvar', dados: Partial<Usuario>): void;
+// Component type (for Storybook, tests, etc.)
+export interface UserProfileScreenType {
+  $props: UserProfileScreenProps;
+  $emit: UserProfileScreenEmits;
 }
 ```
 
+**Step 2: Pure Presentation Component** (UI only)
+
 ```vue
-<!-- PerfilScreen.vue: Presentation -->
+<!-- UserProfileScreen.vue -->
 <template>
-  <div class="perfil">
-    <!-- Pure presentation logic -->
+  <div class="user-profile">
+    <input v-model="localName" type="text" />
+    <button @click="handleSave" :disabled="loading">
+      {{ loading ? 'Saving...' : 'Save' }}
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { PerfilScreenProps, PerfilScreenEmits } from './PerfilScreen.types';
+import { ref } from 'vue';
+import type { UserProfileScreenProps, UserProfileScreenEmits } from './UserProfileScreen.types';
 
-defineProps<PerfilScreenProps>();
-defineEmits<PerfilScreenEmits>();
+const props = defineProps<UserProfileScreenProps>();
+const emit = defineEmits<UserProfileScreenEmits>();
+
+const localName = ref(props.user.name);
+
+const handleSave = () => {
+  // TypeScript ensures we pass the right shape
+  emit('save', { name: localName.value });
+};
 </script>
 ```
+
+**Step 3: Smart Container** (business logic)
+
+```vue
+<!-- UserProfilePage.vue -->
+<template>
+  <UserProfileScreen
+    :user="state.user"
+    :loading="state.loading"
+    :error="state.error"
+    @save="handleSave"
+    @cancel="router.push('/dashboard')"
+  />
+</template>
+
+<script setup lang="ts">
+import { useUserStore } from '@/stores/user';
+import { useRouter } from 'vue-router';
+import UserProfileScreen from './UserProfileScreen.vue';
+
+const store = useUserStore();
+const router = useRouter();
+const state = store.state; // Your state management
+
+const handleSave = async (data: Partial<User>) => {
+  await store.updateUser(data); // Type-safe all the way
+};
+</script>
+```
+
+**The benefits:**
+
+- ✅ `UserProfileScreen` can be developed in Storybook isolation
+- ✅ TypeScript catches prop/emit mismatches instantly
+- ✅ Refactoring is safe - compiler catches all breaking changes
+- ✅ Testing is trivial - just pass props, assert emits
 
 ### 3. Storybook-Driven Development
 

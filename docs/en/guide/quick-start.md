@@ -84,22 +84,132 @@ src/
 
 ## Your First Component
 
-Let's create a simple atom component:
+Let's create a simple atom component and see the **type safety in action**:
 
 ```bash
 storytype add atom Avatar
 ```
 
-This generates:
+This generates **fully typed** components:
 
-```vue
-<!-- src/components/atomos/AtomAvatar/AtomAvatar.vue -->
+::: code-group
+
+```typescript [types.ts - The Contract]
+// src/components/atomos/AtomAvatar/types.ts
+
+/** Size variants for the avatar */
+export type AvatarSize = 'sm' | 'md' | 'lg';
+
+/** Avatar component props */
+export interface AvatarProps {
+  /** User's image URL */
+  src: string;
+  /** Alt text for accessibility */
+  alt: string;
+  /** Size variant */
+  size?: AvatarSize;
+}
+
+/** Avatar component type (for Storybook & tests) */
+export interface AvatarType {
+  $props: AvatarProps;
+}
+```
+
+```vue [AtomAvatar.vue - The Component]
+<template>
+  <img :src="src" :alt="alt" :class="['avatar', `avatar--${size}`]" />
+</template>
+
 <script setup lang="ts">
 import type { AvatarProps } from './types';
 
-const props = withDefaults(defineProps<AvatarProps>(), {
+// TypeScript provides:
+// ✅ Autocomplete for all props
+// ✅ Type errors if props are wrong
+// ✅ Safe refactoring
+withDefaults(defineProps<AvatarProps>(), {
   size: 'md',
-  shape: 'circle',
+});
+</script>
+
+<style scoped>
+.avatar {
+  border-radius: 50%;
+}
+.avatar--sm {
+  width: 32px;
+  height: 32px;
+}
+.avatar--md {
+  width: 48px;
+  height: 48px;
+}
+.avatar--lg {
+  width: 64px;
+  height: 64px;
+}
+</style>
+```
+
+```typescript [AtomAvatar.stories.ts - Live Documentation]
+import type { Meta, StoryObj } from '@storybook/vue3';
+import AtomAvatar from './AtomAvatar.vue';
+import type { AvatarProps } from './types';
+
+const meta = {
+  title: 'Atomos/AtomAvatar',
+  component: AtomAvatar,
+  tags: ['autodocs'],
+} satisfies Meta<typeof AtomAvatar>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// TypeScript ensures stories match props
+export const Default: Story = {
+  args: {
+    src: 'https://i.pravatar.cc/150',
+    alt: 'User avatar',
+    size: 'md',
+  },
+};
+
+export const Small: Story = {
+  args: { ...Default.args, size: 'sm' },
+};
+```
+
+:::
+
+## The Developer Experience
+
+Now when you use the component, **TypeScript helps you**:
+
+```vue
+<template>
+  <!-- ✅ Autocomplete shows: src, alt, size -->
+  <AtomAvatar src="/user.jpg" alt="John Doe" size="lg" />
+
+  <!-- ❌ TypeScript error: Type '"xl"' is not assignable to type 'AvatarSize' -->
+  <AtomAvatar size="xl" />
+
+  <!-- ❌ TypeScript error: Property 'src' is missing -->
+  <AtomAvatar alt="John" />
+</template>
+```
+
+**This means:**
+
+- 🎯 Can't pass wrong prop types
+- 🎯 Can't forget required props
+- 🎯 Can't use props that don't exist
+- 🎯 Rename refactoring is 100% safe
+
+## Your First Component
+
+size: 'md',
+shape: 'circle',
 });
 </script>
 
@@ -141,7 +251,8 @@ const props = withDefaults(defineProps<AvatarProps>(), {
   }
 }
 </style>
-```
+
+````
 
 ```ts
 // src/components/atomos/AtomAvatar/types.ts
@@ -152,7 +263,7 @@ export interface AvatarProps {
   size?: 'sm' | 'md' | 'lg';
   shape?: 'circle' | 'square';
 }
-```
+````
 
 ## Development Workflow
 
@@ -240,8 +351,8 @@ export interface PerfilScreenProps {
 }
 
 export interface PerfilScreenEmits {
-  (e: 'salvar', dados: Usuario): void;
-  (e: 'cancelar'): void;
+  salvar: [dados: Usuario];
+  cancelar: [];
 }
 ```
 

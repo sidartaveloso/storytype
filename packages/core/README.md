@@ -76,12 +76,6 @@ Atomic Design + Container/Presentation
 
 ---
 
-## 🎓 Projetos de Referência
-
-- **coworking-ui** — 11 páginas, 44 screens, 91+ stories, implementação completa
-- **organiza-ai** — Gerador plop com templates automáticos
-- **subhike-venture-ui** — Projeto atual seguindo o padrão
-
 ---
 
 ## 🤝 Como Usar Este Guia em Seus Projetos
