@@ -46,3 +46,6 @@ lerna-debug.log*
 *.tsbuildinfo
 .cache
 cache/
+
+# Taskin configuration
+.taskin.json
