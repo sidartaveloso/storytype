@@ -19,44 +19,47 @@ describe('Analyzer - Naming Validation', () => {
   /**
    * Helper to check if component name needs fixing (matches analyzer.ts logic exactly)
    */
-  function checkComponentName(filePath: string): { 
-    needsFix: boolean; 
-    oldName: string; 
+  function checkComponentName(filePath: string): {
+    needsFix: boolean;
+    oldName: string;
     newName: string;
     baseName: string;
     isPascalCase: boolean;
   } {
     const oldName = path.basename(filePath);
     const baseName = getComponentBaseName(filePath);
-    
+
     // Check if PascalCase
     const isPascalCase = /^[A-Z][a-zA-Z0-9]*$/.test(baseName);
 
     if (isPascalCase) {
-      return { 
-        needsFix: false, 
-        oldName, 
+      return {
+        needsFix: false,
+        oldName,
         newName: oldName,
         baseName,
-        isPascalCase: true
+        isPascalCase: true,
       };
     }
-    
+
     // Convert to PascalCase
     const pascalName = baseName
       .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
       .replace(/^(.)/, (_, c: string) => c.toUpperCase());
-    
+
     // Reconstruct the full filename with same suffixes
-    const suffix = oldName.replace(new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), '');
+    const suffix = oldName.replace(
+      new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+      ''
+    );
     const newName = `${pascalName}${suffix}`;
 
-    return { 
-      needsFix: oldName !== newName, 
-      oldName, 
+    return {
+      needsFix: oldName !== newName,
+      oldName,
       newName,
       baseName,
-      isPascalCase: false
+      isPascalCase: false,
     };
   }
 
@@ -130,7 +133,7 @@ describe('Analyzer - Naming Validation', () => {
     });
 
     it('should handle the real-world bug scenario: correctly named files should never need fixing', () => {
-      // Simulate the exact bug scenario: A correctly named file like 
+      // Simulate the exact bug scenario: A correctly named file like
       // "DialogoConfirmarAcao.types.ts" should NEVER be reported as needing a fix
       const correctlyNamedFiles = [
         'DialogoConfirmarAcao.types.ts',
@@ -142,14 +145,14 @@ describe('Analyzer - Naming Validation', () => {
 
       for (const fileName of correctlyNamedFiles) {
         const result = checkComponentName(`/some/path/${fileName}`);
-        
+
         // Assert that correctly named PascalCase files:
         // 1. Are recognized as PascalCase
         expect(result.isPascalCase).toBe(true);
-        
+
         // 2. Don't need fixes
         expect(result.needsFix).toBe(false);
-        
+
         // 3. The suggested name matches the original
         expect(result.newName).toBe(fileName);
         expect(result.oldName).toBe(fileName);

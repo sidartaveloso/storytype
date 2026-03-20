@@ -66,9 +66,7 @@ export interface UserProfileScreenEmits {
 <template>
   <div class="user-profile-screen">
     <AtomInput v-model="props.user.name" label="Name" />
-    <AtomButton @click="emits('save', { name: props.user.name })">
-      Save
-    </AtomButton>
+    <AtomButton @click="emits('save', { name: props.user.name })"> Save </AtomButton>
   </div>
 </template>
 
@@ -83,11 +81,7 @@ const emits = defineEmits<UserProfileScreenEmits>();
 ```vue
 <!-- UserProfilePage.vue - Page: Business logic container -->
 <template>
-  <UserProfileScreen
-    :user="userStore.user"
-    :loading="userStore.loading"
-    @save="handleSave"
-  />
+  <UserProfileScreen :user="userStore.user" :loading="userStore.loading" @save="handleSave" />
 </template>
 
 <script setup lang="ts">

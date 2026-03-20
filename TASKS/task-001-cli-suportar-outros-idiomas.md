@@ -26,14 +26,14 @@ Adicionar suporte a internacionalização (i18n) no Storytype CLI, permitindo qu
 ### Estratégia de implementação
 
 1. **Detecção automática**: Usar `Intl.DateTimeFormat().resolvedOptions().locale` ou `process.env.LANG` como fallback
-2. **Estrutura de arquivos**: 
+2. **Estrutura de arquivos**:
    ```
    packages/cli/src/locales/
    ├── index.ts         # Exports getLocale() e t() helper
    ├── pt-BR.ts         # Strings em português
    └── en-US.ts         # Strings em inglês
    ```
-3. **Bibliotecas consideradas**: 
+3. **Bibliotecas consideradas**:
    - `i18next` (mais completa, mas adiciona dependência)
    - Implementação custom simples (preferível para manter CLI leve)
 
