@@ -361,13 +361,23 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
   }
 
   const componentFiles = findAllComponents(componentsPath);
+  
+  // Helper function to get the base component name (handles .types.ts, .stories.ts, etc.)
+  const getComponentBaseName = (file: string): string => {
+    const fileName = path.basename(file);
+    // Remove .types.ts, .stories.ts, .spec.ts, .test.ts, etc.
+    return fileName
+      .replace(/\.(types|stories|story|spec|test)\.(ts|tsx|js|jsx)$/, '')
+      .replace(/\.(ts|tsx|js|jsx|vue)$/, '');
+  };
+  
   const pascalCaseFiles = componentFiles.filter(file => {
-    const fileName = path.basename(file, path.extname(file));
-    return /^[A-Z][a-zA-Z0-9]*$/.test(fileName);
+    const baseName = getComponentBaseName(file);
+    return /^[A-Z][a-zA-Z0-9]*$/.test(baseName);
   });
   const nonPascalFiles = componentFiles.filter(file => {
-    const fileName = path.basename(file, path.extname(file));
-    return !/^[A-Z][a-zA-Z0-9]*$/.test(fileName);
+    const baseName = getComponentBaseName(file);
+    return !/^[A-Z][a-zA-Z0-9]*$/.test(baseName);
   });
 
   const pascalCasePercentage =
@@ -379,19 +389,33 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
     points: Math.round((pascalCasePercentage / 100) * 10),
     maxPoints: 10,
     message: `${pascalCaseFiles.length}/${componentFiles.length} componentes (${Math.round(pascalCasePercentage)}%)`,
-    fileIssues: nonPascalFiles.map(f => {
-      const oldName = path.basename(f);
-      const ext = path.extname(f);
-      const baseName = path.basename(f, ext);
-      const pascalName = baseName
-        .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
-        .replace(/^(.)/, (_, c: string) => c.toUpperCase());
-      return {
-        file: f,
+    fileIssues: nonPascalFiles
+      .map(f => {
+        const oldName = path.basename(f);
+        const baseName = getComponentBaseName(f);
+        
+        // Convert to PascalCase
+        const pascalName = baseName
+          .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
+          .replace(/^(.)/, (_, c: string) => c.toUpperCase());
+        
+        // Reconstruct the full filename with same suffixes
+        const suffix = oldName.replace(new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), '');
+        const newName = `${pascalName}${suffix}`;
+        
+        return {
+          file: f,
+          oldName,
+          newName,
+        };
+      })
+      // Only include files where the name actually needs to change
+      .filter(({ oldName, newName }) => oldName !== newName)
+      .map(({ file, oldName, newName }) => ({
+        file,
         issue: `Nome em formato incorreto: "${oldName}"`,
-        fix: `Renomeie para "${pascalName}${ext}"`,
-      };
-    }),
+        fix: `Renomeie para "${newName}"`,
+      })),
   });
 
   // Check if components are organized in folders (Component/Component.vue pattern)
