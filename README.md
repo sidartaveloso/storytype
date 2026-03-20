@@ -93,11 +93,6 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 Created and maintained by [Sidarta Veloso](https://github.com/sidartaveloso).
 
-Inspired by projects:
-
-- [coworking-ui](https://github.com/sidartaveloso/coworking-ui)
-- [organiza-ai](https://github.com/sidartaveloso/organiza-ai)
-
 ---
 
-**Made with ❤️ for the Vue community**
+**Made with HardWork 💪 for the Vue community**
