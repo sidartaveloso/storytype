@@ -10,36 +10,48 @@
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 [![Turborepo](https://img.shields.io/badge/built%20with-Turborepo-ef4444)](https://turbo.build/repo)
 
+📚 **[Read the Documentation](https://sidartaveloso.github.io/storytype/)** | 🚀 **[Quick Start Guide](https://sidartaveloso.github.io/storytype/guide/quick-start)**
+
 </div>
 
 ---
 
 ## 🎯 What is Storytype?
 
-**Storytype** is a comprehensive pattern and toolkit for building scalable, testable, and maintainable Vue 3 components. It combines industry best practices:
+**Storytype** is a comprehensive pattern and toolkit for building **type-safe, scalable, and maintainable Vue 3 components**. It combines battle-tested software patterns with modern TypeScript to help teams build better applications.
 
-- ✅ **Vue 3** with Composition API (`<script setup>`)
-- ✅ **TypeScript** strict mode
-- ✅ **Atomic Design** methodology
-- ✅ **Container/Presentation** pattern
-- ✅ **Storybook** for visual documentation
-- ✅ **BEM** for CSS architecture
+### Core Principles
+
+- 🏗️ **Atomic Design** - Clear component hierarchy from atoms to pages
+- 🎭 **Container/Presentation** - Separate business logic from UI
+- 🔒 **TypeScript Strict Mode** - Full type safety with autocomplete everywhere
+- 📚 **Storybook-Driven** - Visual documentation and isolated development
+- 🧪 **Testable by Design** - Pure components that are easy to test
+
+### Why Storytype?
+
+As Vue applications grow, they often become difficult to maintain. Storytype solves this by providing:
+
+- **Clear Architecture** - Know exactly where every component belongs
+- **Type Safety** - Catch bugs at compile time, not runtime
+- **Better DX** - Full autocomplete, safe refactoring, instant feedback
+- **Team Alignment** - Consistent patterns everyone can follow
+- **Living Documentation** - Storybook provides always up-to-date component docs
 
 ## 🚀 Quick Start
 
 ```bash
-# Install dependencies
-pnpm install
+# Create a new project with Storytype
+npx @storytype/cli create my-app
 
-# Start development
-pnpm dev
+# Or add to existing Vue 3 project
+npx @storytype/cli init
 
-# Build all packages
-pnpm build
-
-# Run documentation site
-pnpm docs:dev
+# Generate fully-typed components
+storytype add atom Button
 ```
+
+**Learn more:** Read the [Quick Start Guide](https://sidartaveloso.github.io/storytype/guide/quick-start) for detailed setup instructions and examples.
 
 ## 📦 Packages
 

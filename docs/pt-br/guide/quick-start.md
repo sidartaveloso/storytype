@@ -240,8 +240,8 @@ export interface PerfilScreenProps {
 }
 
 export interface PerfilScreenEmits {
-  (e: 'salvar', dados: Usuario): void;
-  (e: 'cancelar'): void;
+  salvar: [dados: Usuario];
+  cancelar: [];
 }
 ```
 

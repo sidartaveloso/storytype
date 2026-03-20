@@ -10,36 +10,48 @@
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 [![Turborepo](https://img.shields.io/badge/built%20with-Turborepo-ef4444)](https://turbo.build/repo)
 
+📚 **[Leia a Documentação](https://sidartaveloso.github.io/storytype/pt-br/)** | 🚀 **[Guia de Início Rápido](https://sidartaveloso.github.io/storytype/pt-br/guide/quick-start)**
+
 </div>
 
 ---
 
 ## 🎯 O que é Storytype?
 
-**Storytype** é um padrão abrangente e conjunto de ferramentas para construir componentes Vue 3 escaláveis, testáveis e de fácil manutenção. Combina as melhores práticas da indústria:
+**Storytype** é um padrão abrangente e conjunto de ferramentas para construir **componentes Vue 3 type-safe, escaláveis e de fácil manutenção**. Combina padrões de software comprovados com TypeScript moderno para ajudar equipes a construir melhores aplicações.
 
-- ✅ **Vue 3** com Composition API (`<script setup>`)
-- ✅ **TypeScript** em modo strict
-- ✅ Metodologia **Atomic Design**
-- ✅ Padrão **Container/Presentation**
-- ✅ **Storybook** para documentação visual
-- ✅ **BEM** para arquitetura CSS
+### Princípios Fundamentais
+
+- 🏗️ **Atomic Design** - Hierarquia clara de componentes, de átomos a páginas
+- 🎭 **Container/Presentation** - Separa lógica de negócio da UI
+- 🔒 **TypeScript Strict Mode** - Type safety completo com autocomplete em todos os lugares
+- 📚 **Orientado por Storybook** - Documentação visual e desenvolvimento isolado
+- 🧪 **Testável por Design** - Componentes puros fáceis de testar
+
+### Por que Storytype?
+
+À medida que aplicações Vue crescem, frequentemente se tornam difíceis de manter. Storytype resolve isso fornecendo:
+
+- **Arquitetura Clara** - Saiba exatamente onde cada componente pertence
+- **Type Safety** - Capture bugs em tempo de compilação, não em runtime
+- **Melhor DX** - Autocomplete completo, refatoração segura, feedback instantâneo
+- **Alinhamento de Time** - Padrões consistentes que todos podem seguir
+- **Documentação Viva** - Storybook fornece documentação sempre atualizada
 
 ## 🚀 Início Rápido
 
 ```bash
-# Instalar dependências
-pnpm install
+# Criar um novo projeto com Storytype
+npx @storytype/cli create meu-app
 
-# Iniciar desenvolvimento
-pnpm dev
+# Ou adicionar a um projeto Vue 3 existente
+npx @storytype/cli init
 
-# Build de todos os pacotes
-pnpm build
-
-# Executar site de documentação
-pnpm docs:dev
+# Gerar componentes totalmente tipados
+storytype add atom Button
 ```
+
+**Saiba mais:** Leia o [Guia de Início Rápido](https://sidartaveloso.github.io/storytype/pt-br/guide/quick-start) para instruções detalhadas de configuração e exemplos.
 
 ## 📦 Pacotes
 
@@ -93,11 +105,6 @@ MIT License - veja [LICENSE](./LICENSE) para detalhes.
 
 Criado e mantido por [Sidarta Veloso](https://github.com/sidartaveloso).
 
-Inspirado pelos projetos:
-
-- [coworking-ui](https://github.com/sidartaveloso/coworking-ui)
-- [organiza-ai](https://github.com/sidartaveloso/organiza-ai)
-
 ---
 
-**Feito com ❤️ para a comunidade Vue**
+**Made with HardWork 💪 for the Vue community**

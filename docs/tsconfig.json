@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM"],
+    "moduleResolution": "bundler",
+    "strict": false,
+    "noEmit": true
+  },
+  "include": [".vitepress/**/*", "**/*.md"],
+  "exclude": [".vitepress/dist", ".vitepress/cache"]
+}

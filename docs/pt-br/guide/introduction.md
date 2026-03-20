@@ -61,7 +61,7 @@ export interface PerfilScreenProps {
 }
 
 export interface PerfilScreenEmits {
-  (e: 'salvar', dados: Partial<Usuario>): void;
+  salvar: [dados: Partial<Usuario>];
 }
 ```
 

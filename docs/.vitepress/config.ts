@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'Storytype',
   description: 'A modern Vue 3 component development pattern',
+  base: '/storytype/',
 
   rewrites: {
     'en/:rest*': ':rest*',
