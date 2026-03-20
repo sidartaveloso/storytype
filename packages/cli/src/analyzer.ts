@@ -361,7 +361,7 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
   }
 
   const componentFiles = findAllComponents(componentsPath);
-  
+
   // Helper function to get the base component name (handles .types.ts, .stories.ts, etc.)
   const getComponentBaseName = (file: string): string => {
     const fileName = path.basename(file);
@@ -370,7 +370,7 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
       .replace(/\.(types|stories|story|spec|test)\.(ts|tsx|js|jsx)$/, '')
       .replace(/\.(ts|tsx|js|jsx|vue)$/, '');
   };
-  
+
   const pascalCaseFiles = componentFiles.filter(file => {
     const baseName = getComponentBaseName(file);
     return /^[A-Z][a-zA-Z0-9]*$/.test(baseName);
@@ -393,16 +393,19 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
       .map(f => {
         const oldName = path.basename(f);
         const baseName = getComponentBaseName(f);
-        
+
         // Convert to PascalCase
         const pascalName = baseName
           .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
           .replace(/^(.)/, (_, c: string) => c.toUpperCase());
-        
+
         // Reconstruct the full filename with same suffixes
-        const suffix = oldName.replace(new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`), '');
+        const suffix = oldName.replace(
+          new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+          ''
+        );
         const newName = `${pascalName}${suffix}`;
-        
+
         return {
           file: f,
           oldName,
