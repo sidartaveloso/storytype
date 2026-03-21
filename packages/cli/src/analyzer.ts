@@ -183,8 +183,11 @@ async function analyzeTypeScript(projectPath: string, spinner: Ora): Promise<Cat
   const componentsPath = findComponentsDirectory(projectPath);
   if (componentsPath) {
     const allComponents = findAllComponents(componentsPath);
-    const tsComponents = allComponents.filter(f => f.endsWith('.ts') || f.endsWith('.tsx'));
-    const nonTsComponents = allComponents.filter(f => !f.endsWith('.ts') && !f.endsWith('.tsx'));
+    
+    // Filter components by TypeScript usage (extension or content)
+    const tsComponents = allComponents.filter(f => isFileUsingTypeScript(f));
+    const nonTsComponents = allComponents.filter(f => !isFileUsingTypeScript(f));
+    
     const total = allComponents.length;
     const typescript = tsComponents.length;
     const tsPercentage = total > 0 ? (typescript / total) * 100 : 0;
@@ -197,8 +200,12 @@ async function analyzeTypeScript(projectPath: string, spinner: Ora): Promise<Cat
       message: `${typescript}/${total} componentes (${Math.round(tsPercentage)}%)`,
       fileIssues: nonTsComponents.map(f => ({
         file: f,
-        issue: `Arquivo não usa TypeScript: "${path.basename(f)}"`,
-        fix: `Renomeie para "${path.basename(f, path.extname(f))}.ts" e adicione tipagem`,
+        issue: f.endsWith('.vue')
+          ? `Arquivo .vue não usa TypeScript: "${path.basename(f)}"`
+          : `Arquivo não usa TypeScript: "${path.basename(f)}"`,
+        fix: f.endsWith('.vue')
+          ? `Adicione lang="ts" ao script: <script setup lang="ts">`
+          : `Renomeie para "${path.basename(f, path.extname(f))}.ts" e adicione tipagem`,
       })),
     });
   } else {
@@ -645,6 +652,45 @@ function stripTestSuffix(filePath: string, patterns: string[]): string {
     }
   }
   return stripExt(filePath);
+}
+
+/**
+ * Helper: Check if a .vue file uses TypeScript by reading its content
+ */
+function isVueFileUsingTypeScript(filePath: string): boolean {
+  try {
+    if (!filePath.endsWith('.vue')) return false;
+    
+    const content = fs.readFileSync(filePath, 'utf-8');
+    
+    // Check for <script setup lang="ts">
+    if (/<script\s+setup\s+lang=["']ts["']/.test(content)) return true;
+    // Check for <script lang="ts" setup>
+    if (/<script\s+lang=["']ts["']\s+setup/.test(content)) return true;
+    // Check for <script lang="ts"> (without setup)
+    if (/<script\s+lang=["']ts["']/.test(content)) return true;
+    
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Helper: Check if a file uses TypeScript (by extension or content)
+ */
+function isFileUsingTypeScript(filePath: string): boolean {
+  // Check by extension first (faster)
+  if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
+    return true;
+  }
+  
+  // For .vue files, check content
+  if (filePath.endsWith('.vue')) {
+    return isVueFileUsingTypeScript(filePath);
+  }
+  
+  return false;
 }
 
 /**
