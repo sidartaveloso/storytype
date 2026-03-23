@@ -201,20 +201,20 @@ describe('Analyzer - Naming Validation', () => {
       suggestedName: string;
     } {
       const dirName = path.basename(dirPath);
-      
+
       // Check if it's a component directory (should be PascalCase)
       const isPascalCase = /^[A-Z][a-zA-Z0-9]*$/.test(dirName);
-      
+
       // Check if it's a valid non-component directory (camelCase or kebab-case)
       const isCamelCase = /^[a-z][a-zA-Z0-9]*$/.test(dirName);
       const isKebabCase = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(dirName);
       const isValidNonComponentDir = isCamelCase || isKebabCase;
-      
+
       // Suggest PascalCase conversion
       const suggestedName = dirName
         .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
         .replace(/^(.)/, (_, c: string) => c.toUpperCase());
-      
+
       return {
         dirName,
         isPascalCase,
@@ -239,12 +239,12 @@ describe('Analyzer - Naming Validation', () => {
       // This is the scenario: kebab-case directory but PascalCase file
       const dirResult = checkDirectoryName('src/components/atoms/user-avatar');
       const fileResult = checkComponentName('src/components/atoms/user-avatar/UserAvatar.vue');
-      
+
       expect(dirResult.dirName).toBe('user-avatar');
       expect(dirResult.isPascalCase).toBe(false);
       expect(dirResult.isValidNonComponentDir).toBe(true); // It's valid kebab-case, but wrong context
       expect(dirResult.suggestedName).toBe('UserAvatar');
-      
+
       // File is correct
       expect(fileResult.isPascalCase).toBe(true);
       expect(fileResult.needsFix).toBe(false);
@@ -260,7 +260,7 @@ describe('Analyzer - Naming Validation', () => {
     it('should accept camelCase or kebab-case for non-component directories', () => {
       const camelCase = checkDirectoryName('src/composables');
       expect(camelCase.isValidNonComponentDir).toBe(true);
-      
+
       const kebabCase = checkDirectoryName('src/utils-helpers');
       expect(kebabCase.isValidNonComponentDir).toBe(true);
     });
@@ -312,14 +312,17 @@ describe('Analyzer - TypeScript Detection', () => {
     if (/<script\s+lang=["']ts["']\s+setup/.test(content)) return true;
     // Check for <script lang="ts"> (without setup)
     if (/<script\s+lang=["']ts["']/.test(content)) return true;
-    
+
     return false;
   }
 
   /**
    * Helper to check if a file uses TypeScript (by extension or content)
    */
-  async function checkTypeScriptUsage(filePath: string, content?: string): Promise<{
+  async function checkTypeScriptUsage(
+    filePath: string,
+    content?: string
+  ): Promise<{
     isTypeScript: boolean;
     reason: string;
   }> {
