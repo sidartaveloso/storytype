@@ -1,13 +1,17 @@
-# storytype
+# @storytype/cli
 
 CLI tool for scaffolding Storytype components and analyzing project structure.
 
 ## Installation
 
 ```bash
+# Using the short alias
 npm install -g storytype
-# or
-pnpm add -g storytype
+
+# Or the full package name
+npm install -g @storytype/cli
+
+# Both provide the same 'storytype' command
 ```
 
 ## Commands

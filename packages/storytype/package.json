@@ -1,0 +1,41 @@
+{
+  "name": "storytype",
+  "version": "0.2.3",
+  "description": "Alias package for @storytype/cli - CLI tool for scaffolding Storytype components",
+  "keywords": [
+    "cli",
+    "vue3",
+    "generator",
+    "scaffold",
+    "storytype",
+    "atomic-design",
+    "component-analyzer",
+    "vue",
+    "typescript"
+  ],
+  "author": "Sidarta Veloso <sidartaveloso@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidartaveloso/storytype.git",
+    "directory": "packages/storytype"
+  },
+  "bugs": {
+    "url": "https://github.com/sidartaveloso/storytype/issues"
+  },
+  "homepage": "https://github.com/sidartaveloso/storytype#readme",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "storytype": "./bin.js"
+  },
+  "files": [
+    "bin.js",
+    "README.md"
+  ],
+  "dependencies": {
+    "@storytype/cli": "workspace:*"
+  }
+}

@@ -41,14 +41,15 @@
 ## 🚀 Início Rápido
 
 ```bash
-# Criar um novo projeto com Storytype
-npx @storytype/cli create meu-app
-
-# Ou adicionar a um projeto Vue 3 existente
-npx @storytype/cli init
+# Instalar CLI globalmente
+npm install -g storytype
+# ou
+npm install -g @storytype/cli
 
 # Gerar componentes totalmente tipados
-storytype add atom Button
+storytype generate atomo Button
+storytype normalize
+storytype analyze
 ```
 
 **Saiba mais:** Leia o [Guia de Início Rápido](https://sidartaveloso.github.io/storytype/pt-br/guide/quick-start) para instruções detalhadas de configuração e exemplos.
@@ -57,8 +58,9 @@ storytype add atom Button
 
 Este monorepo contém os seguintes pacotes:
 
+- **[@storytype/cli](./packages/cli)** — Ferramenta CLI para scaffold de componentes (pacote principal)
+- **[storytype](./packages/storytype)** — Pacote alias para instalação facilitada
 - **[@storytype/core](./packages/core)** — Documentação central do padrão e diretrizes
-- **[@storytype/cli](./packages/cli)** — Ferramenta CLI para scaffold de componentes
 - **[@storytype/eslint-plugin](./packages/eslint-plugin)** — Regras ESLint para validação do padrão
 - **[docs](./docs)** — Site de documentação VitePress (multilíngue)
 
@@ -67,8 +69,9 @@ Este monorepo contém os seguintes pacotes:
 ```
 storytype/
 ├── packages/
+│   ├── cli/            # @storytype/cli (pacote principal)
+│   ├── storytype/      # storytype (alias)
 │   ├── core/           # Documentação central
-│   ├── cli/            # Ferramenta CLI
 │   └── eslint-plugin/  # Plugin ESLint
 ├── docs/               # Docs VitePress (i18n)
 ├── examples/           # Projetos de exemplo

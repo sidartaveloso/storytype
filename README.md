@@ -41,14 +41,15 @@ As Vue applications grow, they often become difficult to maintain. Storytype sol
 ## 🚀 Quick Start
 
 ```bash
-# Create a new project with Storytype
-npx @storytype/cli create my-app
-
-# Or add to existing Vue 3 project
-npx @storytype/cli init
+# Install CLI globally
+npm install -g storytype
+# or
+npm install -g @storytype/cli
 
 # Generate fully-typed components
-storytype add atom Button
+storytypegenerate atomo Button
+storytype normalize
+storytype analyze
 ```
 
 **Learn more:** Read the [Quick Start Guide](https://sidartaveloso.github.io/storytype/guide/quick-start) for detailed setup instructions and examples.
@@ -57,8 +58,9 @@ storytype add atom Button
 
 This monorepo contains the following packages:
 
+- **[@storytype/cli](./packages/cli)** — CLI tool for scaffolding components (main package)
+- **[storytype](./packages/storytype)** — Alias package for easier installation
 - **[@storytype/core](./packages/core)** — Core pattern documentation and guidelines
-- **[@storytype/cli](./packages/cli)** — CLI tool for scaffolding components
 - **[@storytype/eslint-plugin](./packages/eslint-plugin)** — ESLint rules for pattern enforcement
 - **[docs](./docs)** — VitePress documentation site (multilingual)
 
@@ -92,6 +94,17 @@ Visit our documentation site to learn more:
 
 - **Online:** [storytype.dev](https://storytype.dev) (coming soon)
 - **Local:** Run `pnpm docs:dev` and visit http://localhost:5173
+
+## 📦 Releases
+
+This project uses [semantic-release](https://semantic-release.gitbook.io/) for automated versioning and npm publishing. Releases are triggered automatically when commits following [Conventional Commits](https://www.conventionalcommits.org/) are pushed to the `main` branch.
+
+**Quick reference:**
+- `fix:` → Patch release (0.0.x)
+- `feat:` → Minor release (0.x.0)  
+- `feat!:` or `BREAKING CHANGE:` → Major release (x.0.0)
+
+For detailed instructions on the release process, see [RELEASE.md](./RELEASE.md).
 
 ## 🤝 Contributing
 

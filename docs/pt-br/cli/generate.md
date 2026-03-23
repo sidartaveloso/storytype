@@ -345,11 +345,15 @@ cp -r node_modules/storytype/dist/templates/component/* .storytype/templates/com
 
 ### Helpers Handlebars Disponíveis
 
-| Helper                 | Descrição                | Exemplo        |
-| ---------------------- | ------------------------ | -------------- |
-| `{{pascalCase name}}`  | Converte para PascalCase | `UserProfile`  |
-| `{{kebabCase name}}`   | Converte para kebab-case | `user-profile` |
-| `{{eq type "atomos"}}` | Compara valores          | `true/false`   |
+<div v-pre>
+
+| Helper                 | Descrição           | Exemplo        |
+| ---------------------- | --------------------- | -------------- |
+| `{{ pascalCase name }}`  | Converter para PascalCase | `UserProfile`  |
+| `{{ kebabCase name }}`   | Converter para kebab-case | `user-profile` |
+| `{{ eq type "atomos" }}` | Comparar valores        | `true/false`   |
+
+</div>
 
 ### Variáveis Disponíveis
 
