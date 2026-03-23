@@ -32,7 +32,7 @@ O desafio e valor desta task está em **elevar esses componentes ao próximo ní
 
 ## 📦 Estrutura do Package
 
-```
+````
 packages/components/
 ├── package.json
 ├── tsconfig.json
@@ -264,9 +264,10 @@ Para cada componente a ser migrado:
     "quasar": "^2.16.0"
   }
 }
-```
+````
 
 ### CI/CD - .github/workflows/validate.yml
+
 ```yaml
 name: Validate Component Standards
 
@@ -291,6 +292,7 @@ jobs:
 ## 🎨 Exemplo de Migração de Componente
 
 ### Antes da Migração (Componente Legado):
+
 ```typescript
 // components/avatar.vue (score: ~35%)
 <template>
@@ -308,15 +310,16 @@ export default {
 ```
 
 ### Após Migração (100% Storytype):
+
 ```typescript
 // src/atoms/Avatar/Avatar.vue
 <template>
-  <div 
+  <div
     :class="avatarClasses"
     role="img"
     :aria-label="ariaLabel"
   >
-    <img 
+    <img
       v-if="src && !imageError"
       :src="src"
       :alt="alt"
@@ -353,7 +356,7 @@ const avatarClasses = computed(() => [
   `avatar--${props.shape}`,
 ]);
 
-const ariaLabel = computed(() => 
+const ariaLabel = computed(() =>
   props.alt || `Avatar de ${props.name || 'usuário'}`
 );
 
@@ -392,16 +395,17 @@ export type AvatarType = {
 ✅ Fallback para iniciais  
 ✅ Error handling na imagem  
 ✅ Classes BEM  
-✅ Computed properties otimizadas  
+✅ Computed properties otimizadas
 
 **Score: 35% → 98%** 🎉
 
 ## 🌍 Impacto na Comunidade
 
 ### Benefícios:
+
 1. **Para Desenvolvedores**:
    - Componentes battle-tested de anos de produção
-   - Aprende o padrão Storytype na prática  
+   - Aprende o padrão Storytype na prática
    - Portfólio de contribuições open-source
 
 2. **Para Empresas**:
@@ -416,6 +420,7 @@ export type AvatarType = {
    - Prova de conceito com componentes reais
 
 ### Métricas de Sucesso (3 meses pós-lançamento):
+
 - [ ] 100% dos componentes migrados com score ≥ 95%
 - [ ] Cobertura de testes média ≥ 85%
 - [ ] 500+ downloads/semana no npm
@@ -427,7 +432,7 @@ export type AvatarType = {
 ## 📚 Referências
 
 - **Inspiração**: Vuetify, PrimeVue, ElementPlus (estrutura e governança)
-- **Diferencial**: 
+- **Diferencial**:
   - Componentes reais de anos de produção adaptados para Storytype 100%
   - Score mínimo de 95% validado por CI/CD
   - Battle-tested em aplicações reais
@@ -444,24 +449,28 @@ export type AvatarType = {
 ## Notes
 
 ### Componentes Existentes:
+
 - **Origem**: Componentes desenvolvidos ao longo dos últimos anos em projetos reais
 - **Vantagem**: São componentes battle-tested, já validados em produção
 - **Desafio**: Adaptar para seguir 100% o padrão Storytype (tipagem, nomenclatura, testes, stories)
 - **Oportunidade**: Documentar o processo de migração serve como guia para outros devs
 
 ### Processo de Migração - Checklist por Componente:
+
 ```markdown
 ## [Nome do Componente]
 
 ### ✅ Análise Inicial
-- [ ] Score atual: ___%
-- [ ] Camada Atomic Design: ___
+
+- [ ] Score atual: \_\_\_%
+- [ ] Camada Atomic Design: \_\_\_
 - [ ] Possui TypeScript: sim/não
-- [ ] Possui testes: sim/não (___% coverage)
+- [ ] Possui testes: sim/não (\_\_\_% coverage)
 - [ ] Possui stories: sim/não
-- [ ] Dependências: ___
+- [ ] Dependências: \_\_\_
 
 ### 🔧 Refatorações Necessárias
+
 - [ ] Renomear arquivos/pastas para PascalCase
 - [ ] Converter para <script setup lang="ts">
 - [ ] Criar arquivo .types.ts
@@ -471,13 +480,15 @@ export type AvatarType = {
 - [ ] Documentar props/emits/slots
 
 ### ✨ Pós-Migração
-- [ ] Score final: ___% (meta: ≥95%)
-- [ ] Coverage: ___% (meta: ≥80%)
-- [ ] Stories: ___ variações
-- [ ] PR criado: #___
+
+- [ ] Score final: \_\_\_% (meta: ≥95%)
+- [ ] Coverage: \_\_\_% (meta: ≥80%)
+- [ ] Stories: \_\_\_ variações
+- [ ] PR criado: #\_\_\_
 ```
 
 ### Decisões Arquiteturais:
+
 1. **Monorepo vs Repo Separado**: Manter como monorepo em `packages/components/`
 2. **Dependência do Quasar**: Componentes podem usar Quasar como base quando faz sentido
 3. **Versionamento**: Seguir semver estrito, breaking changes só em majors
@@ -487,6 +498,7 @@ export type AvatarType = {
 ### 🌍 Decisão de Idioma (CRÍTICA):
 
 **Contexto:**
+
 - Storytype usa PT-BR na especificação (átomos, moléculas, organismos)
 - Ecossistema npm é predominantemente inglês
 - Comunidade Vue.js é global
@@ -495,9 +507,10 @@ export type AvatarType = {
 **Opções avaliadas:**
 
 #### ❌ Opção 1: Tudo em Português
+
 ```typescript
 // Exports
-export { Avatar, Botao, Cartao, EntradaTexto }
+export { Avatar, Botao, Cartao, EntradaTexto };
 
 // Props
 interface BotaoProps {
@@ -506,13 +519,15 @@ interface BotaoProps {
   aoClicar: () => void;
 }
 ```
+
 **Prós**: Alinhado com spec Storytype, identidade brasileira forte  
 **Contras**: Adoção internacional limitada, difícil para devs não-BR contribuírem
 
 #### ❌ Opção 2: Tudo em Inglês (ignorar spec)
+
 ```typescript
 // Exports
-export { Avatar, Button, Card, TextInput }
+export { Avatar, Button, Card, TextInput };
 
 // Props - props em kebab-case nos templates
 interface ButtonProps {
@@ -521,10 +536,12 @@ interface ButtonProps {
   onClick: () => void;
 }
 ```
+
 **Prós**: Adoção global, padrão da indústria  
 **Contras**: Desalinhado com Storytype spec, perde identidade brasileira
 
 #### ✅ Opção 3: Híbrida Inteligente (RECOMENDADA)
+
 ```typescript
 // Exports e código SEMPRE em inglês (padrão global)
 export { Avatar, Button, Card, TextInput }
@@ -551,12 +568,14 @@ src/
 ```
 
 **PORÉM:**
+
 - **Documentação bilíngue** (PT-BR + EN) nos READMEs e Storybook
 - **Comentários JSDoc em PT-BR** (opcional, para identidade)
 - **Stories com nomes descritivos em PT-BR**
 - **Issues/PRs aceitos em PT-BR ou EN**
 
 **Exemplo concreto:**
+
 ```typescript
 // Button.vue - código em inglês
 <script setup lang="ts">
@@ -604,11 +623,13 @@ export const Carregando: Story = {
 Componente base de botão que segue o padrão Storytype.
 
 ### Uso
+
 \`\`\`vue
 <Button text="Clique aqui" @click="handleClick" />
 \`\`\`
 
 ### Props
+
 - `text` (string): Texto do botão
 - `disabled` (boolean): Desabilita interação
 - `loading` (boolean): Mostra estado de carregamento
@@ -620,17 +641,20 @@ Componente base de botão que segue o padrão Storytype.
 Base button component following Storytype standard.
 
 ### Usage
+
 \`\`\`vue
 <Button text="Click here" @click="handleClick" />
 \`\`\`
 
 ### Props
+
 - `text` (string): Button text
 - `disabled` (boolean): Disables interaction
 - `loading` (boolean): Shows loading state
 ```
 
 **Decisão Final:**
+
 - ✅ **Código e exports em INGLÊS** (maximiza adoção)
 - ✅ **Estrutura de pastas em INGLÊS** (atoms/, molecules/, organisms/, templates/)
 - ✅ **Documentação BILÍNGUE** (PT-BR + EN)
@@ -639,6 +663,7 @@ Base button component following Storytype standard.
 - ✅ **README principal bilíngue**
 
 **Justificativa:**
+
 1. Código em inglês é **universal** - qualquer dev entende
 2. Documentação bilíngue **não adiciona complexidade ao código**
 3. Mantém **identidade brasileira** do Storytype
@@ -660,12 +685,14 @@ Base button component following Storytype standard.
 8. **Diferencial Único**: Poucos projetos oferecem docs realmente bilíngues
 
 **Comparação com concorrentes:**
+
 - Vuetify: 100% inglês
-- PrimeVue: 100% inglês  
+- PrimeVue: 100% inglês
 - ElementPlus: Inglês + algumas traduções chinesas
 - **@storytype/components**: Inglês + PT-BR desde o início ✨
 
 ### Próximos Passos Após v1.0:
+
 - Workshop/Webinar de lançamento mostrando componentes migrados
 - Artigo técnico: "Como migrar componentes legados para Storytype"
 - Séries de artigos deep-dive em componentes complexos

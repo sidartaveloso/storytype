@@ -183,11 +183,11 @@ async function analyzeTypeScript(projectPath: string, spinner: Ora): Promise<Cat
   const componentsPath = findComponentsDirectory(projectPath);
   if (componentsPath) {
     const allComponents = findAllComponents(componentsPath);
-    
+
     // Filter components by TypeScript usage (extension or content)
     const tsComponents = allComponents.filter(f => isFileUsingTypeScript(f));
     const nonTsComponents = allComponents.filter(f => !isFileUsingTypeScript(f));
-    
+
     const total = allComponents.length;
     const typescript = tsComponents.length;
     const tsPercentage = total > 0 ? (typescript / total) * 100 : 0;
@@ -660,16 +660,16 @@ function stripTestSuffix(filePath: string, patterns: string[]): string {
 function isVueFileUsingTypeScript(filePath: string): boolean {
   try {
     if (!filePath.endsWith('.vue')) return false;
-    
+
     const content = fs.readFileSync(filePath, 'utf-8');
-    
+
     // Check for <script setup lang="ts">
     if (/<script\s+setup\s+lang=["']ts["']/.test(content)) return true;
     // Check for <script lang="ts" setup>
     if (/<script\s+lang=["']ts["']\s+setup/.test(content)) return true;
     // Check for <script lang="ts"> (without setup)
     if (/<script\s+lang=["']ts["']/.test(content)) return true;
-    
+
     return false;
   } catch {
     return false;
@@ -684,12 +684,12 @@ function isFileUsingTypeScript(filePath: string): boolean {
   if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
     return true;
   }
-  
+
   // For .vue files, check content
   if (filePath.endsWith('.vue')) {
     return isVueFileUsingTypeScript(filePath);
   }
-  
+
   return false;
 }
 

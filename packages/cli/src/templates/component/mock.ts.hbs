@@ -1,0 +1,21 @@
+import type { {{pascalCase name}}Models, {{pascalCase name}}Props, {{pascalCase name}}Emits, {{pascalCase name}}Type } from './{{pascalCase name}}.types';
+
+export const generateMockData = (): {{pascalCase name}}Type => {
+  const props: {{pascalCase name}}Props = {
+    //TODO: Add props here
+  };
+
+  const models: {{pascalCase name}}Models = {
+    //TODO: Add models here
+  };
+
+  const emits: {{pascalCase name}}Emits = {
+    //TODO: Add emits here ex.: (e: 'click', event: Event): void;
+  };
+
+  return {
+    props,
+    models,
+    emits,
+  } satisfies {{pascalCase name}}Type as {{pascalCase name}}Type;
+};

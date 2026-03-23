@@ -1,0 +1,20 @@
+<template>
+  <div class="{{kebabCase name}}">
+    <!-- Conteúdo -->
+    <p>Parabéns! Você criou o componente {{pascalCase name}}!</p>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { {{pascalCase name}}Props } from './{{pascalCase name}}.types';
+
+const props = withDefaults(defineProps<{{pascalCase name}}Props>(), {
+  // Add default props here
+});
+</script>
+
+<style scoped>
+.{{kebabCase name}} {
+  /* Add component styles here */
+}
+</style>
