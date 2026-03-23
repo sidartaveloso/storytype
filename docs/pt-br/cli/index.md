@@ -4,14 +4,21 @@ O CLI do Storytype é uma ferramenta poderosa para criar, analisar e normalizar 
 
 ## Instalação
 
+::: tip Pacotes Disponíveis
+Você pode instalar usando o nome curto `storytype` (recomendado) ou o nome completo `@storytype/cli`. Ambos instalam o mesmo pacote e fornecem o comando `storytype`.
+:::
+
 ### Global (Recomendado)
 
 ```bash
-# Com pnpm
+# Com pnpm (nome curto)
 pnpm add -g storytype
 
-# Com npm
+# Com npm (nome curto)
 npm install -g storytype
+
+# Ou usando o nome completo
+npm install -g @storytype/cli
 
 # Verificar instalação
 storytype --version

@@ -4,14 +4,21 @@ The Storytype CLI is a powerful tool for creating, analyzing, and normalizing Vu
 
 ## Installation
 
+::: tip Available Packages
+You can install using the short name `storytype` (recommended) or the full name `@storytype/cli`. Both install the same package and provide the `storytype` command.
+:::
+
 ### Global (Recommended)
 
 ```bash
-# With pnpm
+# With pnpm (short name)
 pnpm add -g storytype
 
-# With npm
+# With npm (short name)
 npm install -g storytype
+
+# Or using the full name
+npm install -g @storytype/cli
 
 # Verify installation
 storytype --version

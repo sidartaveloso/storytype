@@ -228,11 +228,15 @@ node_modules/storytype/dist/templates/component/
 
 ### Available Handlebars Helpers
 
+<div v-pre>
+
 | Helper                 | Description           | Example        |
 | ---------------------- | --------------------- | -------------- |
-| `{{pascalCase name}}`  | Convert to PascalCase | `UserProfile`  |
-| `{{kebabCase name}}`   | Convert to kebab-case | `user-profile` |
-| `{{eq type "atomos"}}` | Compare values        | `true/false`   |
+| `{{ pascalCase name }}`  | Convert to PascalCase | `UserProfile`  |
+| `{{ kebabCase name }}`   | Convert to kebab-case | `user-profile` |
+| `{{ eq type "atomos" }}` | Compare values        | `true/false`   |
+
+</div>
 
 ## Naming Conventions
 

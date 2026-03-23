@@ -1,5 +1,5 @@
 {
-  "name": "storytype",
+  "name": "@storytype/cli",
   "version": "0.2.3",
   "description": "CLI tool for scaffolding Storytype components and analyzing project structure",
   "keywords": [
@@ -25,6 +25,9 @@
   },
   "homepage": "https://github.com/sidartaveloso/storytype#readme",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "storytype": "./dist/cli.js"
   },
@@ -34,6 +37,9 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./cli": {
+      "import": "./dist/cli.js"
     }
   },
   "files": [
