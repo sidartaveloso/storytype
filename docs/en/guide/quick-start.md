@@ -13,46 +13,53 @@ Before you begin, ensure you have:
 
 ## Installation
 
-### Option 1: Add to Existing Vue Project
+### Option 1: Install Globally
 
-If you already have a Vue 3 project:
+To use in any project:
 
 ```bash
-# Install Storytype CLI globally
-npm install -g @storytype/cli
+# With pnpm (recommended)
+pnpm add -g storytype
 
-# Or with pnpm
-pnpm add -g @storytype/cli
+# Or with npm
+npm install -g storytype
 
-# Initialize Storytype in your project
-cd your-vue-project
-storytype init
+# Verify installation
+storytype --version
 ```
 
-The `init` command will:
+### Option 2: Install Locally
 
-- Create the Atomic Design folder structure
-- Add ESLint rules for pattern enforcement
-- Configure Storybook (if not already present)
-- Add TypeScript configurations
-- Create example components
-
-### Option 2: Create New Project with Storytype
-
-Start a fresh project with Storytype preconfigured:
+To use in a specific project:
 
 ```bash
-# Create new project
-storytype create my-app
+# With pnpm
+pnpm add -D storytype
 
-# Navigate to project
-cd my-app
+# Or with npm
+npm install -D storytype
+
+# Use with npx
+npx storytype --version
+```
+
+### Option 3: Clone Storytype Repository
+
+To develop or contribute:
+
+```bash
+# Clone repository
+git clone https://github.com/sidartaveloso/storytype.git
+cd storytype
 
 # Install dependencies
 pnpm install
 
-# Start development server
-pnpm dev
+# Link globally
+pnpm link
+
+# Use anywhere
+storytype --version
 ```
 
 ## Project Structure
@@ -84,13 +91,13 @@ src/
 
 ## Your First Component
 
-Let's create a simple atom component and see the **type safety in action**:
+Let's create a simple atom component:
 
 ```bash
-storytype add atom Avatar
+storytype generate atomos Avatar
 ```
 
-This generates **fully typed** components:
+This automatically generates 5 files:
 
 ::: code-group
 

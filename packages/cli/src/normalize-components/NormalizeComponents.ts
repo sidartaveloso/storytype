@@ -97,7 +97,7 @@ async function gitMoveManual(fromPath: string, toPath: string, isCaseOnly: boole
   } catch (error) {
     // If git commands fail, the file was moved but not staged
     // This is acceptable - user can stage manually
-    console.warn(`Warning: Could not update Git index for ${fromPath}`);
+    console.warn(`Aviso: Não foi possível atualizar o índice Git para ${fromPath}`);
   }
 }
 
