@@ -13,46 +13,53 @@ Antes de começar, certifique-se de ter:
 
 ## Instalação
 
-### Opção 1: Adicionar a Projeto Vue Existente
+### Opção 1: Instalar Globalmente
 
-Se você já tem um projeto Vue 3:
+Para usar em qualquer projeto:
 
 ```bash
-# Instalar CLI do Storytype globalmente
-npm install -g @storytype/cli
+# Com pnpm (recomendado)
+pnpm add -g storytype
 
-# Ou com pnpm
-pnpm add -g @storytype/cli
+# Ou com npm
+npm install -g storytype
 
-# Inicializar Storytype no seu projeto
-cd seu-projeto-vue
-storytype init
+# Verificar instalação
+storytype --version
 ```
 
-O comando `init` irá:
+### Opção 2: Instalar no Projeto
 
-- Criar a estrutura de pastas Atomic Design
-- Adicionar regras ESLint para garantir o padrão
-- Configurar Storybook (se ainda não estiver presente)
-- Adicionar configurações TypeScript
-- Criar componentes de exemplo
-
-### Opção 2: Criar Novo Projeto com Storytype
-
-Inicie um projeto novo com Storytype pré-configurado:
+Para usar localmente:
 
 ```bash
-# Criar novo projeto
-storytype create meu-app
+# Com pnpm
+pnpm add -D storytype
 
-# Navegar para o projeto
-cd meu-app
+# Ou com npm
+npm install -D storytype
+
+# Usar com npx
+npx storytype --version
+```
+
+### Opção 3: Clonar Repositório do Storytype
+
+Para desenvolver ou contribuir:
+
+```bash
+# Clonar repositório
+git clone https://github.com/sidartaveloso/storytype.git
+cd storytype
 
 # Instalar dependências
 pnpm install
 
-# Iniciar servidor de desenvolvimento
-pnpm dev
+# Fazer link global
+pnpm link
+
+# Usar em qualquer lugar
+storytype --version
 ```
 
 ## Estrutura do Projeto
@@ -87,10 +94,10 @@ src/
 Vamos criar um componente átomo simples:
 
 ```bash
-storytype add atom Avatar
+storytype generate atomos Avatar
 ```
 
-Isso gera:
+Isso gera automaticamente 5 arquivos:
 
 ```vue
 <!-- src/components/atomos/AtomAvatar/AtomAvatar.vue -->

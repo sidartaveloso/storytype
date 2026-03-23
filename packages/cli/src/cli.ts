@@ -16,55 +16,72 @@ const program = new Command();
 
 program
   .name('storytype')
-  .description('CLI tool for scaffolding Storytype components')
+  .description('Ferramenta CLI para criar componentes Storytype')
   .version(version);
 
 program
   .command('generate <type> <name>')
   .alias('g')
-  .description('Generate a new component (atomos, moleculas, organismos, templates)')
-  .option('-p, --path <path>', 'Custom path for the component')
+  .description('Gerar um novo componente (atomo, molecula, organismo, template)')
+  .option('-p, --path <path>', 'Caminho customizado para o componente')
   .action(async (type: string, name: string, options: { path?: string }) => {
-    const validTypes: ComponentLevel[] = ['atomos', 'moleculas', 'organismos', 'templates'];
+    // Map singular to plural (folder names)
+    const typeMap: Record<string, ComponentLevel> = {
+      atomo: 'atomos',
+      atomos: 'atomos',
+      molecula: 'moleculas',
+      moleculas: 'moleculas',
+      organismo: 'organismos',
+      organismos: 'organismos',
+      template: 'templates',
+      templates: 'templates',
+    };
 
-    if (!validTypes.includes(type as ComponentLevel)) {
-      console.error(chalk.red(`Invalid component type: ${type}`));
-      console.log(chalk.yellow(`Valid types: ${validTypes.join(', ')}`));
+    const mappedType = typeMap[type.toLowerCase()];
+
+    if (!mappedType) {
+      console.error(chalk.red(`Tipo de componente inválido: ${type}`));
+      console.log(chalk.yellow('Tipos válidos: atomo, molecula, organismo, template'));
+      console.log(
+        chalk.gray('(formas plurais também aceitas: atomos, moleculas, organismos, templates)')
+      );
       process.exit(1);
     }
 
-    console.log(chalk.blue(`Generating ${type} component: ${name}`));
+    console.log(chalk.blue(`Gerando componente ${type}: ${name}`));
 
     try {
       const result = await generateComponent({
         name,
-        type: type as ComponentLevel,
+        type: mappedType,
         path: options.path,
       });
 
       if (result.success) {
-        console.log(chalk.green('✓ Component generated successfully!'));
-        console.log(chalk.gray('\nCreated files:'));
+        console.log(chalk.green('✓ Componente gerado com sucesso!'));
+        console.log(chalk.gray('\nArquivos criados:'));
         result.files.forEach(file => {
           console.log(chalk.gray(`  - ${file}`));
         });
       } else {
-        console.error(chalk.red(`✗ Error: ${result.error}`));
+        console.error(chalk.red(`✗ Erro: ${result.error}`));
         process.exit(1);
       }
     } catch (error) {
-      console.error(chalk.red('Error generating component:'), error);
+      console.error(chalk.red('Erro ao gerar componente:'), error);
       process.exit(1);
     }
   });
 
 program
   .command('normalize [path]')
-  .description('Normalize component structure (kebab-case dirs, PascalCase files)')
-  .option('-d, --dry-run', 'Show changes without executing them')
-  .option('--dirs-only', 'Only normalize directory names')
-  .option('--files-only', 'Only normalize file names')
-  .option('-v, --verbose', 'Show detailed output')
+  .description(
+    'Normalizar estrutura de componentes (diretórios em kebab-case, arquivos em PascalCase)'
+  )
+  .option('-d, --dry-run', 'Mostrar mudanças sem executá-las')
+  .option('--dirs-only', 'Normalizar apenas nomes de diretórios')
+  .option('--files-only', 'Normalizar apenas nomes de arquivos')
+  .option('-v, --verbose', 'Mostrar saída detalhada')
   .action(
     async (
       targetPath?: string,
@@ -76,7 +93,7 @@ program
       }
     ) => {
       try {
-        console.log(chalk.blue('Analyzing component structure...'));
+        console.log(chalk.blue('Analisando estrutura de componentes...'));
 
         const result = await normalizeComponents({
           path: targetPath || process.cwd(),
@@ -87,41 +104,45 @@ program
         });
 
         if (result.success) {
-          console.log(chalk.green('\n✓ Analysis complete!'));
-          console.log(chalk.gray(`\nComponents found: ${result.components.length}`));
-          console.log(chalk.gray(`Directories to rename: ${result.directoriesToRename}`));
-          console.log(chalk.gray(`Files to rename: ${result.filesToRename}`));
-          console.log(chalk.gray(`Files to create: ${result.filesToCreate}`));
+          console.log(chalk.green('\n✓ Análise completa!'));
+          console.log(chalk.gray(`\nComponentes encontrados: ${result.components.length}`));
+          console.log(chalk.gray(`Diretórios a renomear: ${result.directoriesToRename}`));
+          console.log(chalk.gray(`Arquivos a renomear: ${result.filesToRename}`));
+          console.log(chalk.gray(`Arquivos a criar: ${result.filesToCreate}`));
 
           if (options?.dryRun) {
-            console.log(chalk.yellow('\n⚠ Dry-run mode: no changes were made'));
-            console.log(chalk.gray('Run without --dry-run to apply changes'));
+            console.log(chalk.yellow('\n⚠ Modo dry-run: nenhuma mudança foi feita'));
+            console.log(chalk.gray('Execute sem --dry-run para aplicar as mudanças'));
           } else if (result.directoriesToRename + result.filesToRename + result.filesToCreate > 0) {
-            console.log(chalk.green('\n✓ Normalization completed successfully!'));
+            console.log(chalk.green('\n✓ Normalização concluída com sucesso!'));
           } else {
-            console.log(chalk.green('\n✓ All components are already properly structured!'));
+            console.log(
+              chalk.green('\n✓ Todos os componentes já estão estruturados corretamente!')
+            );
           }
 
           if (options?.verbose) {
-            console.log(chalk.gray('\nDetailed changes:'));
+            console.log(chalk.gray('\nMudanças detalhadas:'));
             result.components.forEach(comp => {
               if (comp.needsRename || comp.missingFiles.length > 0) {
                 console.log(chalk.gray(`\n  ${comp.componentName}:`));
                 if (comp.needsRename) {
-                  console.log(chalk.yellow(`    Rename: ${comp.currentPath} → ${comp.targetPath}`));
+                  console.log(
+                    chalk.yellow(`    Renomear: ${comp.currentPath} → ${comp.targetPath}`)
+                  );
                 }
                 if (comp.missingFiles.length > 0) {
-                  console.log(chalk.yellow(`    Create: ${comp.missingFiles.join(', ')}`));
+                  console.log(chalk.yellow(`    Criar: ${comp.missingFiles.join(', ')}`));
                 }
               }
             });
           }
         } else {
-          console.error(chalk.red(`\n✗ Error: ${result.error}`));
+          console.error(chalk.red(`\n✗ Erro: ${result.error}`));
           process.exit(1);
         }
       } catch (error) {
-        console.error(chalk.red('Error normalizing components:'), error);
+        console.error(chalk.red('Erro ao normalizar componentes:'), error);
         process.exit(1);
       }
     }
@@ -129,23 +150,23 @@ program
 
 program
   .command('init')
-  .description('Initialize Storytype in your project')
+  .description('Inicializar Storytype no seu projeto')
   .action(() => {
-    console.log('Initializing Storytype...');
+    console.log('Inicializando Storytype...');
     // TODO: Implement initialization logic
   });
 
 program
   .command('analyze [path]')
   .alias('audit')
-  .description('Analyze and score project based on Storytype best practices')
-  .option('-v, --verbose', 'Show per-file issues and how to fix each one')
+  .description('Analisar e pontuar projeto baseado nas melhores práticas Storytype')
+  .option('-v, --verbose', 'Mostrar problemas por arquivo e como corrigir cada um')
   .action(async (projectPath?: string, options?: { verbose?: boolean }) => {
     try {
       const result = await analyzeProject(projectPath);
       displayResults(result, { verbose: options?.verbose });
     } catch (error) {
-      console.error('Error analyzing project:', error);
+      console.error('Erro ao analisar projeto:', error);
       process.exit(1);
     }
   });
