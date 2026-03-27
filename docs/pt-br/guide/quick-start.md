@@ -7,7 +7,7 @@ Comece com Storytype no seu projeto Vue 3 em apenas alguns minutos.
 Antes de começar, certifique-se de ter:
 
 - **Node.js 20.11.1+** instalado
-- **pnpm 9.12.3+** (recomendado) ou npm/yarn
+- **pnpm 10.33.0+** (recomendado) ou npm/yarn
 - Conhecimento básico de Vue 3 e TypeScript
 - Um projeto Vue 3 (ou crie um)
 
@@ -70,20 +70,29 @@ Após a inicialização, seu projeto terá esta estrutura:
 src/
 ├── components/
 │   ├── atomos/
-│   │   ├── AtomButton/
-│   │   │   ├── AtomButton.vue
-│   │   │   ├── AtomButton.stories.ts
-│   │   │   ├── AtomButton.spec.ts
-│   │   │   └── types.ts
+│   │   ├── botao/
+│   │   │   ├── Botao.vue
+│   │   │   ├── Botao.types.ts
+│   │   │   ├── Botao.stories.ts
+│   │   │   ├── Botao.mock.ts
+│   │   │   └── index.ts
 │   │   └── ...
 │   ├── moleculas/
 │   ├── organismos/
 │   ├── templates/
+│   │   └── exemplo-screen/
+│   │       ├── ExemploScreen.vue
+│   │       ├── ExemploScreen.types.ts
+│   │       ├── ExemploScreen.stories.ts
+│   │       ├── ExemploScreen.mock.ts
+│   │       └── index.ts
 │   └── pages/
-│       └── ExamplePage/
-│           ├── ExamplePage.vue          # Container
-│           ├── ExampleScreen.vue        # Apresentação
-│           └── ExampleScreen.stories.ts # Storybook
+│       └── exemplo-page/
+│           ├── ExemploPage.vue
+│           ├── ExemploPage.types.ts
+│           ├── ExemploPage.stories.ts
+│           ├── ExemploPage.mock.ts
+│           └── index.ts
 ├── store/
 ├── router/
 └── ...
@@ -99,23 +108,61 @@ storytype generate atomos Avatar
 
 Isso gera automaticamente 5 arquivos:
 
-```vue
-<!-- src/components/atomos/AtomAvatar/AtomAvatar.vue -->
-<script setup lang="ts">
-import type { AvatarProps } from './types';
+::: code-group
 
-const props = withDefaults(defineProps<AvatarProps>(), {
-  size: 'md',
-  shape: 'circle',
-});
-</script>
+```typescript [Avatar.types.ts - Definições de Tipo]
+// src/components/atomos/avatar/Avatar.types.ts
 
+/** Tamanho do avatar */
+export type AvatarSize = 'sm' | 'md' | 'lg';
+
+/** Forma do avatar */
+export type AvatarShape = 'circle' | 'square';
+
+export interface AvatarProps {
+  /** URL da imagem do usuário */
+  src?: string;
+  /** Texto alternativo para acessibilidade */
+  alt?: string;
+  /** Iniciais a exibir quando não há imagem */
+  initials?: string;
+  /** Tamanho do avatar */
+  size?: AvatarSize;
+  /** Forma do avatar */
+  shape?: AvatarShape;
+}
+
+export interface AvatarType {
+  props: AvatarProps;
+  models: AvatarModels;
+  emits: AvatarEmits;
+}
+
+export interface AvatarModels {}
+export interface AvatarEmits {}
+```
+
+```vue [Avatar.vue - O Componente]
+<!-- src/components/atomos/avatar/Avatar.vue -->
 <template>
   <div class="atom-avatar" :class="[`atom-avatar--${props.size}`, `atom-avatar--${props.shape}`]">
     <img v-if="props.src" :src="props.src" :alt="props.alt" />
     <span v-else class="atom-avatar__initials">{{ props.initials }}</span>
   </div>
 </template>
+
+<script setup lang="ts">
+import type { AvatarProps } from './Avatar.types';
+
+// TypeScript fornece:
+// ✅ Autocomplete para todas as props
+// ✅ Erros de tipo se props estiverem incorretas
+// ✅ Refatoração segura
+const props = withDefaults(defineProps<AvatarProps>(), {
+  size: 'md',
+  shape: 'circle',
+});
+</script>
 
 <style scoped lang="scss">
 .atom-avatar {
@@ -150,16 +197,131 @@ const props = withDefaults(defineProps<AvatarProps>(), {
 </style>
 ```
 
-```ts
-// src/components/atomos/AtomAvatar/types.ts
-export interface AvatarProps {
-  src?: string;
-  alt?: string;
-  initials?: string;
-  size?: 'sm' | 'md' | 'lg';
-  shape?: 'circle' | 'square';
-}
+```typescript [Avatar.stories.ts - Documentação Visual]
+// src/components/atomos/avatar/Avatar.stories.ts
+import type { Meta, StoryObj } from '@storybook/vue3';
+import Avatar from './Avatar.vue';
+import { generateMockData } from './Avatar.mock';
+
+const meta: Meta<typeof Avatar> = {
+  title: '01 - Átomos/Avatar',
+  component: Avatar,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component: 'Componente para exibir foto de perfil do usuário ou suas iniciais',
+      },
+    },
+  },
+} satisfies Meta<typeof Avatar>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+const mockData = generateMockData();
+
+// TypeScript garante que stories correspondam às props
+export const Default: Story = {
+  args: {
+    ...mockData.props,
+  },
+};
+
+export const ComImagem: Story = {
+  args: {
+    src: 'https://i.pravatar.cc/150',
+    alt: 'Avatar do usuário',
+    size: 'md',
+  },
+};
+
+export const ComIniciais: Story = {
+  args: {
+    initials: 'JD',
+    alt: 'João Doe',
+    size: 'md',
+  },
+};
+
+export const Pequeno: Story = {
+  args: {
+    ...ComImagem.args,
+    size: 'sm',
+  },
+};
+
+export const Grande: Story = {
+  args: {
+    ...ComImagem.args,
+    size: 'lg',
+  },
+};
+
+export const Quadrado: Story = {
+  args: {
+    ...ComImagem.args,
+    shape: 'square',
+  },
+};
 ```
+
+```typescript [Avatar.mock.ts - Dados de Teste]
+// src/components/atomos/avatar/Avatar.mock.ts
+import type { AvatarType, AvatarProps, AvatarModels, AvatarEmits } from './Avatar.types';
+
+export const generateMockData = (): AvatarType => {
+  const props: AvatarProps = {
+    initials: 'JD',
+    alt: 'João Doe',
+    size: 'md',
+    shape: 'circle',
+  };
+
+  const models: AvatarModels = {};
+  const emits: AvatarEmits = {};
+
+  return {
+    props,
+    models,
+    emits,
+  } satisfies AvatarType as AvatarType;
+};
+```
+
+```typescript [index.ts - Exportações]
+// src/components/atomos/avatar/index.ts
+export * from './Avatar.types';
+export * from './Avatar.mock';
+export * as Stories from './Avatar.stories';
+export { default } from './Avatar.vue';
+```
+
+:::
+
+## A Experiência do Desenvolvedor
+
+Agora quando você usa o componente, **TypeScript te ajuda**:
+
+```vue
+<template>
+  <!-- ✅ Autocomplete mostra: src, alt, initials, size, shape -->
+  <Avatar src="/user.jpg" alt="João Doe" size="lg" />
+
+  <!-- ❌ Erro TypeScript: Type '"xl"' não pode ser atribuído ao tipo 'AvatarSize' -->
+  <Avatar size="xl" />
+
+  <!-- ✅ Props opcionais funcionam -->
+  <Avatar initials="JD" />
+</template>
+```
+
+**Isso significa:**
+
+- 🎯 Não pode passar tipos de prop errados
+- 🎯 Props opcionais claramente indicadas
+- 🎯 Não pode usar props que não existem
+- 🎯 Refatoração de renomeação é 100% segura
 
 ## Fluxo de Desenvolvimento
 

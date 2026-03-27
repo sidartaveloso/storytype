@@ -337,9 +337,9 @@ cp -r node_modules/storytype/dist/templates/component/* .storytype/templates/com
 
 <style scoped>
   /* Seus estilos customizados */
-  .{{kebabCase name}} {
-    font-family: var(--font-family);
-  }
+  .{{kebabCase name}}{
+         font-family: var(--font-family);
+       }
 </style>
 ```
 
@@ -347,11 +347,11 @@ cp -r node_modules/storytype/dist/templates/component/* .storytype/templates/com
 
 <div v-pre>
 
-| Helper                 | Descrição           | Exemplo        |
-| ---------------------- | --------------------- | -------------- |
+| Helper                   | Descrição                 | Exemplo        |
+| ------------------------ | ------------------------- | -------------- |
 | `{{ pascalCase name }}`  | Converter para PascalCase | `UserProfile`  |
 | `{{ kebabCase name }}`   | Converter para kebab-case | `user-profile` |
-| `{{ eq type "atomos" }}` | Comparar valores        | `true/false`   |
+| `{{ eq type "atomos" }}` | Comparar valores          | `true/false`   |
 
 </div>
 
