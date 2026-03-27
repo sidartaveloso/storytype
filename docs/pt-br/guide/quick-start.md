@@ -71,24 +71,27 @@ src/
 ├── components/
 │   ├── atomos/
 │   │   ├── botao/
-│   │   │   ├── Botao.stories.ts
-│   │   │   └── Botao.types.ts
 │   │   │   ├── Botao.vue
+│   │   │   ├── Botao.types.ts
+│   │   │   ├── Botao.stories.ts
+│   │   │   ├── Botao.mock.ts
 │   │   │   └── index.ts
 │   │   └── ...
 │   ├── moleculas/
 │   ├── organismos/
 │   ├── templates/
-│       └── exemplo-screen/
-│           └── ExemploScreen.stories.ts
-│           ├── ExemploScreen.vue
-│           ├── ExemploScreen.types.ts
-│           └── index.ts
+│   │   └── exemplo-screen/
+│   │       ├── ExemploScreen.vue
+│   │       ├── ExemploScreen.types.ts
+│   │       ├── ExemploScreen.stories.ts
+│   │       ├── ExemploScreen.mock.ts
+│   │       └── index.ts
 │   └── pages/
 │       └── exemplo-page/
-│           └── ExemploPage.stories.ts
 │           ├── ExemploPage.vue
 │           ├── ExemploPage.types.ts
+│           ├── ExemploPage.stories.ts
+│           ├── ExemploPage.mock.ts
 │           └── index.ts
 ├── store/
 ├── router/
@@ -116,7 +119,6 @@ export type AvatarSize = 'sm' | 'md' | 'lg';
 /** Forma do avatar */
 export type AvatarShape = 'circle' | 'square';
 
-/** Props do componente Avatar */
 export interface AvatarProps {
   /** URL da imagem do usuário */
   src?: string;
@@ -130,7 +132,6 @@ export interface AvatarProps {
   shape?: AvatarShape;
 }
 
-/** Tipo do componente Avatar (para Storybook e testes) */
 export interface AvatarType {
   props: AvatarProps;
   models: AvatarModels;
