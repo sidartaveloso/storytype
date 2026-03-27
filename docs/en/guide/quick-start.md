@@ -101,80 +101,127 @@ This automatically generates 5 files:
 
 ::: code-group
 
-```typescript [types.ts - The Contract]
-// src/components/atomos/AtomAvatar/types.ts
+```typescript [Avatar.types.ts - Type Definitions]
+// src/components/atomos/avatar/Avatar.types.ts
 
 /** Size variants for the avatar */
 export type AvatarSize = 'sm' | 'md' | 'lg';
 
+/** Shape variants for the avatar */
+export type AvatarShape = 'circle' | 'square';
+
 /** Avatar component props */
 export interface AvatarProps {
   /** User's image URL */
-  src: string;
+  src?: string;
   /** Alt text for accessibility */
-  alt: string;
+  alt?: string;
+  /** User initials when no image is provided */
+  initials?: string;
   /** Size variant */
   size?: AvatarSize;
+  /** Shape variant */
+  shape?: AvatarShape;
 }
 
 /** Avatar component type (for Storybook & tests) */
 export interface AvatarType {
-  $props: AvatarProps;
+  props: AvatarProps;
+  models: AvatarModels;
+  emits: AvatarEmits;
 }
+
+export interface AvatarModels {}
+export interface AvatarEmits {}
 ```
 
-```vue [AtomAvatar.vue - The Component]
+```vue [Avatar.vue - The Component]
+<!-- src/components/atomos/avatar/Avatar.vue -->
 <template>
-  <img :src="src" :alt="alt" :class="['avatar', `avatar--${size}`]" />
+  <div class="atom-avatar" :class="[`atom-avatar--${props.size}`, `atom-avatar--${props.shape}`]">
+    <img v-if="props.src" :src="props.src" :alt="props.alt" />
+    <span v-else class="atom-avatar__initials">{{ props.initials }}</span>
+  </div>
 </template>
 
 <script setup lang="ts">
-import type { AvatarProps } from './types';
+import type { AvatarProps } from './Avatar.types';
 
 // TypeScript provides:
 // ✅ Autocomplete for all props
 // ✅ Type errors if props are wrong
 // ✅ Safe refactoring
-withDefaults(defineProps<AvatarProps>(), {
+const props = withDefaults(defineProps<AvatarProps>(), {
   size: 'md',
+  shape: 'circle',
 });
 </script>
 
-<style scoped>
-.avatar {
-  border-radius: 50%;
-}
-.avatar--sm {
-  width: 32px;
-  height: 32px;
-}
-.avatar--md {
-  width: 48px;
-  height: 48px;
-}
-.avatar--lg {
-  width: 64px;
-  height: 64px;
+<style scoped lang="scss">
+.atom-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  &--circle {
+    border-radius: 50%;
+  }
+
+  &--square {
+    border-radius: 4px;
+  }
+
+  &--sm {
+    width: 32px;
+    height: 32px;
+  }
+
+  &--md {
+    width: 48px;
+    height: 48px;
+  }
+
+  &--lg {
+    width: 64px;
+    height: 64px;
+  }
 }
 </style>
 ```
 
-```typescript [AtomAvatar.stories.ts - Live Documentation]
+```typescript [Avatar.stories.ts - Live Documentation]
+// src/components/atomos/avatar/Avatar.stories.ts
 import type { Meta, StoryObj } from '@storybook/vue3';
-import AtomAvatar from './AtomAvatar.vue';
-import type { AvatarProps } from './types';
+import Avatar from './Avatar.vue';
+import { generateMockData } from './Avatar.mock';
 
-const meta = {
-  title: 'Atomos/AtomAvatar',
-  component: AtomAvatar,
+const meta: Meta<typeof Avatar> = {
+  title: '01 - Atoms/Avatar',
+  component: Avatar,
   tags: ['autodocs'],
-} satisfies Meta<typeof AtomAvatar>;
+  parameters: {
+    docs: {
+      description: {
+        component: 'User avatar component that displays profile picture or initials',
+      },
+    },
+  },
+} satisfies Meta<typeof Avatar>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+const mockData = generateMockData();
+
 // TypeScript ensures stories match props
 export const Default: Story = {
+  args: {
+    ...mockData.props,
+  },
+};
+
+export const WithImage: Story = {
   args: {
     src: 'https://i.pravatar.cc/150',
     alt: 'User avatar',
@@ -182,9 +229,65 @@ export const Default: Story = {
   },
 };
 
-export const Small: Story = {
-  args: { ...Default.args, size: 'sm' },
+export const WithInitials: Story = {
+  args: {
+    initials: 'JD',
+    alt: 'John Doe',
+    size: 'md',
+  },
 };
+
+export const Small: Story = {
+  args: {
+    ...WithImage.args,
+    size: 'sm',
+  },
+};
+
+export const Large: Story = {
+  args: {
+    ...WithImage.args,
+    size: 'lg',
+  },
+};
+
+export const Square: Story = {
+  args: {
+    ...WithImage.args,
+    shape: 'square',
+  },
+};
+```
+
+```typescript [Avatar.mock.ts - Test Data]
+// src/components/atomos/avatar/Avatar.mock.ts
+import type { AvatarType, AvatarProps, AvatarModels, AvatarEmits } from './Avatar.types';
+
+export const generateMockData = (): AvatarType => {
+  const props: AvatarProps = {
+    initials: 'JD',
+    alt: 'John Doe',
+    size: 'md',
+    shape: 'circle',
+  };
+
+  const models: AvatarModels = {};
+  const emits: AvatarEmits = {};
+
+  return {
+    props,
+    models,
+    emits,
+  } satisfies AvatarType as AvatarType;
+};
+```
+
+```typescript [index.ts - Module Exports]
+// src/components/atomos/avatar/index.ts
+export * from './Avatar.types';
+export * from './Avatar.mock';
+export * as Stories from './Avatar.stories';
+export { default } from './Avatar.vue';
 ```
 
 :::
@@ -195,21 +298,21 @@ Now when you use the component, **TypeScript helps you**:
 
 ```vue
 <template>
-  <!-- ✅ Autocomplete shows: src, alt, size -->
-  <AtomAvatar src="/user.jpg" alt="John Doe" size="lg" />
+  <!-- ✅ Autocomplete shows: src, alt, initials, size, shape -->
+  <Avatar src="/user.jpg" alt="John Doe" size="lg" />
 
   <!-- ❌ TypeScript error: Type '"xl"' is not assignable to type 'AvatarSize' -->
-  <AtomAvatar size="xl" />
+  <Avatar size="xl" />
 
-  <!-- ❌ TypeScript error: Property 'src' is missing -->
-  <AtomAvatar alt="John" />
+  <!-- ✅ Optional props work -->
+  <Avatar initials="JD" />
 </template>
 ```
 
 **This means:**
 
 - 🎯 Can't pass wrong prop types
-- 🎯 Can't forget required props
+- 🎯 Optional props clearly indicated
 - 🎯 Can't use props that don't exist
 - 🎯 Rename refactoring is 100% safe
 
