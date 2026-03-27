@@ -1,7 +1,5 @@
 <template>
-  <header class="nx-header">
-    Nx Header
-  </header>
+  <header class="nx-header">Nx Header</header>
 </template>
 
 <script setup lang="ts">

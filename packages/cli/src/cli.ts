@@ -5,6 +5,7 @@
  */
 
 import { Command } from 'commander';
+import path from 'path';
 import { version } from '../package.json';
 import { analyzeProject, displayResults } from './analyzer.js';
 import { generateComponent } from './generate/index.js';
@@ -110,32 +111,71 @@ program
           console.log(chalk.gray(`Arquivos a renomear: ${result.filesToRename}`));
           console.log(chalk.gray(`Arquivos a criar: ${result.filesToCreate}`));
 
+          // Show detailed changes in dry-run mode or verbose mode
+          if (
+            (options?.dryRun || options?.verbose) &&
+            result.directoriesToRename + result.filesToRename + result.filesToCreate > 0
+          ) {
+            console.log(chalk.cyan('\n📋 Mudanças detalhadas:\n'));
+
+            const cwd = process.cwd();
+            const relativePath = (absolutePath: string) => {
+              const rel = path.relative(cwd, absolutePath);
+              return rel.startsWith('..') ? absolutePath : rel;
+            };
+
+            result.components.forEach(comp => {
+              const hasChanges =
+                comp.needsRename ||
+                comp.missingFiles.length > 0 ||
+                comp.files.some(f => f.currentPath !== f.targetPath);
+
+              if (hasChanges) {
+                console.log(chalk.bold(`\n  Componente: ${comp.componentName}`));
+
+                // Show directory rename
+                if (comp.needsRename) {
+                  console.log(chalk.yellow(`    📁 Renomear diretório:`));
+                  console.log(chalk.gray(`       ${relativePath(comp.currentPath)}`));
+                  console.log(chalk.gray(`       → ${relativePath(comp.targetPath)}`));
+                }
+
+                // Show file renames
+                const filesToRename = comp.files.filter(f => f.currentPath !== f.targetPath);
+                if (filesToRename.length > 0) {
+                  console.log(
+                    chalk.yellow(`    📄 Renomear arquivo${filesToRename.length > 1 ? 's' : ''}:`)
+                  );
+                  filesToRename.forEach(file => {
+                    console.log(chalk.gray(`       ${relativePath(file.currentPath)}`));
+                    console.log(chalk.gray(`       → ${relativePath(file.targetPath)}`));
+                  });
+                }
+
+                // Show files to create
+                if (comp.missingFiles.length > 0) {
+                  console.log(
+                    chalk.green(`    ✨ Criar arquivo${comp.missingFiles.length > 1 ? 's' : ''}:`)
+                  );
+                  comp.missingFiles.forEach(fileName => {
+                    const targetDir = comp.needsRename ? comp.targetPath : comp.currentPath;
+                    const fullPath = `${targetDir}/${fileName}`;
+                    console.log(chalk.gray(`       ${relativePath(fullPath)}`));
+                  });
+                }
+              }
+            });
+          }
+
           if (options?.dryRun) {
-            console.log(chalk.yellow('\n⚠ Modo dry-run: nenhuma mudança foi feita'));
-            console.log(chalk.gray('Execute sem --dry-run para aplicar as mudanças'));
+            console.log(chalk.yellow('\n⚠️  Modo dry-run: nenhuma mudança foi feita'));
+            console.log(chalk.gray('Execute sem --dry-run para aplicar as mudanças\n'));
           } else if (result.directoriesToRename + result.filesToRename + result.filesToCreate > 0) {
             console.log(chalk.green('\n✓ Normalização concluída com sucesso!'));
           } else {
             console.log(
               chalk.green('\n✓ Todos os componentes já estão estruturados corretamente!')
             );
-          }
-
-          if (options?.verbose) {
-            console.log(chalk.gray('\nMudanças detalhadas:'));
-            result.components.forEach(comp => {
-              if (comp.needsRename || comp.missingFiles.length > 0) {
-                console.log(chalk.gray(`\n  ${comp.componentName}:`));
-                if (comp.needsRename) {
-                  console.log(
-                    chalk.yellow(`    Renomear: ${comp.currentPath} → ${comp.targetPath}`)
-                  );
-                }
-                if (comp.missingFiles.length > 0) {
-                  console.log(chalk.yellow(`    Criar: ${comp.missingFiles.join(', ')}`));
-                }
-              }
-            });
           }
         } else {
           console.error(chalk.red(`\n✗ Erro: ${result.error}`));

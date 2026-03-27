@@ -3,17 +3,18 @@ import { test, expect } from '@playwright/test';
 /**
  * Lista de páginas para testar
  * Formato: [url, titulo esperado ou regex]
+ * Nota: VitePress está configurado com base: '/storytype/'
  */
 const pages = [
-  // Páginas principais em inglês
-  { url: '/en/', title: 'Storytype' },
-  { url: '/en/guide/introduction', title: /What is Storytype/ },
-  { url: '/en/guide/quick-start', title: /Quick Start/ },
+  // Páginas principais em inglês (en/ é mapeado para raiz via rewrite)
+  { url: '/storytype/', title: 'Storytype' },
+  { url: '/storytype/guide/introduction', title: /What is Storytype/ },
+  { url: '/storytype/guide/quick-start', title: /Quick Start/ },
 
   // Páginas principais em português
-  { url: '/pt-br/', title: 'Storytype' },
-  { url: '/pt-br/guide/introduction', title: /O Que é Storytype/ },
-  { url: '/pt-br/guide/quick-start', title: /Início Rápido/ },
+  { url: '/storytype/pt-br/', title: 'Storytype' },
+  { url: '/storytype/pt-br/guide/introduction', title: /O Que é Storytype/ },
+  { url: '/storytype/pt-br/guide/quick-start', title: /Início Rápido/ },
 ] as const;
 
 test.describe('VitePress Pages Accessibility', () => {
@@ -45,7 +46,7 @@ test.describe('VitePress Pages Accessibility', () => {
   }
 
   test('Links de navegação principais devem funcionar', async ({ page }) => {
-    await page.goto('/en/');
+    await page.goto('/storytype/');
 
     // Verifica botão "Get Started"
     const getStartedButton = page.locator('a:has-text("Get Started")').first();
@@ -58,7 +59,7 @@ test.describe('VitePress Pages Accessibility', () => {
 
   test('Troca de idioma deve funcionar', async ({ page }) => {
     // Começa na página em inglês
-    await page.goto('/en/');
+    await page.goto('/storytype/');
     await expect(page).toHaveTitle(/Storytype/);
 
     // Procura pelo seletor de idioma (pode estar em um dropdown)
@@ -77,7 +78,7 @@ test.describe('VitePress Pages Accessibility', () => {
   });
 
   test('Busca deve estar disponível', async ({ page }) => {
-    await page.goto('/en/');
+    await page.goto('/storytype/');
 
     // Verifica se o botão/input de busca existe
     const searchButton = page.locator(
@@ -89,7 +90,7 @@ test.describe('VitePress Pages Accessibility', () => {
   });
 
   test('Logo deve ser carregado', async ({ page }) => {
-    await page.goto('/en/');
+    await page.goto('/storytype/');
 
     // Verifica se a imagem do logo carrega
     const logo = page.locator('img[alt="Storytype"], img[src*="logo"]');
@@ -101,7 +102,7 @@ test.describe('VitePress Pages Accessibility', () => {
   });
 
   test('Exemplos de código devem estar visíveis', async ({ page }) => {
-    await page.goto('/en/guide/introduction');
+    await page.goto('/storytype/guide/introduction');
 
     // Aguarda carregar
     await page.waitForLoadState('networkidle');
@@ -114,7 +115,7 @@ test.describe('VitePress Pages Accessibility', () => {
   });
 
   test('Footer deve conter informações de copyright', async ({ page }) => {
-    await page.goto('/en/');
+    await page.goto('/storytype/');
 
     // Verifica se o footer existe e contém informações
     const footer = page.locator('footer, .VPFooter');
@@ -128,7 +129,7 @@ test.describe('VitePress Pages Accessibility', () => {
 
 test.describe('Estrutura de documentação', () => {
   test('Sidebar deve estar presente nas páginas de guia', async ({ page }) => {
-    await page.goto('/en/guide/introduction');
+    await page.goto('/storytype/guide/introduction');
 
     // Verifica se a sidebar ou navegação lateral existe
     const sidebar = page.locator('aside, .VPSidebar, .sidebar, nav[class*="sidebar"]').first();
@@ -145,7 +146,7 @@ test.describe('Estrutura de documentação', () => {
   });
 
   test('Navegação entre páginas consecutivas deve funcionar', async ({ page }) => {
-    const initialUrl = '/en/guide/introduction';
+    const initialUrl = '/storytype/guide/introduction';
     await page.goto(initialUrl);
 
     // Procura por link "Next" ou similar
@@ -177,12 +178,12 @@ test.describe('Estrutura de documentação', () => {
   test('Todos os links internos devem ser válidos', async ({ page }) => {
     // Lista de páginas para verificar os links
     const pagesToCheck = [
-      '/en/',
-      '/en/guide/introduction',
-      '/en/guide/quick-start',
-      '/pt-br/',
-      '/pt-br/guide/introduction',
-      '/pt-br/guide/quick-start',
+      '/storytype/',
+      '/storytype/guide/introduction',
+      '/storytype/guide/quick-start',
+      '/storytype/pt-br/',
+      '/storytype/pt-br/guide/introduction',
+      '/storytype/pt-br/guide/quick-start',
     ];
 
     const brokenLinks: Array<{ page: string; link: string; reason: string }> = [];

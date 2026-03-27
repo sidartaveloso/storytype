@@ -1,7 +1,5 @@
 <template>
-  <div class="server">
-    App Server
-  </div>
+  <div class="server">App Server</div>
 </template>
 
 <script setup lang="ts">

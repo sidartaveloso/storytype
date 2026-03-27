@@ -419,7 +419,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
   describe('Simple Project Structure', () => {
     it('should keep srv folder name intact', async () => {
       const projectPath = path.join(fixturesDir, 'simple-project', 'src', 'components');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -427,9 +427,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const srvComponent = result.components.find(c => 
-        path.basename(c.currentPath) === 'srv'
-      );
+      const srvComponent = result.components.find(c => path.basename(c.currentPath) === 'srv');
 
       expect(srvComponent).toBeDefined();
       expect(srvComponent?.needsRename).toBe(false);
@@ -440,7 +438,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
     it('should normalize SRV uppercase to srv lowercase', async () => {
       // Create temp dir for case-sensitive testing (macOS filesystem issue)
       const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-srv-test-'));
-      
+
       try {
         const componentDir = path.join(tempDir, 'SRV');
         await fs.ensureDir(componentDir);
@@ -456,9 +454,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
         const result = await analyzeComponentStructure(options);
 
-        const srvComponent = result.components.find(c => 
-          path.basename(c.currentPath) === 'SRV'
-        );
+        const srvComponent = result.components.find(c => path.basename(c.currentPath) === 'SRV');
 
         expect(srvComponent).toBeDefined();
         expect(srvComponent?.needsRename).toBe(true);
@@ -471,7 +467,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should normalize UserProfile to user-profile', async () => {
       const projectPath = path.join(fixturesDir, 'simple-project', 'src', 'components');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -479,8 +475,8 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const profileComponent = result.components.find(c => 
-        path.basename(c.currentPath) === 'UserProfile'
+      const profileComponent = result.components.find(
+        c => path.basename(c.currentPath) === 'UserProfile'
       );
 
       expect(profileComponent).toBeDefined();
@@ -492,7 +488,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
   describe('TurboRepo Structure', () => {
     it('should not rename packages folder', async () => {
       const projectPath = path.join(fixturesDir, 'turborepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -501,12 +497,12 @@ describe('NormalizeComponents - Monorepo Support', () => {
       const result = await analyzeComponentStructure(options);
 
       // Should find components inside packages but not try to rename packages itself
-      const componentsInPackages = result.components.filter(c => 
+      const componentsInPackages = result.components.filter(c =>
         c.currentPath.includes('packages')
       );
 
       expect(componentsInPackages.length).toBeGreaterThan(0);
-      
+
       // Verify packages folder name is preserved in paths
       componentsInPackages.forEach(component => {
         expect(component.currentPath).toContain('/packages/');
@@ -516,7 +512,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should not rename apps folder', async () => {
       const projectPath = path.join(fixturesDir, 'turborepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -524,12 +520,10 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const componentsInApps = result.components.filter(c => 
-        c.currentPath.includes('apps')
-      );
+      const componentsInApps = result.components.filter(c => c.currentPath.includes('apps'));
 
       expect(componentsInApps.length).toBeGreaterThan(0);
-      
+
       componentsInApps.forEach(component => {
         expect(component.currentPath).toContain('/apps/');
         expect(component.targetPath).toContain('/apps/');
@@ -538,7 +532,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should normalize component inside packages/ui/src', async () => {
       const projectPath = path.join(fixturesDir, 'turborepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -546,9 +540,8 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const buttonComponent = result.components.find(c => 
-        c.currentPath.includes('packages/ui/src') && 
-        path.basename(c.currentPath) === 'Button'
+      const buttonComponent = result.components.find(
+        c => c.currentPath.includes('packages/ui/src') && path.basename(c.currentPath) === 'Button'
       );
 
       expect(buttonComponent).toBeDefined();
@@ -558,7 +551,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should keep srv folder in packages/shared/components', async () => {
       const projectPath = path.join(fixturesDir, 'turborepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -566,9 +559,10 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const srvComponent = result.components.find(c => 
-        c.currentPath.includes('packages/shared/components') && 
-        path.basename(c.currentPath) === 'srv'
+      const srvComponent = result.components.find(
+        c =>
+          c.currentPath.includes('packages/shared/components') &&
+          path.basename(c.currentPath) === 'srv'
       );
 
       expect(srvComponent).toBeDefined();
@@ -578,7 +572,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should normalize Dashboard in apps/web/src', async () => {
       const projectPath = path.join(fixturesDir, 'turborepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -586,9 +580,8 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const dashboardComponent = result.components.find(c => 
-        c.currentPath.includes('apps/web/src') && 
-        path.basename(c.currentPath) === 'Dashboard'
+      const dashboardComponent = result.components.find(
+        c => c.currentPath.includes('apps/web/src') && path.basename(c.currentPath) === 'Dashboard'
       );
 
       expect(dashboardComponent).toBeDefined();
@@ -600,7 +593,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
   describe('App Structure', () => {
     it('should not rename app folder itself', async () => {
       const projectPath = path.join(fixturesDir, 'app-structure');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -608,12 +601,10 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const componentsInApp = result.components.filter(c => 
-        c.currentPath.includes('app/')
-      );
+      const componentsInApp = result.components.filter(c => c.currentPath.includes('app/'));
 
       expect(componentsInApp.length).toBeGreaterThan(0);
-      
+
       componentsInApp.forEach(component => {
         expect(component.currentPath).toContain('/app/');
         expect(component.targetPath).toContain('/app/');
@@ -622,7 +613,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should keep srv folder in app/components', async () => {
       const projectPath = path.join(fixturesDir, 'app-structure');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -630,9 +621,8 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const srvComponent = result.components.find(c => 
-        c.currentPath.includes('app/components') && 
-        path.basename(c.currentPath) === 'srv'
+      const srvComponent = result.components.find(
+        c => c.currentPath.includes('app/components') && path.basename(c.currentPath) === 'srv'
       );
 
       expect(srvComponent).toBeDefined();
@@ -642,7 +632,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should normalize Header in app/components', async () => {
       const projectPath = path.join(fixturesDir, 'app-structure');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -650,9 +640,8 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const headerComponent = result.components.find(c => 
-        c.currentPath.includes('app/components') && 
-        path.basename(c.currentPath) === 'Header'
+      const headerComponent = result.components.find(
+        c => c.currentPath.includes('app/components') && path.basename(c.currentPath) === 'Header'
       );
 
       expect(headerComponent).toBeDefined();
@@ -664,7 +653,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
   describe('Nx Monorepo Structure', () => {
     it('should not rename libs folder', async () => {
       const projectPath = path.join(fixturesDir, 'nx-monorepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -672,12 +661,10 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const componentsInLibs = result.components.filter(c => 
-        c.currentPath.includes('libs/')
-      );
+      const componentsInLibs = result.components.filter(c => c.currentPath.includes('libs/'));
 
       expect(componentsInLibs.length).toBeGreaterThan(0);
-      
+
       componentsInLibs.forEach(component => {
         expect(component.currentPath).toContain('/libs/');
         expect(component.targetPath).toContain('/libs/');
@@ -686,7 +673,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should normalize Button in libs/ui/src/lib', async () => {
       const projectPath = path.join(fixturesDir, 'nx-monorepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -694,9 +681,8 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const buttonComponent = result.components.find(c => 
-        c.currentPath.includes('libs/ui/src/lib') && 
-        path.basename(c.currentPath) === 'Button'
+      const buttonComponent = result.components.find(
+        c => c.currentPath.includes('libs/ui/src/lib') && path.basename(c.currentPath) === 'Button'
       );
 
       expect(buttonComponent).toBeDefined();
@@ -706,7 +692,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should normalize Header in apps/frontend/app/components', async () => {
       const projectPath = path.join(fixturesDir, 'nx-monorepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -714,9 +700,10 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const headerComponent = result.components.find(c => 
-        c.currentPath.includes('apps/frontend/app/components') && 
-        path.basename(c.currentPath) === 'Header'
+      const headerComponent = result.components.find(
+        c =>
+          c.currentPath.includes('apps/frontend/app/components') &&
+          path.basename(c.currentPath) === 'Header'
       );
 
       expect(headerComponent).toBeDefined();
@@ -726,7 +713,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
     it('should preserve app folder in apps/frontend/app path', async () => {
       const projectPath = path.join(fixturesDir, 'nx-monorepo');
-      
+
       const options: NormalizeOptions = {
         path: projectPath,
         dryRun: true,
@@ -734,7 +721,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const componentsInAppFolder = result.components.filter(c => 
+      const componentsInAppFolder = result.components.filter(c =>
         c.currentPath.includes('apps/frontend/app/')
       );
 

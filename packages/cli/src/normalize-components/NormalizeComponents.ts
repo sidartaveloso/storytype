@@ -179,7 +179,7 @@ async function analyzeDirectory(
     const componentName = getComponentBaseName(componentFile.name);
     const pascalComponentName = toPascalCase(componentName);
     const dirName = path.basename(dirPath);
-    
+
     // CRITICAL FIX: Use directory name for kebab-case conversion, not component name
     // This ensures dirs like 'srv/' stay 'srv/', not forced to 'server/' by file name
     const expectedDirName = toKebabCase(dirName);

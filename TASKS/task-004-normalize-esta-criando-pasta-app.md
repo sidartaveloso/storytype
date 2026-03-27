@@ -17,12 +17,14 @@ O comando `storytype normalize` está criando incorretamente uma pasta chamada `
 ### Comportamento Atual (Bug)
 
 Ao executar `storytype normalize [path]`, o sistema cria ou renomeia diretórios para `app/` ao invés de seguir o padrão correto, causando confusão entre:
+
 - Diretórios de componentes (ex: `srv/` → deveria permanecer `srv/`)
 - Estruturas de monorepo (ex: `packages/my-package/` → deveria ser respeitada)
 
 ### Comportamento Esperado
 
 O comando deve:
+
 - Converter nomes de diretórios **de componentes** para **kebab-case** preservando o nome original (ex: `SRV` → `srv`, `ServerComponent` → `server-component`)
 - **Nunca** introduzir novos nomes de diretório que não existiam na estrutura original
 - Aplicar as conversões apenas aos nomes existentes, mantendo a semântica do projeto
@@ -33,6 +35,7 @@ O comando deve:
 ### Causa Provável
 
 O problema pode estar em uma das seguintes áreas do código:
+
 1. Função `toKebabCase()` aplicando conversão incorreta em siglas ou palavras específicas
 2. Lógica de análise em `analyzeDirectory()` inferindo nomes incorretos a partir dos arquivos Vue
 3. Função `getComponentBaseName()` extraindo nome base incorreto do componente
@@ -123,7 +126,7 @@ O problema pode estar em uma das seguintes áreas do código:
 **Fase 1 e 2 COMPLETAS** seguindo TDD rigoroso estilo Matt Pocock:
 
 1. ✅ **37 testes escritos PRIMEIRO** (todos falhando inicialmente)
-2. ✅ **Bug crítico identificado e corrigido**: 
+2. ✅ **Bug crítico identificado e corrigido**:
    - Problema: `analyzeDirectory` usava nome do arquivo `.vue` para determinar nome do diretório
    - Solução: Agora usa o nome do diretório atual para kebab-case conversion
    - Impacto: `srv/Server.vue` permanece em `srv/`, não força rename para `server/`
@@ -131,6 +134,7 @@ O problema pode estar em uma das seguintes áreas do código:
 4. ✅ **37/37 testes passando** incluindo todos os casos de monorepo
 
 **Código alterado**:
+
 ```typescript
 // ANTES (bug):
 const expectedDirName = toKebabCase(componentName); // Usa nome do componente
@@ -151,6 +155,7 @@ Esta task **DEVE** seguir Test-Driven Development (TDD):
 4. **NÃO** começar a Fase 2 antes de concluir a Fase 1
 
 **Justificativa**: Estruturas de monorepo são complexas e variadas. Sem testes abrangentes escritos primeiro, é fácil:
+
 - Criar regressões em estruturas já suportadas
 - Não cobrir todos os edge cases
 - Fazer suposições incorretas sobre o comportamento esperado
@@ -158,11 +163,13 @@ Esta task **DEVE** seguir Test-Driven Development (TDD):
 ### Sincronização entre `analyze` e `normalize`
 
 Ambos os comandos compartilham lógica de detecção de componentes. Qualquer mudança deve ser:
+
 - **Testada** em ambos os comandos
 - **Consistente** no comportamento (o que `analyze` detecta, `normalize` deve respeitar)
 - **Documentada** com exemplos de ambos os comandos
 
 Verificar se existe código compartilhado em:
+
 - [analyzer.ts](../packages/cli/src/analyzer.ts) — Comando analyze
 - [NormalizeComponents.ts](../packages/cli/src/normalize-components/NormalizeComponents.ts) — Comando normalize
 - Considerar extrair lógica de detecção para módulo compartilhado (`component-detector.ts`)
@@ -240,6 +247,7 @@ analyzeDirectory(dirPath: string, ...): Promise<void>
 ```
 
 **Ponto de atenção**: A função `analyzeDirectory()` atualmente verifica:
+
 ```typescript
 if (vueFiles.length > 0) {
   // Este diretório é tratado como componente
@@ -306,6 +314,7 @@ monorepo/
 ### Diretórios que NÃO devem ser normalizados
 
 Lista de nomes que devem ser **preservados** por serem containers de monorepo ou estruturas padrão:
+
 - `packages/`, `package/`
 - `apps/`, `app/` (quando na raiz ou em contexto de monorepo)
 - `libs/`, `lib/`

@@ -1,7 +1,5 @@
 <template>
-  <div class="server">
-    Server Component
-  </div>
+  <div class="server">Server Component</div>
 </template>
 
 <script setup lang="ts">

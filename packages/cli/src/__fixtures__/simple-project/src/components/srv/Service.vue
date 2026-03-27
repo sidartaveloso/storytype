@@ -1,7 +1,5 @@
 <template>
-  <div class="service">
-    Service Component (SRV uppercase folder)
-  </div>
+  <div class="service">Service Component (SRV uppercase folder)</div>
 </template>
 
 <script setup lang="ts">
