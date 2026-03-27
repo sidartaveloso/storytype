@@ -92,7 +92,7 @@ Storytype supports multiple languages:
 
 Visit our documentation site to learn more:
 
-- **Online:** [storytype.dev](https://storytype.dev) (coming soon)
+- **Online:** [sidartaveloso.github.io/storytype](https://sidartaveloso.github.io/storytype/)
 - **Local:** Run `pnpm docs:dev` and visit http://localhost:5173
 
 ## 📦 Releases
@@ -100,8 +100,9 @@ Visit our documentation site to learn more:
 This project uses [semantic-release](https://semantic-release.gitbook.io/) for automated versioning and npm publishing. Releases are triggered automatically when commits following [Conventional Commits](https://www.conventionalcommits.org/) are pushed to the `main` branch.
 
 **Quick reference:**
+
 - `fix:` → Patch release (0.0.x)
-- `feat:` → Minor release (0.x.0)  
+- `feat:` → Minor release (0.x.0)
 - `feat!:` or `BREAKING CHANGE:` → Major release (x.0.0)
 
 For detailed instructions on the release process, see [RELEASE.md](./RELEASE.md).
