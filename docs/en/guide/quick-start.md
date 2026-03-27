@@ -7,7 +7,7 @@ Get started with Storytype in your Vue 3 project in just a few minutes.
 Before you begin, ensure you have:
 
 - **Node.js 20.11.1+** installed
-- **pnpm 9.12.3+** (recommended) or npm/yarn
+- **pnpm 10.33.0+** (recommended) or npm/yarn
 - Basic knowledge of Vue 3 and TypeScript
 - A Vue 3 project (or create one)
 
