@@ -230,8 +230,8 @@ node_modules/storytype/dist/templates/component/
 
 <div v-pre>
 
-| Helper                 | Description           | Example        |
-| ---------------------- | --------------------- | -------------- |
+| Helper                   | Description           | Example        |
+| ------------------------ | --------------------- | -------------- |
 | `{{ pascalCase name }}`  | Convert to PascalCase | `UserProfile`  |
 | `{{ kebabCase name }}`   | Convert to kebab-case | `user-profile` |
 | `{{ eq type "atomos" }}` | Compare values        | `true/false`   |

@@ -93,7 +93,7 @@ Storytype suporta múltiplos idiomas:
 
 Visite nosso site de documentação para saber mais:
 
-- **Online:** [storytype.dev](https://storytype.dev) (em breve)
+- **Online:** [sidartaveloso.github.io/storytype](https://sidartaveloso.github.io/storytype/)
 - **Local:** Execute `pnpm docs:dev` e visite http://localhost:5173
 
 ## 🤝 Contribuindo
