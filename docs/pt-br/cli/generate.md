@@ -338,8 +338,8 @@ cp -r node_modules/storytype/dist/templates/component/* .storytype/templates/com
 <style scoped>
   /* Seus estilos customizados */
   .{{kebabCase name}}{
-       font-family: var(--font-family);
-     }
+         font-family: var(--font-family);
+       }
 </style>
 ```
 
