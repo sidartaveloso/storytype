@@ -70,20 +70,29 @@ After initialization, your project will have this structure:
 src/
 ├── components/
 │   ├── atomos/
-│   │   ├── AtomButton/
-│   │   │   ├── AtomButton.vue
-│   │   │   ├── AtomButton.stories.ts
-│   │   │   ├── AtomButton.spec.ts
-│   │   │   └── types.ts
+│   │   ├── button/
+│   │   │   ├── Button.vue
+│   │   │   ├── Button.types.ts
+│   │   │   ├── Button.stories.ts
+│   │   │   ├── Button.mock.ts
+│   │   │   └── index.ts
 │   │   └── ...
 │   ├── moleculas/
 │   ├── organismos/
 │   ├── templates/
+│   │   └── example-screen/
+│   │       ├── ExampleScreen.vue
+│   │       ├── ExampleScreen.types.ts
+│   │       ├── ExampleScreen.stories.ts
+│   │       ├── ExampleScreen.mock.ts
+│   │       └── index.ts
 │   └── pages/
-│       └── ExamplePage/
-│           ├── ExamplePage.vue          # Container
-│           ├── ExampleScreen.vue        # Presentation
-│           └── ExampleScreen.stories.ts # Storybook
+│       └── example-page/
+│           ├── ExamplePage.vue
+│           ├── ExamplePage.types.ts
+│           ├── ExamplePage.stories.ts
+│           ├── ExamplePage.mock.ts
+│           └── index.ts
 ├── store/
 ├── router/
 └── ...
