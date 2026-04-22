@@ -1,6 +1,6 @@
 {
   "name": "storytype",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Alias package for @storytype/cli - CLI tool for scaffolding Storytype components",
   "keywords": [
     "cli",
