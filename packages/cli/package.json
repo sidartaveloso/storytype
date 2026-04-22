@@ -54,8 +54,9 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:no-coverage": "vitest run",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
@@ -71,8 +72,9 @@
     "@types/handlebars": "^4.1.0",
     "@types/node": "^20.11.30",
     "@types/prompts": "^2.4.9",
+    "@vitest/coverage-v8": "^4.1.5",
     "tsup": "^8.0.2",
     "typescript": "^5.4.5",
-    "vitest": "^1.6.0"
+    "vitest": "^4.1.5"
   }
 }

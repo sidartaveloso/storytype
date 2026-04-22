@@ -18,8 +18,11 @@ export default defineConfig({
   // Workers paralelos
   workers: process.env.CI ? 1 : undefined,
 
-  // Reporter
-  reporter: 'html',
+  // Reporters: HTML e JSON salvos em arquivos
+  reporter: [
+    ['html', { outputFolder: 'playwright-report' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+  ],
 
   use: {
     // URL base para os testes
