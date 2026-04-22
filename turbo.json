@@ -1,5 +1,5 @@
 {
-  "$schema": "https://turbo.build/schema.json",
+  "$schema": "https://v2-9-6.turborepo.dev/schema.json",
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
@@ -15,8 +15,8 @@
     },
     "test": {
       "dependsOn": ["build", "^build"],
-      "outputs": ["coverage/**"],
-      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx"]
+      "outputs": ["coverage/**", "playwright-report/**", "test-results/**"],
+      "inputs": ["src/**/*.tsx", "src/**/*.ts", "test/**/*.ts", "test/**/*.tsx", "tests/**/*.ts"]
     },
     "clean": {
       "cache": false
