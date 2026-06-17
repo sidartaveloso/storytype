@@ -625,6 +625,75 @@ const value = ref('');
       expect(tsComponentsItem!.fileIssues![0].fix).toContain('lang="ts"');
     });
 
+    it('should NOT count auxiliary files (.types.ts, .mock.ts, index.ts) as components', async () => {
+      // Cenário do bug: um componente acompanhado de arquivos auxiliares.
+      // Apenas o componente real deve contar para cobertura de testes/stories.
+      const projectPath = path.join(tempDir, 'project-with-aux-files');
+      const componentDir = path.join(projectPath, 'src', 'components', 'atoms', 'Button');
+      await fs.ensureDir(componentDir);
+
+      await fs.writeFile(
+        path.join(projectPath, 'tsconfig.json'),
+        JSON.stringify({ compilerOptions: { strict: true } }, null, 2)
+      );
+
+      // Componente real (1)
+      await fs.writeFile(
+        path.join(componentDir, 'Button.vue'),
+        `<template>
+  <button>Click me</button>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+const count = ref<number>(0);
+</script>`
+      );
+
+      // Arquivos auxiliares que NÃO devem contar como componentes
+      await fs.writeFile(
+        path.join(componentDir, 'Button.types.ts'),
+        `export interface ButtonProps { label: string }`
+      );
+      await fs.writeFile(
+        path.join(componentDir, 'Button.mock.ts'),
+        `export const buttonMock = { label: 'Mock' };`
+      );
+      await fs.writeFile(
+        path.join(componentDir, 'index.ts'),
+        `export { default } from './Button.vue';`
+      );
+
+      // Teste e story do componente real (cobertura completa)
+      await fs.writeFile(
+        path.join(componentDir, 'Button.spec.ts'),
+        `import { describe, it } from 'vitest'; describe('Button', () => { it('works', () => {}); });`
+      );
+      await fs.writeFile(
+        path.join(componentDir, 'Button.stories.ts'),
+        `export default { title: 'Button' };`
+      );
+
+      const result = await analyzeProject(projectPath);
+
+      // TypeScript: apenas 1 componente deve ser contado (não 4)
+      const tsCategory = result.categories.find(c => c.name === 'TypeScript');
+      const tsComponentsItem = tsCategory!.items.find(i => i.name === 'Componentes TypeScript');
+      expect(tsComponentsItem!.message).toContain('1/1');
+
+      // Testes e Stories: cobertura 1/1 (100%), sem auxiliares apontados como faltantes
+      const testsCategory = result.categories.find(c => c.name === 'Testes e Stories');
+      expect(testsCategory).toBeDefined();
+
+      const testsItem = testsCategory!.items.find(i => i.name === 'Cobertura de testes');
+      expect(testsItem!.message).toContain('1/1');
+      expect(testsItem!.fileIssues ?? []).toHaveLength(0);
+
+      const storiesItem = testsCategory!.items.find(i => i.name === 'Cobertura de stories');
+      expect(storiesItem!.message).toContain('1/1');
+      expect(storiesItem!.fileIssues ?? []).toHaveLength(0);
+    });
+
     it('should score medium when only some .vue files use lang="ts"', async () => {
       // Setup: Create project with mixed TypeScript usage
       const projectPath = path.join(tempDir, 'project-mixed-ts');
