@@ -47,6 +47,18 @@ const ATOMIC_LEVELS = ['atoms', 'molecules', 'organisms', 'templates', 'pages'];
 const COMPONENT_EXTENSIONS = ['.vue', '.tsx', '.ts'];
 const STORY_PATTERNS = ['.stories.ts', '.stories.tsx', '.story.ts', '.story.tsx'];
 const TEST_PATTERNS = ['.spec.ts', '.spec.tsx', '.test.ts', '.test.tsx'];
+// Arquivos auxiliares que acompanham um componente mas não são componentes em si.
+// Não devem ser contados como componentes separados (ex.: cobertura de testes/stories).
+const AUXILIARY_PATTERNS = [
+  '.types.ts',
+  '.types.tsx',
+  '.mock.ts',
+  '.mock.tsx',
+  '.mocks.ts',
+  '.mocks.tsx',
+];
+// Arquivos de barril (re-exportação) que não representam um componente.
+const BARREL_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
 
 /**
  * Analyze a project directory
@@ -553,10 +565,13 @@ function findAllComponents(dir: string): string[] {
       } else if (entry.isFile()) {
         const ext = path.extname(entry.name);
         if (COMPONENT_EXTENSIONS.includes(ext)) {
-          // Exclude test and story files
+          // Exclude test, story, auxiliary (.types/.mock) and barrel (index) files,
+          // que não são componentes em si e não devem ser contados separadamente.
           const isTest = TEST_PATTERNS.some(pattern => entry.name.includes(pattern));
           const isStory = STORY_PATTERNS.some(pattern => entry.name.includes(pattern));
-          if (!isTest && !isStory) {
+          const isAuxiliary = AUXILIARY_PATTERNS.some(pattern => entry.name.endsWith(pattern));
+          const isBarrel = BARREL_FILES.includes(entry.name);
+          if (!isTest && !isStory && !isAuxiliary && !isBarrel) {
             components.push(fullPath);
           }
         }
