@@ -726,7 +726,7 @@ Documentação                           Status
 Qualidade                              Status
 ─────────────────────────────────────────────
 ✅ Funciona no Storybook                [✓]
-✅ Zero erros ESLint                    [✓]
+✅ Zero erros de lint (Biome)           [✓]
 ✅ Acessibilidade (ARIA)                [✓]
 ✅ Responsividade                       [✓]
 

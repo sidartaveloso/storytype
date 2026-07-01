@@ -61,7 +61,6 @@ This monorepo contains the following packages:
 - **[@storytype/cli](./packages/cli)** — CLI tool for scaffolding components (main package)
 - **[storytype](./packages/storytype)** — Alias package for easier installation
 - **[@storytype/core](./packages/core)** — Core pattern documentation and guidelines
-- **[@storytype/eslint-plugin](./packages/eslint-plugin)** — ESLint rules for pattern enforcement
 - **[docs](./docs)** — VitePress documentation site (multilingual)
 
 ## 🏗️ Project Structure
@@ -70,8 +69,7 @@ This monorepo contains the following packages:
 storytype/
 ├── packages/
 │   ├── core/           # Core documentation
-│   ├── cli/            # CLI tool
-│   └── eslint-plugin/  # ESLint plugin
+│   └── cli/            # CLI tool
 ├── docs/               # VitePress docs (i18n)
 ├── examples/           # Example projects
 ├── .tool-versions      # asdf version management

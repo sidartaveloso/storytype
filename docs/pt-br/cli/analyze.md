@@ -277,18 +277,21 @@ Ações recomendadas:
 
 ## Integração com Outras Ferramentas
 
-### ESLint
+### Biome
 
-Após normalizar, configure ESLint para manter padrão:
+Após normalizar, configure Biome para manter o padrão:
 
-```javascript
-// .eslintrc.js
-module.exports = {
-  rules: {
-    'vue/component-name-in-template-casing': ['error', 'PascalCase'],
-    'vue/multi-word-component-names': 'error',
-  },
-};
+```json
+// biome.json
+{
+  "linter": {
+    "rules": {
+      "style": {
+        "useNamingConvention": "info"
+      }
+    }
+  }
+}
 ```
 
 ### TypeScript

@@ -1,6 +1,6 @@
 # Task 003 — Utilitário para corrigir padrão de nomes de arquivos
 
-Status: completed
+Status: done
 Type: feat
 Assignee: Sidarta Veloso
 

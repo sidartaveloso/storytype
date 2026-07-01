@@ -29,9 +29,7 @@ export interface GeneratePackageOptions {
 }
 
 export type GenerateOptions =
-  | GenerateComponentOptions
-  | GeneratePageOptions
-  | GeneratePackageOptions;
+  GenerateComponentOptions | GeneratePageOptions | GeneratePackageOptions;
 
 export interface GenerateResult {
   success: boolean;

@@ -123,7 +123,7 @@ Storytype é projetado para desenvolvimento moderno com Vue 3:
 - **Storybook 10+** para desenvolvimento e documentação de componentes
 - **Quasar 2+** (opcional) para componentes de UI
 - **Vitest** para testes unitários
-- **ESLint** com regras personalizadas para garantir o padrão
+- **Biome** para linting rápido e estilo de código consistente
 
 ## Para Quem é Isso?
 
