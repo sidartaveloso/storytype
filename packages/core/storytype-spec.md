@@ -1839,41 +1839,33 @@ Antes de criar PR, verifique:
 #### Qualidade
 
 - [ ] Zero erros TypeScript
-- [ ] Zero erros ESLint
+- [ ] Zero erros de lint (Biome)
 - [ ] Sem `any` explícito
 - [ ] Sem `@ts-ignore`
 - [ ] Componente funciona no Storybook
 
 ### 10.2 Linting
 
-**ESLint config (.eslintrc.js):**
+**Biome config (biome.json):**
 
-```javascript
-module.exports = {
-  extends: ['plugin:vue/vue3-recommended', '@vue/typescript/recommended', 'prettier'],
-  rules: {
-    // Vue
-    'vue/multi-word-component-names': 'error',
-    'vue/component-name-in-template-casing': ['error', 'PascalCase'],
-    'vue/require-default-prop': 'off', // withDefaults cuida disso
-    'vue/require-prop-types': 'off', // TypeScript cuida disso
-
-    // TypeScript
-    '@typescript-eslint/no-explicit-any': 'error',
-    '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/consistent-type-imports': 'error',
-
-    // Imports
-    'import/order': [
-      'error',
-      {
-        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-        'newlines-between': 'always',
-        alphabetize: { order: 'asc' },
+```json
+{
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "style": {
+        "noParameterAssign": "error",
+        "useConst": "error"
       },
-    ],
-  },
-};
+      "correctness": {
+        "noUnusedVariables": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "error"
+      }
+    }
+  }
+}
 ```
 
 ### 10.3 TypeScript
@@ -2318,8 +2310,8 @@ Ver seção [8.4 Presentation (Screen)](#84-presentation-screen) para exemplo co
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "lint": "eslint --ext .js,.ts,.vue src",
-    "lint:fix": "eslint --ext .js,.ts,.vue src --fix",
+    "lint": "biome lint src",
+    "lint:fix": "biome lint --write src",
     "type-check": "vue-tsc --noEmit"
   }
 }

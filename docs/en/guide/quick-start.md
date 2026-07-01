@@ -485,20 +485,6 @@ Now that you have Storytype set up, you can:
 
 ## Troubleshooting
 
-### ESLint Errors
-
-If you see ESLint errors about the pattern:
-
-```bash
-# Install ESLint plugin
-pnpm add -D @storytype/eslint-plugin
-
-# Add to .eslintrc.js
-module.exports = {
-  extends: ['plugin:@storytype/recommended'],
-};
-```
-
 ### Storybook Not Starting
 
 Ensure you have the correct dependencies:
