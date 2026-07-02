@@ -36,6 +36,6 @@
     "README.md"
   ],
   "dependencies": {
-    "@storytype/cli": "workspace:*"
+    "@storytype/cli": "^0.2.5"
   }
 }
