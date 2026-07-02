@@ -22,6 +22,8 @@ storytype analyze [caminho] [opções]
 | `--verbose` | Saída detalhada com todos os componentes | `false` |
 | `--json`    | Saída em formato JSON                    | `false` |
 
+> **Suporte a monorepo:** O `analyze` suporta estruturas de monorepo. Ele primeiro verifica diretórios comuns (`src/components`, `components`, `src/views`, `app/components`) e, se nenhum for encontrado, varre recursivamente o projeto por arquivos `.vue` — funciona com TurboRepo, Nx, pnpm workspaces e qualquer estrutura personalizada.
+
 ## O Que o Analyze Detecta?
 
 ### 📊 Análise Estrutural

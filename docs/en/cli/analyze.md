@@ -8,6 +8,8 @@ The `analyze` command analyzes your project structure and identifies problems, i
 storytype analyze [path] [options]
 ```
 
+> **Monorepo support:** `analyze` supports monorepo structures. It first checks common directories (`src/components`, `components`, `src/views`, `app/components`), and if none are found, recursively scans the project for `.vue` files — works with TurboRepo, Nx, pnpm workspaces, and any custom layout.
+
 ## What Analyze Detects
 
 ### 📊 Structural Analysis
