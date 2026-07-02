@@ -519,8 +519,11 @@ async function analyzeDocumentation(projectPath: string, spinner: Ora): Promise<
 
 /**
  * Helper: Find components directory
+ * First checks common paths, then falls back to scanning for ANY directory with .vue files.
+ * This ensures monorepo structures (packages/, apps/, libs/) are supported.
  */
 function findComponentsDirectory(projectPath: string): string | null {
+  // Check common paths first (fast path)
   const possiblePaths = [
     path.join(projectPath, 'src', 'components'),
     path.join(projectPath, 'components'),
@@ -534,7 +537,50 @@ function findComponentsDirectory(projectPath: string): string | null {
     }
   }
 
+  // Fallback: scan the project for any directory containing .vue files
+  // This matches the normalize command's recursive detection
+  const vueDirs = findVueComponentDirectories(projectPath);
+  if (vueDirs.length > 0) {
+    // If components are in a monorepo layout, return project root so findAllComponents walks all
+    return projectPath;
+  }
+
   return null;
+}
+
+/**
+ * Scan a directory recursively for folders containing .vue component files
+ */
+function findVueComponentDirectories(dir: string): string[] {
+  const results: string[] = [];
+
+  function walk(currentDir: string) {
+    if (!fs.existsSync(currentDir)) return;
+
+    try {
+      const entries = fs.readdirSync(currentDir, { withFileTypes: true });
+
+      // Check if this dir has .vue files
+      const hasVue = entries.some(e => e.isFile() && e.name.endsWith('.vue'));
+      if (hasVue) {
+        results.push(currentDir);
+        // Don't recurse into component directories
+        return;
+      }
+
+      // Recurse into subdirectories
+      for (const entry of entries) {
+        if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+          walk(path.join(currentDir, entry.name));
+        }
+      }
+    } catch {
+      // Skip directories we can't read
+    }
+  }
+
+  walk(dir);
+  return results;
 }
 
 /**

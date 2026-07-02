@@ -262,6 +262,55 @@ storytype normalize src/components/moleculas
 storytype normalize src/components
 ```
 
+## Suporte a Monorepo
+
+O comando `normalize` funciona com estruturas de monorepo como TurboRepo, Nx e pnpm workspaces.
+
+**Como funciona:**
+
+1. Varre **recursivamente** a partir do caminho informado (ou diretório atual)
+2. Pastas container (`packages/`, `apps/`, `libs/`) são **preservadas**
+3. Apenas diretórios que contêm arquivos `.vue` são tratados como componentes
+4. Diretórios de componentes são normalizados para `kebab-case`
+5. Diretórios que não são componentes (como `srv/`, `services/`, `types/`) nunca são renomeados
+
+**Exemplo TurboRepo:**
+
+```
+workspace/
+├── packages/
+│   ├── ui/src/components/Button/     → packages/ui/src/components/button/
+│   └── shared/components/srv/        → preservado (srv/ mantido)
+└── apps/
+    └── web/src/components/Dashboard/ → apps/web/src/components/dashboard/
+```
+
+**Exemplo Nx:**
+
+```
+monorepo/
+├── libs/ui/src/lib/Button/           → libs/ui/src/lib/button/
+└── apps/frontend/app/components/Header/ → apps/frontend/app/components/header/
+```
+
+**Estrutura app-based:**
+
+```
+project/app/components/
+├── srv/                              → preservado (diretório de convenção)
+└── Header/                           → header/
+```
+
+Para normalizar todos os componentes de uma vez:
+
+```bash
+# A partir da raiz do monorepo
+storytype normalize . --dry-run
+
+# Ou um workspace específico
+storytype normalize packages/ui --dry-run
+```
+
 ## Integração com Git
 
 O normalize detecta automaticamente se os arquivos estão rastreados pelo Git:
