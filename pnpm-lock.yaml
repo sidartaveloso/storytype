@@ -20,6 +20,11 @@ overrides:
   vite@<=6.4.2: '>=6.4.3'
   vitest@<3.2.6: '>=3.2.6'
 
+patchedDependencies:
+  vitepress@1.6.4:
+    hash: 2085bdd751d7e638928a47d94b2513481c8bfa525bf13b6aa43d7355e680919b
+    path: patches/vitepress@1.6.4.patch
+
 importers:
 
   .:
@@ -81,7 +86,7 @@ importers:
         version: 1.61.1
       vitepress:
         specifier: ^1.0.2
-        version: 1.6.4(@algolia/client-search@5.55.1)(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.6.1)(postcss@8.5.16)(search-insights@2.17.3)(typescript@6.0.3)
+        version: 1.6.4(patch_hash=2085bdd751d7e638928a47d94b2513481c8bfa525bf13b6aa43d7355e680919b)(@algolia/client-search@5.55.1)(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.6.1)(postcss@8.5.16)(search-insights@2.17.3)(typescript@6.0.3)
       vue:
         specifier: ^3.4.21
         version: 3.5.39(typescript@6.0.3)
@@ -7992,7 +7997,7 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.6.1
 
-  vitepress@1.6.4(@algolia/client-search@5.55.1)(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.6.1)(postcss@8.5.16)(search-insights@2.17.3)(typescript@6.0.3):
+  vitepress@1.6.4(patch_hash=2085bdd751d7e638928a47d94b2513481c8bfa525bf13b6aa43d7355e680919b)(@algolia/client-search@5.55.1)(@types/node@20.19.43)(esbuild@0.28.1)(jiti@2.6.1)(postcss@8.5.16)(search-insights@2.17.3)(typescript@6.0.3):
     dependencies:
       '@docsearch/css': 3.8.2
       '@docsearch/js': 3.8.2(@algolia/client-search@5.55.1)(search-insights@2.17.3)
