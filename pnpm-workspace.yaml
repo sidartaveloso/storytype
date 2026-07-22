@@ -19,3 +19,5 @@ overrides:
   vite@<=6.4.1: '>=6.4.2'
   vite@<=6.4.2: '>=6.4.3'
   vitest@<3.2.6: '>=3.2.6'
+patchedDependencies:
+  vitepress@1.6.4: patches/vitepress@1.6.4.patch
