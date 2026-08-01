@@ -1,17 +1,18 @@
 #!/usr/bin/env node
+
 /**
  * @storytype/cli
  * CLI tool for scaffolding Storytype components
  */
 
+import chalk from 'chalk';
 import { Command } from 'commander';
 import path from 'path';
 import { version } from '../package.json';
 import { analyzeProject, displayResults } from './analyzer.js';
+import type { ComponentLevel } from './generate/Generate.types.js';
 import { generateComponent } from './generate/index.js';
 import { normalizeComponents } from './normalize-components/index.js';
-import type { ComponentLevel } from './generate/Generate.types.js';
-import chalk from 'chalk';
 
 const program = new Command();
 
@@ -110,6 +111,18 @@ program
           console.log(chalk.gray(`Diretórios a renomear: ${result.directoriesToRename}`));
           console.log(chalk.gray(`Arquivos a renomear: ${result.filesToRename}`));
           console.log(chalk.gray(`Arquivos a criar: ${result.filesToCreate}`));
+          if (result.importsToUpdate > 0) {
+            console.log(chalk.gray(`Imports a atualizar: ${result.importsToUpdate}`));
+          }
+          if (result.skippedDirectories.length > 0 && (options?.dryRun || options?.verbose)) {
+            console.log(chalk.gray(`Diretórios ignorados: ${result.skippedDirectories.length}`));
+          }
+
+          const cwd = process.cwd();
+          const relativePath = (absolutePath: string) => {
+            const rel = path.relative(cwd, absolutePath);
+            return rel.startsWith('..') ? absolutePath : rel;
+          };
 
           // Show detailed changes in dry-run mode or verbose mode
           if (
@@ -117,12 +130,6 @@ program
             result.directoriesToRename + result.filesToRename + result.filesToCreate > 0
           ) {
             console.log(chalk.cyan('\n📋 Mudanças detalhadas:\n'));
-
-            const cwd = process.cwd();
-            const relativePath = (absolutePath: string) => {
-              const rel = path.relative(cwd, absolutePath);
-              return rel.startsWith('..') ? absolutePath : rel;
-            };
 
             result.components.forEach(comp => {
               const hasChanges =
@@ -164,6 +171,20 @@ program
                   });
                 }
               }
+            });
+
+            result.importReferences.forEach(ref => {
+              console.log(chalk.yellow(`    🔗 Atualizar import:`));
+              console.log(chalk.gray(`       ${relativePath(ref.filePath)}`));
+              console.log(chalk.gray(`       ${ref.currentImport} → ${ref.newImport}`));
+            });
+          }
+
+          if (result.skippedDirectories.length > 0 && (options?.dryRun || options?.verbose)) {
+            console.log(chalk.yellow('\n⚠️  Diretórios ignorados:\n'));
+            result.skippedDirectories.forEach(skip => {
+              console.log(chalk.gray(`  • ${relativePath(skip.path)}`));
+              console.log(chalk.dim(`    Motivo: ${skip.reason}`));
             });
           }
 

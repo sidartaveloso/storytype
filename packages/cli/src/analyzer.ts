@@ -3,10 +3,19 @@
  * Analyzes and scores projects based on Storytype best practices
  */
 
-import fs from 'fs-extra';
-import path from 'path';
 import chalk from 'chalk';
+import fs from 'fs-extra';
 import ora, { type Ora } from 'ora';
+import path from 'path';
+import {
+  ATOMIC_LEVELS,
+  AUXILIARY_PATTERNS,
+  BARREL_FILES,
+  COMPONENT_EXTENSIONS,
+  isComponentFile,
+  STORY_PATTERNS,
+  TEST_PATTERNS,
+} from './component-detector.js';
 
 export interface AnalysisResult {
   score: number;
@@ -42,23 +51,6 @@ export interface CheckItem {
 export interface DisplayOptions {
   verbose?: boolean;
 }
-
-const ATOMIC_LEVELS = ['atoms', 'molecules', 'organisms', 'templates', 'pages'];
-const COMPONENT_EXTENSIONS = ['.vue', '.tsx', '.ts'];
-const STORY_PATTERNS = ['.stories.ts', '.stories.tsx', '.story.ts', '.story.tsx'];
-const TEST_PATTERNS = ['.spec.ts', '.spec.tsx', '.test.ts', '.test.tsx'];
-// Arquivos auxiliares que acompanham um componente mas não são componentes em si.
-// Não devem ser contados como componentes separados (ex.: cobertura de testes/stories).
-const AUXILIARY_PATTERNS = [
-  '.types.ts',
-  '.types.tsx',
-  '.mock.ts',
-  '.mock.tsx',
-  '.mocks.ts',
-  '.mocks.tsx',
-];
-// Arquivos de barril (re-exportação) que não representam um componente.
-const BARREL_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
 
 /**
  * Analyze a project directory
@@ -560,15 +552,12 @@ function findVueComponentDirectories(dir: string): string[] {
     try {
       const entries = fs.readdirSync(currentDir, { withFileTypes: true });
 
-      // Check if this dir has .vue files
-      const hasVue = entries.some(e => e.isFile() && e.name.endsWith('.vue'));
-      if (hasVue) {
+      const hasComponents = entries.some(e => e.isFile() && isComponentFile(e.name));
+      if (hasComponents) {
         results.push(currentDir);
-        // Don't recurse into component directories
         return;
       }
 
-      // Recurse into subdirectories
       for (const entry of entries) {
         if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
           walk(path.join(currentDir, entry.name));
@@ -605,22 +594,10 @@ function findAllComponents(dir: string): string[] {
       const fullPath = path.join(currentDir, entry.name);
 
       if (entry.isDirectory()) {
-        // Skip node_modules and hidden directories
         if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
         walk(fullPath);
-      } else if (entry.isFile()) {
-        const ext = path.extname(entry.name);
-        if (COMPONENT_EXTENSIONS.includes(ext)) {
-          // Exclude test, story, auxiliary (.types/.mock) and barrel (index) files,
-          // que não são componentes em si e não devem ser contados separadamente.
-          const isTest = TEST_PATTERNS.some(pattern => entry.name.includes(pattern));
-          const isStory = STORY_PATTERNS.some(pattern => entry.name.includes(pattern));
-          const isAuxiliary = AUXILIARY_PATTERNS.some(pattern => entry.name.endsWith(pattern));
-          const isBarrel = BARREL_FILES.includes(entry.name);
-          if (!isTest && !isStory && !isAuxiliary && !isBarrel) {
-            components.push(fullPath);
-          }
-        }
+      } else if (entry.isFile() && isComponentFile(entry.name)) {
+        components.push(fullPath);
       }
     }
   }
@@ -632,7 +609,10 @@ function findAllComponents(dir: string): string[] {
 /**
  * Helper: Count components by language
  */
-function countComponentsByLanguage(dir: string): { total: number; typescript: number } {
+function countComponentsByLanguage(dir: string): {
+  total: number;
+  typescript: number;
+} {
   const components = findAllComponents(dir);
   const typescript = components.filter(
     file => file.endsWith('.ts') || file.endsWith('.tsx')

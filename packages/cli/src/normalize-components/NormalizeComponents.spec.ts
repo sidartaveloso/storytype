@@ -1,18 +1,27 @@
 /**
  * Tests for component normalization utility
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import path from 'path';
+
+import { exec } from 'child_process';
 import fs from 'fs-extra';
 import os from 'os';
+import path from 'path';
+import { promisify } from 'util';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   analyzeComponentStructure,
+  isGitTracked,
   normalizeComponents,
   toKebabCase,
   toPascalCase,
-  isGitTracked,
 } from './NormalizeComponents';
-import type { NormalizeOptions, ComponentDirectory } from './NormalizeComponents.types';
+import type {
+  ComponentDirectory,
+  ImportReference,
+  NormalizeOptions,
+} from './NormalizeComponents.types';
+
+const execAsync = promisify(exec);
 
 describe('NormalizeComponents - Naming Conversions', () => {
   describe('toKebabCase', () => {
@@ -730,5 +739,919 @@ describe('NormalizeComponents - Monorepo Support', () => {
         expect(component.targetPath).toContain('/app/');
       });
     });
+  });
+
+  describe('NormalizeComponents - Monorepo Import Adjustment and Execution', () => {
+    let tempDir: string;
+
+    beforeEach(async () => {
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-monorepo-exec-'));
+    });
+
+    afterEach(async () => {
+      await fs.remove(tempDir);
+    });
+
+    it('should execute directory rename in monorepo structure', async () => {
+      const buttonDir = path.join(tempDir, 'packages', 'ui', 'src', 'UserProfile');
+      await fs.ensureDir(buttonDir);
+      await fs.writeFile(
+        path.join(buttonDir, 'UserProfile.vue'),
+        '<template><div>Profile</div></template>'
+      );
+
+      const options: NormalizeOptions = {
+        path: tempDir,
+        dryRun: false,
+      };
+
+      const result = await normalizeComponents(options);
+
+      expect(result.success).toBe(true);
+      expect(result.directoriesToRename).toBe(1);
+
+      const newDir = path.join(tempDir, 'packages', 'ui', 'src', 'user-profile');
+      const newExists = await fs.pathExists(newDir);
+      expect(newExists).toBe(true);
+
+      const vueExists = await fs.pathExists(path.join(newDir, 'UserProfile.vue'));
+      expect(vueExists).toBe(true);
+    });
+
+    it('should adjust barrel import in monorepo component directory', async () => {
+      const componentDir = path.join(tempDir, 'libs', 'ui', 'src', 'lib', 'user-profile');
+      await fs.ensureDir(componentDir);
+      await fs.writeFile(
+        path.join(componentDir, 'userProfile.vue'),
+        '<template><div>User</div></template>'
+      );
+      await fs.writeFile(
+        path.join(componentDir, 'index.ts'),
+        "export { default } from './userProfile.vue';\n"
+      );
+
+      const options: NormalizeOptions = {
+        path: tempDir,
+        dryRun: false,
+      };
+
+      const result = await normalizeComponents(options);
+
+      expect(result.success).toBe(true);
+      expect(result.importsToUpdate).toBeGreaterThan(0);
+
+      const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+      expect(indexContent).toContain("'./UserProfile.vue'");
+      expect(indexContent).not.toContain("'./userProfile.vue'");
+    });
+
+    it('should detect and report .ts component in monorepo structure', async () => {
+      const componentDir = path.join(
+        tempDir,
+        'apps',
+        'frontend',
+        'components',
+        'taskin-effect-hearts'
+      );
+      await fs.ensureDir(componentDir);
+      await fs.writeFile(
+        path.join(componentDir, 'taskin-effect-hearts.ts'),
+        'export const hearts = () => {};'
+      );
+      await fs.writeFile(
+        path.join(componentDir, 'index.ts'),
+        "export * from './taskin-effect-hearts';\n"
+      );
+
+      const options: NormalizeOptions = {
+        path: tempDir,
+        dryRun: true,
+      };
+
+      const result = await analyzeComponentStructure(options);
+
+      expect(result.success).toBe(true);
+      expect(result.components.length).toBeGreaterThan(0);
+
+      const component = result.components[0];
+      expect(component.componentName).toBe('TaskinEffectHearts');
+      expect(result.importsToUpdate).toBeGreaterThan(0);
+    });
+
+    it('should report skipped directories in verbose dry-run on monorepo', async () => {
+      const atomsDir = path.join(tempDir, 'packages', 'ui', 'src', 'atoms');
+      await fs.ensureDir(atomsDir);
+      await fs.writeFile(
+        path.join(atomsDir, 'Button.vue'),
+        '<template><div>Button</div></template>'
+      );
+
+      const options: NormalizeOptions = {
+        path: tempDir,
+        dryRun: true,
+        verbose: true,
+      };
+
+      const result = await analyzeComponentStructure(options);
+
+      expect(result.success).toBe(true);
+      expect(result.components.length).toBe(0);
+      expect(result.skippedDirectories.length).toBeGreaterThan(0);
+
+      const atomsSkip = result.skippedDirectories.find(s => s.path.includes('atoms'));
+      expect(atomsSkip).toBeDefined();
+      expect(atomsSkip?.reason).toContain('Atomic Design');
+    });
+
+    it('should handle full pipeline in monorepo: rename + imports + .ts', async () => {
+      const componentDir = path.join(tempDir, 'packages', 'design-system', 'src', 'my-component');
+      await fs.ensureDir(componentDir);
+      await fs.writeFile(
+        path.join(componentDir, 'my-component.ts'),
+        'export const comp = () => {};'
+      );
+      await fs.writeFile(path.join(componentDir, 'index.ts'), "export * from './my-component';\n");
+
+      const options: NormalizeOptions = {
+        path: tempDir,
+        dryRun: false,
+      };
+
+      const result = await normalizeComponents(options);
+
+      expect(result.success).toBe(true);
+      expect(result.filesToRename).toBeGreaterThan(0);
+      expect(result.importsToUpdate).toBeGreaterThan(0);
+
+      const tsExists = await fs.pathExists(path.join(componentDir, 'MyComponent.ts'));
+      expect(tsExists).toBe(true);
+
+      const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+      expect(indexContent).toContain("'./MyComponent'");
+      expect(indexContent).not.toContain("'./my-component'");
+    });
+  });
+});
+
+describe('NormalizeComponents - Import Adjustment', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-import-test-'));
+  });
+
+  afterEach(async () => {
+    await fs.remove(tempDir);
+  });
+
+  it('should detect import that needs updating when file is renamed', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './userProfile.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+    expect(result.importsToUpdate).toBeGreaterThan(0);
+    expect(result.importReferences.length).toBeGreaterThan(0);
+
+    const importRef = result.importReferences[0];
+    expect(importRef.filePath).toContain('index.ts');
+    expect(importRef.currentImport).toContain('userProfile.vue');
+    expect(importRef.newImport).toContain('UserProfile.vue');
+  });
+
+  it('should detect barrel export that needs updating when file is renamed', async () => {
+    const componentDir = path.join(tempDir, 'taskin-effect-hearts');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'taskin-effect-hearts.vue'),
+      '<template><div>hearts</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export * from './taskin-effect-hearts.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+    const importRefs = result.importReferences.filter((r: ImportReference) =>
+      r.filePath.includes('index.ts')
+    );
+    expect(importRefs.length).toBeGreaterThan(0);
+    expect(importRefs[0].currentImport).toContain('taskin-effect-hearts');
+    expect(importRefs[0].newImport).toContain('TaskinEffectHearts');
+  });
+
+  it('should detect multiple imports across sibling files', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './userProfile.vue';\n"
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'UserProfile.stories.ts'),
+      "import UserProfile from './userProfile.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+    expect(result.importsToUpdate).toBeGreaterThanOrEqual(2);
+    expect(result.importReferences.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('should not report imports when no files need renaming', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'UserProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './UserProfile.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+    expect(result.importsToUpdate).toBe(0);
+    expect(result.importReferences.length).toBe(0);
+  });
+
+  it('should update imports in files when normalizing', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './userProfile.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./UserProfile.vue'");
+    expect(indexContent).not.toContain("'./userProfile.vue'");
+
+    const vueExists = await fs.pathExists(path.join(componentDir, 'UserProfile.vue'));
+    expect(vueExists).toBe(true);
+  });
+
+  it('should update barrel export from kebab-case to PascalCase on normalize', async () => {
+    const componentDir = path.join(tempDir, 'taskin-effect-hearts');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'taskin-effect-hearts.vue'),
+      '<template><div>hearts</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './taskin-effect-hearts.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./TaskinEffectHearts.vue'");
+    expect(indexContent).not.toContain("'./taskin-effect-hearts.vue'");
+
+    const vueExists = await fs.pathExists(path.join(componentDir, 'TaskinEffectHearts.vue'));
+    expect(vueExists).toBe(true);
+  });
+
+  it('should report imports in dry-run without modifying files', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './userProfile.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+    expect(result.importsToUpdate).toBeGreaterThan(0);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./userProfile.vue'");
+    expect(indexContent).not.toContain("'./UserProfile.vue'");
+
+    const oldFileExists = await fs.pathExists(path.join(componentDir, 'userProfile.vue'));
+    expect(oldFileExists).toBe(true);
+  });
+});
+
+describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-ts-test-'));
+  });
+
+  afterEach(async () => {
+    await fs.remove(tempDir);
+  });
+
+  it('should detect .ts component without .vue file', async () => {
+    const componentDir = path.join(tempDir, 'taskin-effect-hearts');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'taskin-effect-hearts.ts'),
+      'export const hearts = () => {};'
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+    expect(result.components.length).toBeGreaterThan(0);
+
+    const component = result.components[0];
+    expect(component.componentName).toBe('TaskinEffectHearts');
+    expect(component.files.some(f => f.type === 'component')).toBe(true);
+  });
+
+  it('should detect .tsx component without .vue file', async () => {
+    const componentDir = path.join(tempDir, 'render-function');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'render-function.tsx'),
+      'export const render = () => <div/>;'
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+    expect(result.components.length).toBeGreaterThan(0);
+  });
+
+  it('should detect mixed .vue and .ts components in same project', async () => {
+    const vueDir = path.join(tempDir, 'vue-component');
+    await fs.ensureDir(vueDir);
+    await fs.writeFile(
+      path.join(vueDir, 'vue-component.vue'),
+      '<template><div>Vue</div></template>'
+    );
+
+    const tsDir = path.join(tempDir, 'ts-component');
+    await fs.ensureDir(tsDir);
+    await fs.writeFile(path.join(tsDir, 'ts-component.ts'), 'export const comp = () => {};');
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+    expect(result.components.length).toBe(2);
+  });
+
+  it('should rename .ts file from kebab-case to PascalCase and adjust barrel', async () => {
+    const componentDir = path.join(tempDir, 'my-component');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(path.join(componentDir, 'my-component.ts'), 'export const comp = () => {};');
+    await fs.writeFile(path.join(componentDir, 'index.ts'), "export * from './my-component';\n");
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+
+    const tsExists = await fs.pathExists(path.join(componentDir, 'MyComponent.ts'));
+    expect(tsExists).toBe(true);
+
+    const oldExists = await fs.pathExists(path.join(componentDir, 'my-component.ts'));
+    expect(oldExists).toBe(false);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./MyComponent'");
+    expect(indexContent).not.toContain("'./my-component'");
+  });
+
+  it('should not treat Atomic Design level as component directory', async () => {
+    const moleculesDir = path.join(tempDir, 'molecules');
+    await fs.ensureDir(moleculesDir);
+    await fs.writeFile(
+      path.join(moleculesDir, 'SomeComponent.vue'),
+      '<template><div>Test</div></template>'
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    const moleculesComponent = result.components.find(
+      c => path.basename(c.currentPath) === 'molecules'
+    );
+    expect(moleculesComponent).toBeUndefined();
+  });
+
+  it('should not exclude non-atomic directory names', async () => {
+    const componentDir = path.join(tempDir, 'user-area');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'UserArea.vue'),
+      '<template><div>User Area</div></template>'
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    const userAreaComponent = result.components.find(
+      c => path.basename(c.currentPath) === 'user-area'
+    );
+    expect(userAreaComponent).toBeDefined();
+  });
+
+  it('should detect atomic level with properly nested component subdirectories', async () => {
+    const atomsDir = path.join(tempDir, 'atoms');
+    await fs.ensureDir(atomsDir);
+    const buttonDir = path.join(atomsDir, 'Button');
+    await fs.ensureDir(buttonDir);
+    await fs.writeFile(
+      path.join(buttonDir, 'Button.vue'),
+      '<template><div>Button</div></template>'
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.components.length).toBe(1);
+    expect(result.components[0].componentName).toBe('Button');
+
+    const atomsAsComponent = result.components.find(c => path.basename(c.currentPath) === 'atoms');
+    expect(atomsAsComponent).toBeUndefined();
+  });
+
+  it('should handle atomic level with uppercase name', async () => {
+    const atomsDir = path.join(tempDir, 'Atoms');
+    await fs.ensureDir(atomsDir);
+    await fs.writeFile(path.join(atomsDir, 'Button.vue'), '<template><div>Button</div></template>');
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    const atomsComponent = result.components.find(c => path.basename(c.currentPath) === 'Atoms');
+    expect(atomsComponent).toBeUndefined();
+  });
+});
+
+describe('NormalizeComponents - Edge Cases', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-edge-test-'));
+  });
+
+  afterEach(async () => {
+    await fs.remove(tempDir);
+  });
+
+  it('should detect and update import without file extension', async () => {
+    const componentDir = path.join(tempDir, 'my-component');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'my-component.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './my-component';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./MyComponent'");
+  });
+
+  it('should detect and update double-quoted import', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      'export { default } from "./userProfile.vue";\n'
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain('"./UserProfile.vue"');
+    expect(indexContent).not.toContain('"./userProfile.vue"');
+  });
+
+  it('should detect import type syntax', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'user-profile.types.ts'),
+      'export interface UserProfileProps { name: string }'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "import type { UserProfileProps } from './user-profile.types';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+
+    const importRefs = result.importReferences.filter(r => r.filePath.includes('index.ts'));
+    expect(importRefs.length).toBeGreaterThan(0);
+    expect(importRefs[0].currentImport).toContain('user-profile.types');
+    expect(importRefs[0].newImport).toContain('UserProfile.types');
+  });
+
+  it('should detect named re-exports', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default as UserProfileComponent } from './userProfile.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./UserProfile.vue'");
+    expect(indexContent).toContain('default as UserProfileComponent');
+  });
+
+  it('should handle full pipeline: camelCase file in kebab-case dir with barrel', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './userProfile.vue';\n"
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'UserProfile.stories.ts'),
+      "import UserProfile from './userProfile.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+    expect(result.filesToRename).toBeGreaterThanOrEqual(1);
+    expect(result.importsToUpdate).toBeGreaterThanOrEqual(2);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./UserProfile.vue'");
+
+    const storiesContent = await fs.readFile(
+      path.join(componentDir, 'UserProfile.stories.ts'),
+      'utf-8'
+    );
+    expect(storiesContent).toContain("'./UserProfile.vue'");
+
+    const vueExists = await fs.pathExists(path.join(componentDir, 'UserProfile.vue'));
+    expect(vueExists).toBe(true);
+  });
+
+  it('should categorize .mocks.ts (plural) as mock type', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'user-profile.mocks.ts'),
+      'export const mocks = [];'
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+    };
+
+    const result = await analyzeComponentStructure(options);
+
+    expect(result.success).toBe(true);
+    const component = result.components[0];
+    const mockFile = component.files.find(f => f.currentPath.includes('.mocks.'));
+    expect(mockFile).toBeDefined();
+    expect(mockFile?.type).toBe('mock');
+    expect(mockFile?.targetPath).toContain('UserProfile.mocks.ts');
+  });
+
+  it('should handle special regex characters in component name', async () => {
+    const componentDir = path.join(tempDir, 'my-component');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'my+component.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './my+component.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+    expect(result.importsToUpdate).toBeGreaterThan(0);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./My+component.vue'");
+  });
+
+  it('should handle cross-referencing files both being renamed', async () => {
+    const componentDir = path.join(tempDir, 'user-profile');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.vue'),
+      '<template><div>Test</div></template>'
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'index.ts'),
+      "export { default } from './userProfile.vue';\n"
+    );
+    await fs.writeFile(
+      path.join(componentDir, 'userProfile.stories.ts'),
+      "import UserProfile from './userProfile.vue';\n"
+    );
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: false,
+    };
+
+    const result = await normalizeComponents(options);
+
+    expect(result.success).toBe(true);
+    expect(result.importsToUpdate).toBeGreaterThanOrEqual(2);
+
+    const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
+    expect(indexContent).toContain("'./UserProfile.vue'");
+
+    const storiesPath = path.join(componentDir, 'UserProfile.stories.ts');
+    const storiesExists = await fs.pathExists(storiesPath);
+    expect(storiesExists).toBe(true);
+
+    const storiesContent = await fs.readFile(storiesPath, 'utf-8');
+    expect(storiesContent).toContain("'./UserProfile.vue'");
+  });
+});
+
+describe('NormalizeComponents - Git History Preservation', () => {
+  let repoDir: string;
+
+  beforeEach(async () => {
+    repoDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-git-history-'));
+    await execAsync('git init -q', { cwd: repoDir });
+    await execAsync('git config user.email test@storytype.dev', {
+      cwd: repoDir,
+    });
+    await execAsync('git config user.name "Storytype Test"', { cwd: repoDir });
+    await execAsync('git config commit.gpgsign false', { cwd: repoDir });
+  });
+
+  afterEach(async () => {
+    await fs.remove(repoDir);
+  });
+
+  async function commitAll(message: string): Promise<void> {
+    await execAsync('git add -A', { cwd: repoDir });
+    await execAsync(`git commit -q -m "${message}"`, { cwd: repoDir });
+  }
+
+  /** Assuntos dos commits alcançáveis a partir do arquivo, seguindo renomeações. */
+  async function historyOf(relativePath: string): Promise<string[]> {
+    const { stdout } = await execAsync(`git log --follow --format=%s -- "${relativePath}"`, {
+      cwd: repoDir,
+    });
+    return stdout.trim().split('\n').filter(Boolean);
+  }
+
+  /** Cria um componente versionado com dois commits de historico. */
+  async function seedTrackedComponent(dirName: string): Promise<string> {
+    const componentDir = path.join(repoDir, 'components', 'atomos', dirName);
+    await fs.ensureDir(componentDir);
+    const vuePath = path.join(componentDir, `${dirName}.vue`);
+
+    await fs.writeFile(vuePath, '<template><div>v1</div></template>');
+    await commitAll('c1: cria componente');
+
+    await fs.writeFile(vuePath, '<template><div>v2</div></template>');
+    await commitAll('c2: altera componente');
+
+    return componentDir;
+  }
+
+  async function runNormalize(): Promise<void> {
+    const options: NormalizeOptions = {
+      path: path.join(repoDir, 'components'),
+      dryRun: false,
+      dirsOnly: false,
+      filesOnly: false,
+      verbose: false,
+    };
+    const result = await normalizeComponents(options);
+    expect(result.success).toBe(true);
+  }
+
+  it('should stage the move as a rename in the Git index', async () => {
+    // Esta e a garantia mais forte: o indice do Git precisa enxergar uma
+    // renomeacao (R), nao um delete seguido de um add sem relacao. E o que
+    // `gitMoveManual` reconcilia com `git rm --cached` + `git add`.
+    await seedTrackedComponent('UserProfile');
+
+    await runNormalize();
+
+    const { stdout } = await execAsync('git status --porcelain', {
+      cwd: repoDir,
+    });
+    const renameEntry = stdout.split('\n').find(line => line.startsWith('R'));
+
+    expect(renameEntry).toBeDefined();
+    expect(renameEntry).toContain('UserProfile/UserProfile.vue');
+    expect(renameEntry).toContain('user-profile/UserProfile.vue');
+  });
+
+  it('should keep history reachable after a directory rename', async () => {
+    await seedTrackedComponent('UserProfile');
+
+    await runNormalize();
+    await commitAll('normalize: UserProfile -> user-profile');
+
+    const history = await historyOf('components/atomos/user-profile/UserProfile.vue');
+
+    expect(history).toContain('c1: cria componente');
+    expect(history).toContain('c2: altera componente');
+  });
+
+  it('should keep history reachable after a case-only rename', async () => {
+    // Caminho mais arriscado: em filesystem case-insensitive (macOS) a
+    // renomeacao passa por um arquivo temporario em dois passos.
+    await seedTrackedComponent('Botao');
+
+    await runNormalize();
+    await commitAll('normalize: Botao -> botao');
+
+    const history = await historyOf('components/atomos/botao/Botao.vue');
+
+    expect(history).toContain('c1: cria componente');
+    expect(history).toContain('c2: altera componente');
+  });
+
+  it('should record the change as a rename in the commit itself', async () => {
+    // Complementa o teste do indice: garante que o commit gravado tem status
+    // R, e nao A+D. Se cair para add+delete o `--follow` ainda pode funcionar
+    // por similaridade, mas ferramentas que leem o diff cru perdem o vinculo.
+    await seedTrackedComponent('UserProfile');
+
+    await runNormalize();
+    await commitAll('normalize: UserProfile -> user-profile');
+
+    const { stdout } = await execAsync('git show --name-status --find-renames --format= HEAD', {
+      cwd: repoDir,
+    });
+
+    expect(stdout).toMatch(/^R\d*\s/m);
+    expect(stdout).toContain('user-profile/UserProfile.vue');
   });
 });
