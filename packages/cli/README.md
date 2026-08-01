@@ -211,6 +211,7 @@ Estrutura Atomic Design: 40/50 (80%)
 The `normalize` and `analyze` commands fully support monorepo structures:
 
 **TurboRepo / pnpm workspace:**
+
 ```
 workspace/
 ├── packages/
@@ -221,6 +222,7 @@ workspace/
 ```
 
 **Nx monorepo:**
+
 ```
 monorepo/
 ├── libs/ui/src/lib/Button/           ← normalized to button/
@@ -228,6 +230,7 @@ monorepo/
 ```
 
 **App-based structure:**
+
 ```
 project/
 └── app/components/
@@ -236,6 +239,7 @@ project/
 ```
 
 **Rules:**
+
 - Directories containing `.vue` files are treated as components
 - Container folders (`packages/`, `apps/`, `libs/`, `src/`) are never renamed
 - Directories are normalized to **kebab-case**
@@ -325,4 +329,7 @@ src/components/atomos/user-button/
 ## License
 
 MIT
+
+```
+
 ```

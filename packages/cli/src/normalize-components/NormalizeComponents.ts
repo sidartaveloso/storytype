@@ -2,13 +2,16 @@
  * Component normalization utility
  * Normalizes component structure to follow Storytype conventions
  */
+
+import { exec } from 'child_process';
 import fs from 'fs-extra';
 import path from 'path';
-import { exec } from 'child_process';
 import { promisify } from 'util';
+import { isAtomicLevel, isComponentFile } from '../component-detector.js';
 import type {
   ComponentDirectory,
   ComponentFile,
+  ImportReference,
   NormalizeOptions,
   NormalizeReport,
 } from './NormalizeComponents.types.js';
@@ -84,13 +87,23 @@ async function gitMoveManual(fromPath: string, toPath: string, isCaseOnly: boole
 
   // Update Git index
   try {
-    // Get relative paths for git commands
+    // Get relative paths for git commands.
+    // `git rev-parse` always reports the resolved path, so the paths we compare
+    // it against must be resolved too — otherwise a repo reached through a
+    // symlink (macOS `/tmp` and `/var` are symlinks to `/private/...`) yields a
+    // relative path full of `../..` that Git rejects. The basename is rejoined
+    // because `fromPath` no longer exists at this point: it has just been moved.
     const repoRoot = (await execAsync('git rev-parse --show-toplevel', { cwd })).stdout.trim();
-    const relativeFrom = path.relative(repoRoot, fromPath);
-    const relativeTo = path.relative(repoRoot, toPath);
+    const resolve = async (target: string): Promise<string> =>
+      path.join(await fs.realpath(path.dirname(target)), path.basename(target));
+    const relativeFrom = path.relative(repoRoot, await resolve(fromPath));
+    const relativeTo = path.relative(repoRoot, await resolve(toPath));
 
-    // Remove old path from Git
-    await execAsync(`git rm --cached "${relativeFrom}"`, { cwd: repoRoot });
+    // Remove old path from Git. `-r` is required when the path is a directory
+    // ("fatal: not removing X recursively without -r") and is harmless for a
+    // single file. Without it the index is never updated, and on a
+    // case-insensitive filesystem a case-only rename becomes invisible to Git.
+    await execAsync(`git rm --cached -r "${relativeFrom}"`, { cwd: repoRoot });
 
     // Add new path to Git
     await execAsync(`git add "${relativeTo}"`, { cwd: repoRoot });
@@ -119,9 +132,68 @@ function getFileType(fileName: string): ComponentFile['type'] {
   if (fileName.includes('.types.')) return 'types';
   if (fileName.includes('.spec.') || fileName.includes('.test.')) return 'test';
   if (fileName.includes('.stories.') || fileName.includes('.story.')) return 'stories';
-  if (fileName.includes('.mock.')) return 'mock';
-  if (fileName.endsWith('.vue')) return 'component';
+  if (fileName.includes('.mock.') || fileName.includes('.mocks.')) return 'mock';
+  if (isComponentFile(fileName)) return 'component';
   return 'other';
+}
+
+/**
+ * Find import references in sibling files that need updating when a file is renamed
+ */
+async function findImportReferences(
+  dirPath: string,
+  files: ComponentFile[],
+  existingFileNames: Set<string>
+): Promise<ImportReference[]> {
+  const references: ImportReference[] = [];
+
+  const renamedFiles = files.filter(
+    f => path.basename(f.currentPath) !== path.basename(f.targetPath)
+  );
+
+  for (const renamedFile of renamedFiles) {
+    const oldBaseName = getComponentBaseName(renamedFile.currentPath);
+    const newBaseName = getComponentBaseName(renamedFile.targetPath);
+
+    for (const fileName of existingFileNames) {
+      const filePath = path.join(dirPath, fileName);
+
+      if (filePath === renamedFile.currentPath) continue;
+
+      try {
+        const content = await fs.readFile(filePath, 'utf-8');
+
+        const importRegex = new RegExp(
+          `(from\\s+)(['"])\\.\\/${escapeRegex(oldBaseName)}(\\.[^'"]*)?\\2`,
+          'g'
+        );
+
+        let match = importRegex.exec(content);
+        while (match !== null) {
+          const quote = match[2];
+          const extension = match[3] || '';
+          const newImportStr = `from ${quote}./${newBaseName}${extension}${quote}`;
+
+          references.push({
+            filePath,
+            line: content.substring(0, match.index).split('\n').length,
+            currentImport: match[0],
+            newImport: newImportStr,
+          });
+
+          match = importRegex.exec(content);
+        }
+      } catch {
+        // Skip files that can't be read
+      }
+    }
+  }
+
+  return references;
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -131,10 +203,13 @@ export async function analyzeComponentStructure(
   options: NormalizeOptions
 ): Promise<NormalizeReport> {
   const components: ComponentDirectory[] = [];
+  const skippedDirectories: Array<{ path: string; reason: string }> = [];
   const targetPath = path.resolve(options.path);
 
   try {
-    await analyzeDirectory(targetPath, components, options);
+    await analyzeDirectory(targetPath, components, skippedDirectories, options);
+
+    const allImportReferences = components.flatMap(c => c.importReferences);
 
     return {
       components,
@@ -144,7 +219,9 @@ export async function analyzeComponentStructure(
         0
       ),
       filesToCreate: components.reduce((sum, c) => sum + c.missingFiles.length, 0),
-      importsToUpdate: 0, // TODO: Implement import detection
+      importsToUpdate: allImportReferences.length,
+      importReferences: allImportReferences,
+      skippedDirectories,
       success: true,
     };
   } catch (error) {
@@ -154,6 +231,8 @@ export async function analyzeComponentStructure(
       filesToRename: 0,
       filesToCreate: 0,
       importsToUpdate: 0,
+      importReferences: [],
+      skippedDirectories: [],
       success: false,
       error: error instanceof Error ? error.message : String(error),
     };
@@ -166,19 +245,19 @@ export async function analyzeComponentStructure(
 async function analyzeDirectory(
   dirPath: string,
   components: ComponentDirectory[],
+  skippedDirectories: Array<{ path: string; reason: string }>,
   options: NormalizeOptions
 ): Promise<void> {
   const entries = await fs.readdir(dirPath, { withFileTypes: true });
 
-  // Check if this directory is a component directory
-  const vueFiles = entries.filter(e => e.isFile() && e.name.endsWith('.vue'));
+  const dirName = path.basename(dirPath);
 
-  if (vueFiles.length > 0) {
-    // This is a component directory
-    const componentFile = vueFiles[0];
+  const componentEntries = entries.filter(e => e.isFile() && isComponentFile(e.name));
+
+  if (componentEntries.length > 0 && !isAtomicLevel(dirName)) {
+    const componentFile = componentEntries[0];
     const componentName = getComponentBaseName(componentFile.name);
     const pascalComponentName = toPascalCase(componentName);
-    const dirName = path.basename(dirPath);
 
     // CRITICAL FIX: Use directory name for kebab-case conversion, not component name
     // This ensures dirs like 'srv/' stay 'srv/', not forced to 'server/' by file name
@@ -237,6 +316,8 @@ async function analyzeDirectory(
       missingFiles.push(`${pascalComponentName}.spec.ts`);
     }
 
+    const importReferences = await findImportReferences(dirPath, files, existingFileNames);
+
     components.push({
       currentPath: dirPath,
       targetPath: needsRename ? path.join(path.dirname(dirPath), expectedDirName) : dirPath,
@@ -244,13 +325,30 @@ async function analyzeDirectory(
       files,
       missingFiles,
       needsRename,
+      importReferences,
+    });
+  } else if (componentEntries.length > 0 && isAtomicLevel(dirName)) {
+    if (options.verbose) {
+      console.warn(
+        `[storytype] Ignorado: "${dirPath}" é nível Atomic Design com componentes soltos — ` +
+          `mova os arquivos para subdiretórios próprios.`
+      );
+    }
+    skippedDirectories.push({
+      path: dirPath,
+      reason: `Nível Atomic Design (${dirName}) com componentes soltos — não é um diretório de componente`,
     });
   }
 
   // Recursively analyze subdirectories
   for (const entry of entries) {
     if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
-      await analyzeDirectory(path.join(dirPath, entry.name), components, options);
+      await analyzeDirectory(
+        path.join(dirPath, entry.name),
+        components,
+        skippedDirectories,
+        options
+      );
     }
   }
 }
@@ -406,6 +504,39 @@ export async function normalizeComponents(options: NormalizeOptions): Promise<No
               await fs.move(currentFilePath, targetFilePath);
             }
           }
+        }
+      }
+    }
+
+    // Step 4: Update import references
+    for (const component of analysis.components) {
+      if (component.importReferences.length === 0) continue;
+
+      const fileRenameMap = new Map<string, string>();
+      for (const file of component.files) {
+        const oldName = path.basename(file.currentPath);
+        const newName = path.basename(file.targetPath);
+        if (oldName !== newName) {
+          fileRenameMap.set(oldName, newName);
+        }
+      }
+
+      const currentDir =
+        component.needsRename && !options.filesOnly ? component.targetPath : component.currentPath;
+
+      for (const ref of component.importReferences) {
+        const refOldName = path.basename(ref.filePath);
+        const refNewName = fileRenameMap.get(refOldName) || refOldName;
+        const refPath = path.join(currentDir, refNewName);
+
+        try {
+          const content = await fs.readFile(refPath, 'utf-8');
+          const newContent = content.replace(ref.currentImport, ref.newImport);
+          if (newContent !== content) {
+            await fs.writeFile(refPath, newContent, 'utf-8');
+          }
+        } catch {
+          // Skip files that can't be read/written
         }
       }
     }

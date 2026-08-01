@@ -34,9 +34,8 @@ test.describe('VitePress Pages Accessibility', () => {
       // Verifica se o título contém o texto esperado
       await expect(playwright).toHaveTitle(page.title);
 
-      // Verifica se não há erro 404
+      // Verifica se não há página 404 do VitePress
       const content = await playwright.content();
-      expect(content).not.toContain('404');
       expect(content).not.toContain('PAGE NOT FOUND');
 
       // Verifica se o conteúdo principal existe (pega o primeiro elemento se houver múltiplos)
@@ -209,14 +208,17 @@ test.describe('Estrutura de documentação', () => {
             continue;
           }
 
+          // Remove .html suffix for dev server (VitePress uses clean URLs in dev)
+          const cleanPath = pathname.replace(/\.html$/, '');
+
           // Evita verificar o mesmo URL múltiplas vezes
-          if (checkedUrls.has(pathname)) {
+          if (checkedUrls.has(cleanPath)) {
             continue;
           }
-          checkedUrls.add(pathname);
+          checkedUrls.add(cleanPath);
 
           // Navega para o link e verifica o conteúdo
-          const response = await page.goto(link);
+          const response = await page.goto(cleanPath);
           await page.waitForLoadState('networkidle');
 
           const content = await page.content();
@@ -224,7 +226,6 @@ test.describe('Estrutura de documentação', () => {
 
           // Verifica se é uma página 404 (VitePress retorna 200 mas mostra 404 no conteúdo)
           const is404 =
-            content.includes('404') ||
             content.includes('Page Not Found') ||
             content.includes('PAGE NOT FOUND') ||
             pageTitle.includes('404');

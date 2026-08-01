@@ -16,27 +16,27 @@ export default defineConfig({
       link: '/',
       themeConfig: {
         nav: [
-          { text: 'Guide', link: '/en/guide/introduction' },
-          { text: 'CLI', link: '/en/cli/' },
+          { text: 'Guide', link: '/guide/introduction' },
+          { text: 'CLI', link: '/cli/' },
         ],
         sidebar: {
-          '/en/guide/': [
+          '/guide/': [
             {
               text: 'Getting Started',
               items: [
-                { text: 'What is Storytype?', link: '/en/guide/introduction' },
-                { text: 'Quick Start', link: '/en/guide/quick-start' },
+                { text: 'What is Storytype?', link: '/guide/introduction' },
+                { text: 'Quick Start', link: '/guide/quick-start' },
               ],
             },
           ],
-          '/en/cli/': [
+          '/cli/': [
             {
               text: 'CLI Commands',
               items: [
-                { text: 'Overview', link: '/en/cli/' },
-                { text: 'Generate', link: '/en/cli/generate' },
-                { text: 'Normalize', link: '/en/cli/normalize' },
-                { text: 'Analyze', link: '/en/cli/analyze' },
+                { text: 'Overview', link: '/cli/' },
+                { text: 'Generate', link: '/cli/generate' },
+                { text: 'Normalize', link: '/cli/normalize' },
+                { text: 'Analyze', link: '/cli/analyze' },
               ],
             },
           ],

@@ -26,6 +26,8 @@ export interface ComponentDirectory {
   missingFiles: string[];
   /** Whether directory needs renaming */
   needsRename: boolean;
+  /** Import references that need updating */
+  importReferences: ImportReference[];
 }
 
 export interface NormalizeOptions {
@@ -52,6 +54,10 @@ export interface NormalizeReport {
   filesToCreate: number;
   /** Total imports to update */
   importsToUpdate: number;
+  /** Detailed import references */
+  importReferences: ImportReference[];
+  /** Directories skipped and the reason */
+  skippedDirectories: Array<{ path: string; reason: string }>;
   /** Executed successfully */
   success: boolean;
   /** Error message if failed */
