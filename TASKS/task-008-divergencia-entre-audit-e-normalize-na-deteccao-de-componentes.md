@@ -157,9 +157,27 @@ arquivo que não existe mais.
 - [x] Rodar todos os testes existentes (`analyzer.spec.ts`,
       `NormalizeComponents.spec.ts`, `Generate.spec.ts`) e garantir ausência de
       regressão
-- [ ] Validar contra `taskin/packages/design-vue`: audit e normalize devem
+- [x] Validar contra `taskin/packages/design-vue`: audit e normalize devem
       concordar sobre os ~20 arquivos kebab-case, e o normalize deve reportar os
       imports que seriam ajustados
+
+  Validado com o build local (`packages/cli/dist/cli.js`) contra
+  `taskin/packages/design-vue`:
+
+  |                                                 | Antes | Depois |
+  | ----------------------------------------------- | ----- | ------ |
+  | Componentes encontrados                         | 13    | 17     |
+  | Arquivos a renomear                             | 0     | 27     |
+  | Imports a atualizar                             | —     | 90     |
+  | Apontados pelo audit e ignorados pelo normalize | ~20   | **0**  |
+
+  Os 27 arquivos são os 10 componentes que o audit aponta mais os 17 auxiliares
+  (`.types.ts`, `.stories.ts`) que precisam acompanhar o nome — o audit não os
+  lista porque a task-005 os exclui da contagem. Nenhum arquivo apontado pelo
+  audit ficou fora do plano do normalize.
+
+  Os 5 níveis Atomic Design aparecem em "Diretórios ignorados" com o motivo,
+  confirmando a Fase 3.
 
 ## Notes
 
