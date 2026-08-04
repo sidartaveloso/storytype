@@ -12,6 +12,7 @@ coverage
 
 # Build outputs
 dist
+storybook-static
 .next
 out
 build

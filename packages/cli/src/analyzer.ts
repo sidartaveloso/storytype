@@ -12,6 +12,7 @@ import {
   detectComponents,
   findAtomicLevelDirs,
   findComponentFiles,
+  findFilesMatching,
   findComponentsDirectory,
   getComponentBaseName,
   isPascalCase,
@@ -286,8 +287,8 @@ async function analyzeTestsAndStories(projectPath: string, spinner: Ora): Promis
   }
 
   const componentFiles = findAllComponents(componentsPath);
-  const testFiles = findFilesByPattern(componentsPath, TEST_PATTERNS);
-  const storyFiles = findFilesByPattern(componentsPath, STORY_PATTERNS);
+  const testFiles = findFilesMatching(componentsPath, TEST_PATTERNS);
+  const storyFiles = findFilesMatching(componentsPath, STORY_PATTERNS);
 
   const testFileBases = new Set(testFiles.map(f => stripTestSuffix(f, TEST_PATTERNS)));
   const storyFileBases = new Set(storyFiles.map(f => stripTestSuffix(f, STORY_PATTERNS)));
@@ -494,35 +495,6 @@ function countComponents(dir: string): number {
  */
 function findAllComponents(dir: string): string[] {
   return findComponentFiles(dir);
-}
-
-/**
- * Helper: Find files by pattern
- */
-function findFilesByPattern(dir: string, patterns: readonly string[]): string[] {
-  const files: string[] = [];
-
-  function walk(currentDir: string) {
-    if (!fs.existsSync(currentDir)) return;
-
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-
-      if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-        walk(fullPath);
-      } else if (entry.isFile()) {
-        if (patterns.some(pattern => entry.name.includes(pattern))) {
-          files.push(fullPath);
-        }
-      }
-    }
-  }
-
-  walk(dir);
-  return files;
 }
 
 /**
