@@ -7,6 +7,26 @@ import chalk from 'chalk';
 import fs from 'fs-extra';
 import ora, { type Ora } from 'ora';
 import path from 'path';
+
+/**
+ * Standard build/dependency output directories never contain source
+ * components, so the analyzer always skips them (avoids false positives
+ * inside `dist`, `coverage`, `storybook-static`, etc.).
+ */
+const IGNORED_DIRS = new Set([
+  'node_modules',
+  'dist',
+  'out',
+  'build',
+  'coverage',
+  'storybook-static',
+  '.turbo',
+  '.storybook',
+]);
+
+function isIgnoredDir(name: string): boolean {
+  return name.startsWith('.') || IGNORED_DIRS.has(name);
+}
 import {
   ATOMIC_LEVELS,
   AUXILIARY_PATTERNS,
@@ -559,7 +579,7 @@ function findVueComponentDirectories(dir: string): string[] {
       }
 
       for (const entry of entries) {
-        if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+        if (entry.isDirectory() && !isIgnoredDir(entry.name)) {
           walk(path.join(currentDir, entry.name));
         }
       }
@@ -594,7 +614,7 @@ function findAllComponents(dir: string): string[] {
       const fullPath = path.join(currentDir, entry.name);
 
       if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+        if (isIgnoredDir(entry.name)) continue;
         walk(fullPath);
       } else if (entry.isFile() && isComponentFile(entry.name)) {
         components.push(fullPath);
@@ -636,7 +656,7 @@ function findFilesByPattern(dir: string, patterns: string[]): string[] {
       const fullPath = path.join(currentDir, entry.name);
 
       if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+        if (isIgnoredDir(entry.name)) continue;
         walk(fullPath);
       } else if (entry.isFile()) {
         if (patterns.some(pattern => entry.name.includes(pattern))) {
@@ -663,7 +683,7 @@ function hasFilesWithPattern(dir: string, pattern: RegExp): boolean {
       const fullPath = path.join(currentDir, entry.name);
 
       if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+        if (isIgnoredDir(entry.name)) continue;
         if (walk(fullPath)) return true;
       } else if (entry.isFile()) {
         if (pattern.test(entry.name)) return true;
