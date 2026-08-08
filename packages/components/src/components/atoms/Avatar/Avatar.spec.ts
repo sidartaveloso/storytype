@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar, QAvatar } from 'quasar';
 import Avatar from './Avatar.vue';
+import type { AvatarProps } from './Avatar.types';
 import { generateMockData } from './Avatar.mock';
 
-const mountWithQuasar = (props: Record<string, unknown>) =>
+const mountWithQuasar = (props: AvatarProps) =>
   mount(Avatar, {
     props,
     global: {

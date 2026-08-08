@@ -75,7 +75,7 @@
     "analyze": "storytype analyze . --verbose",
     "validate": "pnpm analyze && pnpm test && pnpm test:a11y && pnpm build",
     "lint": "biome lint src",
-    "typecheck": "vue-tsc --noEmit",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.typecheck.json",
     "clean": "rm -rf dist dist-storybook"
   },
   "peerDependencies": {

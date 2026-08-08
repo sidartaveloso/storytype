@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar, QBanner } from 'quasar';
 import TitleUserName from './TitleUserName.vue';
+import type { TitleUserNameProps } from './TitleUserName.types';
 import { generateMockData } from './TitleUserName.mock';
 
-const mountWithQuasar = (props: Record<string, unknown>, slot?: string) =>
+const mountWithQuasar = (props: TitleUserNameProps, slot?: string) =>
   mount(TitleUserName, {
     props,
     slots: slot ? { default: slot } : undefined,

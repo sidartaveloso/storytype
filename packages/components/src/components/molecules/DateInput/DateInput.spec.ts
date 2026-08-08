@@ -3,9 +3,10 @@ import { mount } from '@vue/test-utils';
 import { Quasar, QInput, QDate, QPopupProxy, QIcon, QBtn, ClosePopup } from 'quasar';
 import { date } from 'quasar';
 import DateInput from './DateInput.vue';
+import type { DateInputProps } from './DateInput.types';
 import { generateMockData } from './DateInput.mock';
 
-const mountWithQuasar = (props: Record<string, unknown>) =>
+const mountWithQuasar = (props: DateInputProps) =>
   mount(DateInput, {
     props,
     global: {

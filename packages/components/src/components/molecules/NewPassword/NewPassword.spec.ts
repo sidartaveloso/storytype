@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar, QInput, QIcon } from 'quasar';
 import NewPassword from './NewPassword.vue';
+import type { NewPasswordProps } from './NewPassword.types';
 import { generateMockData } from './NewPassword.mock';
 
-const mountWithQuasar = (props: Record<string, unknown>) =>
+const mountWithQuasar = (props: NewPasswordProps) =>
   mount(NewPassword, {
     props,
     global: {
