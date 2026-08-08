@@ -4,6 +4,9 @@ packages:
   - 'examples/*'
 allowBuilds:
   esbuild: true
+  '@parcel/watcher': true
+  '@swc/core': true
+  unrs-resolver: true
 overrides:
   brace-expansion@<1.1.13: '>=1.1.13'
   brace-expansion@>=2.0.0 <2.0.3: '>=2.0.3'

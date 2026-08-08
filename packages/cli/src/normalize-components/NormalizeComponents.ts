@@ -138,6 +138,15 @@ function getFileType(fileName: string): ComponentFile['type'] {
 }
 
 /**
+ * Resolve the extension of the component's main file ('.vue' or '.ts'),
+ * so scaffolds (spec/index) import the real module instead of assuming `.vue`.
+ */
+function getComponentExtension(files: ComponentFile[]): string {
+  const componentFile = files.find(file => file.type === 'component');
+  return path.extname(componentFile?.currentPath ?? '').toLowerCase() || '.vue';
+}
+
+/**
  * Find import references in sibling files that need updating when a file is renamed
  */
 async function findImportReferences(
@@ -303,15 +312,20 @@ async function analyzeDirectory(
     // Check for missing files
     const missingFiles: string[] = [];
 
+    // Files that will already exist after the rename (either already named
+    // correctly or renamed into place), so we don't create a scaffold that
+    // collides with a file being renamed onto the same target.
+    const targetFileNames = new Set(files.map(file => path.basename(file.targetPath)));
+
     if (!existingFileNames.has('index.ts') && !existingFileNames.has('index.js')) {
       missingFiles.push('index.ts');
     }
-    if (!existingFileNames.has(`${pascalComponentName}.types.ts`)) {
+    if (!targetFileNames.has(`${pascalComponentName}.types.ts`)) {
       missingFiles.push(`${pascalComponentName}.types.ts`);
     }
     if (
-      !existingFileNames.has(`${pascalComponentName}.spec.ts`) &&
-      !existingFileNames.has(`${pascalComponentName}.test.ts`)
+      !targetFileNames.has(`${pascalComponentName}.spec.ts`) &&
+      !targetFileNames.has(`${pascalComponentName}.test.ts`)
     ) {
       missingFiles.push(`${pascalComponentName}.spec.ts`);
     }
@@ -355,11 +369,16 @@ async function analyzeDirectory(
 
 /**
  * Generate template content for missing files
+ * @param componentExt extension of the component's main file ('.vue' or '.ts')
  */
-function generateFileContent(fileName: string, componentName: string): string {
+function generateFileContent(
+  fileName: string,
+  componentName: string,
+  componentExt: string
+): string {
   if (fileName === 'index.ts') {
     return `export * from './${componentName}.types';
-export { default } from './${componentName}.vue';
+export { default } from './${componentName}${componentExt}';
 `;
   }
 
@@ -386,7 +405,7 @@ export interface ${componentName}Emits {
 
   if (fileName.endsWith('.spec.ts')) {
     return `import { describe, it, expect } from 'vitest';
-import ${componentName} from './${componentName}.vue';
+import ${componentName} from './${componentName}${componentExt}';
 
 describe('${componentName}', () => {
   it('should render', () => {
@@ -419,7 +438,11 @@ export async function normalizeComponents(options: NormalizeOptions): Promise<No
             ? path.join(component.targetPath, missingFile)
             : path.join(component.currentPath, missingFile);
 
-          const content = generateFileContent(missingFile, component.componentName);
+          const content = generateFileContent(
+            missingFile,
+            component.componentName,
+            getComponentExtension(component.files)
+          );
 
           if (component.needsRename) {
             // Will be created after directory rename
@@ -456,7 +479,11 @@ export async function normalizeComponents(options: NormalizeOptions): Promise<No
           // Create missing files in new location
           for (const missingFile of component.missingFiles) {
             const targetPath = path.join(component.targetPath, missingFile);
-            const content = generateFileContent(missingFile, component.componentName);
+            const content = generateFileContent(
+              missingFile,
+              component.componentName,
+              getComponentExtension(component.files)
+            );
             await fs.writeFile(targetPath, content, 'utf-8');
           }
         }
