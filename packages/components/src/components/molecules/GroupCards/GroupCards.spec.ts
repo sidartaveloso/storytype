@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar } from 'quasar';
 import GroupCards from './GroupCards.vue';
+import type { GroupCardsProps } from './GroupCards.types';
 import { generateMockData } from './GroupCards.mock';
 
-const mountWithQuasar = (props: Record<string, unknown>, slot?: string) =>
+const mountWithQuasar = (props: GroupCardsProps, slot?: string) =>
   mount(GroupCards, {
     props,
     slots: slot ? { default: slot } : undefined,

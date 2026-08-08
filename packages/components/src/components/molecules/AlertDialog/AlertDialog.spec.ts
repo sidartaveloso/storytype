@@ -12,9 +12,10 @@ import {
   ClosePopup,
 } from 'quasar';
 import AlertDialog from './AlertDialog.vue';
+import type { AlertDialogProps } from './AlertDialog.types';
 import { generateMockData } from './AlertDialog.mock';
 
-const mountWithQuasar = (props: Record<string, unknown>, slots?: Record<string, string>) =>
+const mountWithQuasar = (props: AlertDialogProps, slots?: Record<string, string>) =>
   mount(AlertDialog, {
     props,
     slots,
@@ -39,7 +40,7 @@ describe('AlertDialog', () => {
     const { props } = generateMockData();
     const wrapper = mountWithQuasar(props);
     await wrapper.vm.$nextTick();
-    const btn = wrapper.findAll('button').find(b => b.text().includes(props.confirmLabel));
+    const btn = wrapper.findAll('button').find(b => b.text().includes(props.confirmLabel!));
     expect(btn).toBeTruthy();
     await btn!.trigger('click');
     expect(wrapper.emitted('confirm')).toBeTruthy();
