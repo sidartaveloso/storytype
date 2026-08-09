@@ -51,3 +51,5 @@ cache/
 # Taskin configuration
 .taskin.json
 .pnpm-store
+
+*.tgz
