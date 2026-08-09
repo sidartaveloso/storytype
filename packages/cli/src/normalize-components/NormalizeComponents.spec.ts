@@ -15,6 +15,7 @@ import {
   toKebabCase,
   toPascalCase,
 } from './NormalizeComponents';
+import { isComponentFile, SKIP_DIRECTORIES } from '../ComponentDetector';
 import type {
   ComponentDirectory,
   ImportReference,
@@ -209,6 +210,61 @@ describe('NormalizeComponents - Component Detection', () => {
     );
     expect(component?.needsRename).toBe(false);
     expect(component?.missingFiles.length).toBe(0);
+  });
+
+  it('should not treat config files as components', async () => {
+    await fs.writeFile(
+      path.join(tempDir, 'vitest.config.ts'),
+      "import { defineConfig } from 'vitest/config';\nexport default defineConfig({ test: { include: ['src/**/*.spec.ts'] } });"
+    );
+    await fs.writeFile(
+      path.join(tempDir, 'vite.config.ts'),
+      "import { defineConfig } from 'vite';\nexport default defineConfig({});"
+    );
+    await fs.writeFile(
+      path.join(tempDir, 'playwright.config.ts'),
+      "import { defineConfig } from '@playwright/test';\nexport default defineConfig({});"
+    );
+
+    for (const fileName of ['vitest.config.ts', 'vite.config.ts', 'playwright.config.ts']) {
+      expect(isComponentFile(fileName)).toBe(false);
+    }
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+      dirsOnly: false,
+      filesOnly: false,
+      verbose: false,
+    };
+
+    const result = await analyzeComponentStructure(options);
+    expect(result.components.length).toBe(0);
+  });
+
+  it('should not treat declaration files as components', async () => {
+    await fs.writeFile(path.join(tempDir, 'index.d.ts'), 'export {};');
+
+    expect(isComponentFile('index.d.ts')).toBe(false);
+    expect(isComponentFile('Foo.d.ts')).toBe(false);
+  });
+
+  it('should not scan build output directories', async () => {
+    await fs.ensureDir(path.join(tempDir, 'dist'));
+    await fs.writeFile(path.join(tempDir, 'dist', 'Index.d.ts'), 'export {};');
+
+    const options: NormalizeOptions = {
+      path: tempDir,
+      dryRun: true,
+      dirsOnly: false,
+      filesOnly: false,
+      verbose: false,
+    };
+
+    const result = await analyzeComponentStructure(options);
+    const distPaths = result.components.filter(c => c.currentPath.includes('dist'));
+    expect(distPaths.length).toBe(0);
+    expect(SKIP_DIRECTORIES).toContain('dist');
   });
 });
 
@@ -475,22 +531,33 @@ describe('NormalizeComponents - Monorepo Support', () => {
     });
 
     it('should normalize UserProfile to user-profile', async () => {
-      const projectPath = path.join(fixturesDir, 'simple-project', 'src', 'components');
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-userprofile-test-'));
 
-      const options: NormalizeOptions = {
-        path: projectPath,
-        dryRun: true,
-      };
+      try {
+        const componentDir = path.join(tempDir, 'UserProfile');
+        await fs.ensureDir(componentDir);
+        await fs.writeFile(
+          path.join(componentDir, 'UserProfile.vue'),
+          '<template><div>User</div></template>'
+        );
 
-      const result = await analyzeComponentStructure(options);
+        const options: NormalizeOptions = {
+          path: tempDir,
+          dryRun: true,
+        };
 
-      const profileComponent = result.components.find(
-        c => path.basename(c.currentPath) === 'UserProfile'
-      );
+        const result = await analyzeComponentStructure(options);
 
-      expect(profileComponent).toBeDefined();
-      expect(profileComponent?.needsRename).toBe(true);
-      expect(path.basename(profileComponent!.targetPath)).toBe('user-profile');
+        const profileComponent = result.components.find(
+          c => path.basename(c.currentPath) === 'UserProfile'
+        );
+
+        expect(profileComponent).toBeDefined();
+        expect(profileComponent?.needsRename).toBe(true);
+        expect(path.basename(profileComponent!.targetPath)).toBe('user-profile');
+      } finally {
+        await fs.remove(tempDir);
+      }
     });
   });
 
@@ -540,22 +607,34 @@ describe('NormalizeComponents - Monorepo Support', () => {
     });
 
     it('should normalize component inside packages/ui/src', async () => {
-      const projectPath = path.join(fixturesDir, 'turborepo');
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-turborepo-ui-test-'));
 
-      const options: NormalizeOptions = {
-        path: projectPath,
-        dryRun: true,
-      };
+      try {
+        const componentDir = path.join(tempDir, 'packages', 'ui', 'src', 'Button');
+        await fs.ensureDir(componentDir);
+        await fs.writeFile(
+          path.join(componentDir, 'Button.vue'),
+          '<template><div>Button</div></template>'
+        );
 
-      const result = await analyzeComponentStructure(options);
+        const options: NormalizeOptions = {
+          path: tempDir,
+          dryRun: true,
+        };
 
-      const buttonComponent = result.components.find(
-        c => c.currentPath.includes('packages/ui/src') && path.basename(c.currentPath) === 'Button'
-      );
+        const result = await analyzeComponentStructure(options);
 
-      expect(buttonComponent).toBeDefined();
-      expect(buttonComponent?.needsRename).toBe(true);
-      expect(path.basename(buttonComponent!.targetPath)).toBe('button');
+        const buttonComponent = result.components.find(
+          c =>
+            c.currentPath.includes('packages/ui/src') && path.basename(c.currentPath) === 'Button'
+        );
+
+        expect(buttonComponent).toBeDefined();
+        expect(buttonComponent?.needsRename).toBe(true);
+        expect(path.basename(buttonComponent!.targetPath)).toBe('button');
+      } finally {
+        await fs.remove(tempDir);
+      }
     });
 
     it('should keep srv folder in packages/shared/components', async () => {
@@ -580,22 +659,34 @@ describe('NormalizeComponents - Monorepo Support', () => {
     });
 
     it('should normalize Dashboard in apps/web/src', async () => {
-      const projectPath = path.join(fixturesDir, 'turborepo');
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-apps-web-test-'));
 
-      const options: NormalizeOptions = {
-        path: projectPath,
-        dryRun: true,
-      };
+      try {
+        const componentDir = path.join(tempDir, 'apps', 'web', 'src', 'Dashboard');
+        await fs.ensureDir(componentDir);
+        await fs.writeFile(
+          path.join(componentDir, 'Dashboard.vue'),
+          '<template><div>Dashboard</div></template>'
+        );
 
-      const result = await analyzeComponentStructure(options);
+        const options: NormalizeOptions = {
+          path: tempDir,
+          dryRun: true,
+        };
 
-      const dashboardComponent = result.components.find(
-        c => c.currentPath.includes('apps/web/src') && path.basename(c.currentPath) === 'Dashboard'
-      );
+        const result = await analyzeComponentStructure(options);
 
-      expect(dashboardComponent).toBeDefined();
-      expect(dashboardComponent?.needsRename).toBe(true);
-      expect(path.basename(dashboardComponent!.targetPath)).toBe('dashboard');
+        const dashboardComponent = result.components.find(
+          c =>
+            c.currentPath.includes('apps/web/src') && path.basename(c.currentPath) === 'Dashboard'
+        );
+
+        expect(dashboardComponent).toBeDefined();
+        expect(dashboardComponent?.needsRename).toBe(true);
+        expect(path.basename(dashboardComponent!.targetPath)).toBe('dashboard');
+      } finally {
+        await fs.remove(tempDir);
+      }
     });
   });
 
@@ -640,22 +731,33 @@ describe('NormalizeComponents - Monorepo Support', () => {
     });
 
     it('should normalize Header in app/components', async () => {
-      const projectPath = path.join(fixturesDir, 'app-structure');
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-app-structure-test-'));
 
-      const options: NormalizeOptions = {
-        path: projectPath,
-        dryRun: true,
-      };
+      try {
+        const componentDir = path.join(tempDir, 'app', 'components', 'Header');
+        await fs.ensureDir(componentDir);
+        await fs.writeFile(
+          path.join(componentDir, 'Header.vue'),
+          '<template><div>Header</div></template>'
+        );
 
-      const result = await analyzeComponentStructure(options);
+        const options: NormalizeOptions = {
+          path: tempDir,
+          dryRun: true,
+        };
 
-      const headerComponent = result.components.find(
-        c => c.currentPath.includes('app/components') && path.basename(c.currentPath) === 'Header'
-      );
+        const result = await analyzeComponentStructure(options);
 
-      expect(headerComponent).toBeDefined();
-      expect(headerComponent?.needsRename).toBe(true);
-      expect(path.basename(headerComponent!.targetPath)).toBe('header');
+        const headerComponent = result.components.find(
+          c => c.currentPath.includes('app/components') && path.basename(c.currentPath) === 'Header'
+        );
+
+        expect(headerComponent).toBeDefined();
+        expect(headerComponent?.needsRename).toBe(true);
+        expect(path.basename(headerComponent!.targetPath)).toBe('header');
+      } finally {
+        await fs.remove(tempDir);
+      }
     });
   });
 
@@ -681,43 +783,66 @@ describe('NormalizeComponents - Monorepo Support', () => {
     });
 
     it('should normalize Button in libs/ui/src/lib', async () => {
-      const projectPath = path.join(fixturesDir, 'nx-monorepo');
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-nx-libs-test-'));
 
-      const options: NormalizeOptions = {
-        path: projectPath,
-        dryRun: true,
-      };
+      try {
+        const componentDir = path.join(tempDir, 'libs', 'ui', 'src', 'lib', 'Button');
+        await fs.ensureDir(componentDir);
+        await fs.writeFile(
+          path.join(componentDir, 'Button.vue'),
+          '<template><div>Button</div></template>'
+        );
 
-      const result = await analyzeComponentStructure(options);
+        const options: NormalizeOptions = {
+          path: tempDir,
+          dryRun: true,
+        };
 
-      const buttonComponent = result.components.find(
-        c => c.currentPath.includes('libs/ui/src/lib') && path.basename(c.currentPath) === 'Button'
-      );
+        const result = await analyzeComponentStructure(options);
 
-      expect(buttonComponent).toBeDefined();
-      expect(buttonComponent?.needsRename).toBe(true);
-      expect(path.basename(buttonComponent!.targetPath)).toBe('button');
+        const buttonComponent = result.components.find(
+          c =>
+            c.currentPath.includes('libs/ui/src/lib') && path.basename(c.currentPath) === 'Button'
+        );
+
+        expect(buttonComponent).toBeDefined();
+        expect(buttonComponent?.needsRename).toBe(true);
+        expect(path.basename(buttonComponent!.targetPath)).toBe('button');
+      } finally {
+        await fs.remove(tempDir);
+      }
     });
 
     it('should normalize Header in apps/frontend/app/components', async () => {
-      const projectPath = path.join(fixturesDir, 'nx-monorepo');
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-nx-frontend-test-'));
 
-      const options: NormalizeOptions = {
-        path: projectPath,
-        dryRun: true,
-      };
+      try {
+        const componentDir = path.join(tempDir, 'apps', 'frontend', 'app', 'components', 'Header');
+        await fs.ensureDir(componentDir);
+        await fs.writeFile(
+          path.join(componentDir, 'Header.vue'),
+          '<template><div>Header</div></template>'
+        );
 
-      const result = await analyzeComponentStructure(options);
+        const options: NormalizeOptions = {
+          path: tempDir,
+          dryRun: true,
+        };
 
-      const headerComponent = result.components.find(
-        c =>
-          c.currentPath.includes('apps/frontend/app/components') &&
-          path.basename(c.currentPath) === 'Header'
-      );
+        const result = await analyzeComponentStructure(options);
 
-      expect(headerComponent).toBeDefined();
-      expect(headerComponent?.needsRename).toBe(true);
-      expect(path.basename(headerComponent!.targetPath)).toBe('header');
+        const headerComponent = result.components.find(
+          c =>
+            c.currentPath.includes('apps/frontend/app/components') &&
+            path.basename(c.currentPath) === 'Header'
+        );
+
+        expect(headerComponent).toBeDefined();
+        expect(headerComponent?.needsRename).toBe(true);
+        expect(path.basename(headerComponent!.targetPath)).toBe('header');
+      } finally {
+        await fs.remove(tempDir);
+      }
     });
 
     it('should preserve app folder in apps/frontend/app path', async () => {

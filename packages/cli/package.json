@@ -29,7 +29,7 @@
     "access": "public"
   },
   "bin": {
-    "storytype": "./dist/cli.js"
+    "storytype": "./dist/Cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,7 +39,7 @@
       "import": "./dist/index.js"
     },
     "./cli": {
-      "import": "./dist/cli.js"
+      "import": "./dist/Cli.js"
     }
   },
   "files": [
@@ -48,9 +48,9 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup src/cli.ts src/index.ts --format esm --dts && pnpm build:templates",
+    "build": "tsup src/Cli.ts src/index.ts --format esm --dts && pnpm build:templates",
     "build:templates": "mkdir -p dist/templates && cp -r src/templates/* dist/templates/",
-    "dev": "tsup src/cli.ts src/index.ts --format esm --dts --watch",
+    "dev": "tsup src/Cli.ts src/index.ts --format esm --dts --watch",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",

@@ -7,7 +7,7 @@ import { exec } from 'child_process';
 import fs from 'fs-extra';
 import path from 'path';
 import { promisify } from 'util';
-import { isAtomicLevel, isComponentFile } from '../component-detector.js';
+import { isAtomicLevel, isComponentFile, SKIP_DIRECTORIES } from '../ComponentDetector.js';
 import type {
   ComponentDirectory,
   ComponentFile,
@@ -356,7 +356,11 @@ async function analyzeDirectory(
 
   // Recursively analyze subdirectories
   for (const entry of entries) {
-    if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
+    if (
+      entry.isDirectory() &&
+      !entry.name.startsWith('.') &&
+      !SKIP_DIRECTORIES.includes(entry.name)
+    ) {
       await analyzeDirectory(
         path.join(dirPath, entry.name),
         components,

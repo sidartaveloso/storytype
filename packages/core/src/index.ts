@@ -14,5 +14,5 @@ export interface StoryTypeMetadata {
 }
 
 // Re-export for convenience
-export * from './types';
-export * from './utils';
+export * from './Types';
+export * from './Utils';

@@ -11,6 +11,31 @@
       "preset": "recommended"
     }
   },
+  "overrides": [
+    {
+      "includes": ["**/*.vue"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off"
+          },
+          "style": {
+            "useVueMultiWordComponentNames": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.types.ts", "**/src/Types.types.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noEmptyInterface": "off"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double"

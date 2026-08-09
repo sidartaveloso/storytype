@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, within } from '@storybook/test';
+import { expect } from '@storybook/test';
 import Avatar from './Avatar.vue';
 import { generateMockData } from './Avatar.mock';
-import type { AvatarProps } from './Avatar.types';
 
 /**
  * Avatar — exibe uma imagem do usuário junto de um título/subtítulo.
@@ -120,7 +119,6 @@ export const ResponsivoDesktop: Story = {
 export const Interacao: Story = {
   name: 'Interação (play function)',
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
     await new Promise(r => setTimeout(r, 0));
     expect(canvasElement).toBeDefined();
   },

@@ -29,11 +29,11 @@ export async function initStorytype(projectPath?: string): Promise<void> {
 }
 
 // Export analyzer functions
-export { analyzeProject, displayResults } from './analyzer.js';
+export { analyzeProject, displayResults } from './Analyzer.js';
 export type {
   AnalysisResult,
   CategoryResult,
   CheckItem,
   FileIssue,
   DisplayOptions,
-} from './analyzer.js';
+} from './Analyzer.js';
