@@ -27,7 +27,7 @@ describe('NewPassword', () => {
     const wrapper = mountWithQuasar({ modelValue: '' });
     const input = wrapper.find('input');
     await input.setValue('Senha123');
-    expect(wrapper.emitted('update:modelValue')!.at(-1)).toEqual(['Senha123']);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['Senha123']);
   });
 
   it('emits update:valid true when password and confirmation match', async () => {

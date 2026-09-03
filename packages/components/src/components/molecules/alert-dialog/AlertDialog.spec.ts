@@ -40,9 +40,9 @@ describe('AlertDialog', () => {
     const { props } = generateMockData();
     const wrapper = mountWithQuasar(props);
     await wrapper.vm.$nextTick();
-    const btn = wrapper.findAll('button').find(b => b.text().includes(props.confirmLabel!));
+    const btn = wrapper.findAll('button').find(b => b.text().includes(props.confirmLabel ?? ''));
     expect(btn).toBeTruthy();
-    await btn!.trigger('click');
+    await btn?.trigger('click');
     expect(wrapper.emitted('confirm')).toBeTruthy();
   });
 

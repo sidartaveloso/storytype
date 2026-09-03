@@ -18,7 +18,7 @@ describe('CardAction', () => {
     const { props } = generateMockData();
     const wrapper = mountWithQuasar(props);
     expect(wrapper.find('.storytype-card-action__header').text()).toBe(props.headerText);
-    expect(wrapper.findAll('.storytype-card-action__item').length).toBe(props.content!.length);
+    expect(wrapper.findAll('.storytype-card-action__item').length).toBe(props.content?.length ?? 0);
     expect(wrapper.find('.storytype-card-action__footer').text()).toBe(props.footerText);
   });
 

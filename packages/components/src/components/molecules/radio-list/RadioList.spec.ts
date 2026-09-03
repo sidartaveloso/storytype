@@ -41,7 +41,7 @@ describe('RadioList', () => {
     await radios[2].trigger('click');
     const emitted = wrapper.emitted('update:modelValue');
     expect(emitted).toBeTruthy();
-    expect(emitted![0]).toEqual([2]);
+    expect(emitted?.[0]).toEqual([2]);
   });
 
   it('applies the Quasar colour classes to the items', () => {
