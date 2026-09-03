@@ -3,7 +3,7 @@ tipo: documento
 tipo_documento: registro_padrao_tecnico
 categoria: engenharia
 codigo:
-versao: 1
+versao: 2
 status: rascunho
 fonte_oficial: true
 metodologia_versao: '0.1'
@@ -12,7 +12,7 @@ responsavel: Sidarta Veloso
 funcao_responsavel: lider_tech
 autor: agente (Claude Code)
 criado_em: 2026-07-22
-atualizado_em: 2026-07-22
+atualizado_em: 2026-09-03
 ---
 
 # Registro de Padrão Técnico — Estrutura de módulos (classe/serviço)
@@ -44,6 +44,35 @@ nome-da-classe-ou-servico/
 
 Nem todo arquivo é obrigatório: um serviço puro sem dependências pode dispensar
 `.mock.ts`; um módulo só-de-tipos tem apenas `.types.ts` + `index.ts`.
+
+## Exceção: componentes de UI
+
+Componente de UI **não** segue a regra de nomes acima. Ele tem padrão próprio,
+definido na [Especificação storytype](../packages/core/storytype-spec.md):
+**pasta em kebab-case, arquivos em PascalCase**.
+
+```
+progress-bar/
+  ProgressBar.vue              # componente
+  ProgressBar.types.ts         # tipos
+  ProgressBar.spec.ts          # testes da unidade
+  ProgressBar.stories.ts       # stories Storybook
+  ProgressBar.mock.ts          # mock, para uso pelos testes de OUTROS módulos
+  index.ts                     # barrel
+```
+
+A pasta continua kebab-case, como em qualquer módulo — o que muda é o nome dos
+arquivos, que acompanha o nome do componente em PascalCase. Isso existe porque o
+nome do arquivo é o nome importado (`import ProgressBar from './ProgressBar.vue'`)
+e porque é a convenção do ecossistema Vue e das ferramentas em torno dele
+(Storybook, devtools, resolvedores de componente).
+
+`storytype normalize` aplica exatamente esta forma; `storytype analyze` pontua
+por ela. Um componente solto num nível Atomic Design (`atoms/ProgressBar.vue`)
+está fora do padrão: ele deve ganhar pasta própria.
+
+Vale só para componente de UI. Classe, serviço, composable, util e store seguem
+kebab-case em pasta e arquivo, como na seção anterior.
 
 ## Múltiplas implementações → interface + contract test
 
@@ -89,12 +118,37 @@ flowchart LR
 
 ## Idioma
 
-- **Português primeiro** em nomes de arquivo, pastas, funções, tipos e testes.
-- **Inglês só em termos técnicos amplamente consagrados**: `test`, `mock`,
-  `index`, `contract`, `types`, `interface`, `service`, `sync`, `build`.
-- Exemplo: `sincronizador-taskin/sincronizador-taskin.ts`, classe
-  `SincronizadorTaskin` com método `executar`, tipo `PlanoSync` (union
-  discriminada por `acao`).
+O idioma de nomes **segue o idioma do projeto**, e isso varia de projeto a
+projeto. Português **não** é obrigatório.
+
+- Cada projeto declara o seu idioma e o mantém em nomes de arquivo, pastas,
+  funções, tipos e testes. Um projeto em inglês nomeia em inglês; um projeto em
+  português nomeia em português.
+- **Não se mistura** dentro do mesmo projeto. Nome em dois idiomas é a única
+  coisa que esta regra proíbe: obriga quem lê a adivinhar qual metade está em
+  qual língua.
+- Termos técnicos amplamente consagrados ficam em inglês nos dois casos, porque
+  são nomes de convenção e não palavras: `test`, `mock`, `index`, `contract`,
+  `types`, `interface`, `service`, `build`.
+- Código anterior à adoção do idioma migra sob demanda, não retroativamente em
+  massa.
+
+### Idioma por projeto
+
+| projeto     | idioma   |
+| ----------- | -------- |
+| `storytype` | inglês   |
+| `taskin`    | inglês   |
+
+Projeto novo declara o seu aqui ao nascer.
+
+Exemplo em projeto **inglês**: `component-detector/component-detector.ts`,
+classe `ComponentDetector` com método `detect`, tipo `DetectionPlan` (union
+discriminada por `action`).
+
+Exemplo em projeto **português**: `sincronizador-taskin/sincronizador-taskin.ts`,
+classe `SincronizadorTaskin` com método `executar`, tipo `PlanoSync` (union
+discriminada por `acao`).
 
 ## Serviços são classes, e implementam uma interface
 

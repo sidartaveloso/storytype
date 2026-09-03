@@ -110,16 +110,22 @@ src/
 
 ### 3.2 Organização de Componentes
 
-Cada componente vive em sua própria pasta com nome em **PascalCase**:
+Cada componente vive em sua própria pasta em **kebab-case**, com os arquivos em
+**PascalCase**:
 
 ```
-src/components/atomos/Avatar/
+src/components/atoms/avatar/
 ├── Avatar.vue              # Componente Vue
 ├── Avatar.types.ts         # Definições de tipos
 ├── Avatar.mock.ts          # Dados mock
 ├── Avatar.stories.ts       # Stories Storybook
 └── index.ts                # Barrel export
 ```
+
+A pasta é kebab-case como qualquer módulo; o nome do arquivo acompanha o nome do
+componente, porque é o nome que se importa (`import Avatar from './Avatar.vue'`).
+`storytype normalize` aplica exatamente esta forma e `storytype analyze` pontua
+por ela.
 
 ### 3.3 Colocalização
 
@@ -131,14 +137,18 @@ Arquivos relacionados devem ficar próximos. Testes, tipos e stories ficam ao la
 
 ### 4.1 Camadas
 
-O padrão utiliza Atomic Design com nomenclatura em **Português Brasileiro**:
+O padrão utiliza Atomic Design. O nome da pasta de cada camada **segue o idioma
+do projeto** — inglês num projeto em inglês, português num projeto em português
+(ver [Idioma](#63-idioma)). O inglês é a forma canônica, e é a que o
+`storytype analyze` e o `storytype normalize` reconhecem hoje.
 
-| Camada       | Inglês    | Descrição                                      | Exemplos                       |
-| ------------ | --------- | ---------------------------------------------- | ------------------------------ |
-| `atomos`     | atoms     | Elementos mínimos, sem dependências internas   | Button, Icon, Badge, Avatar    |
-| `moleculas`  | molecules | Combinação de 2+ átomos com lógica simples     | FormField, CardItem, SearchBar |
-| `organismos` | organisms | Componentes complexos com lógica de domínio    | Modal, DataTable, FileUploader |
-| `templates`  | templates | Estruturas de página sem dados reais (Screens) | LoginScreen, DashboardScreen   |
+| Camada      | Português    | Descrição                                      | Exemplos                       |
+| ----------- | ------------ | ---------------------------------------------- | ------------------------------ |
+| `atoms`     | `atomos`     | Elementos mínimos, sem dependências internas   | Button, Icon, Badge, Avatar    |
+| `molecules` | `moleculas`  | Combinação de 2+ átomos com lógica simples     | FormField, CardItem, SearchBar |
+| `organisms` | `organismos` | Componentes complexos com lógica de domínio    | Modal, DataTable, FileUploader |
+| `templates` | `templates`  | Estruturas de página sem dados reais (Screens) | LoginScreen, DashboardScreen   |
+| `pages`     | `paginas`    | Páginas concretas, com dados reais             | PrioritizationPage             |
 
 ### 4.2 Definições Detalhadas
 
@@ -750,7 +760,7 @@ export const TodosEstados: Story = {
 ```typescript
 /**
  * ComponentName — Descrição breve do componente
- * @module components/atomos/ComponentName
+ * @module components/atoms/component-name
  */
 
 // Default export
@@ -799,31 +809,47 @@ export {
 
 ### 6.2 Pastas
 
-- **PascalCase** para pastas de componentes: `Avatar/`, `CardAtividade/`
-- **camelCase** ou **kebab-case** para outras pastas: `composables/`, `utils/`
+- **kebab-case** para pastas de componentes: `avatar/`, `card-atividade/`
+- **kebab-case** para outras pastas: `composables/`, `utils/`, `use-prioritization/`
 
-### 6.3 Props
+A pasta é sempre kebab-case. O PascalCase vive no nome do arquivo (§6.1), não no
+da pasta.
+
+### 6.3 Idioma
+
+O idioma de nomes **segue o idioma do projeto**, e varia de projeto a projeto.
+Português não é obrigatório.
+
+- Um projeto em inglês nomeia componentes, props, eventos e camadas em inglês;
+  um projeto em português, em português.
+- **Não se mistura** dentro do mesmo projeto.
+- Termos de convenção ficam em inglês nos dois casos: `index`, `types`, `mock`,
+  `stories`, `spec`, `test`.
+
+Os projetos `storytype` e `taskin` são em **inglês**.
+
+### 6.4 Props
 
 - **camelCase** em TypeScript: `userName`, `isDisabled`
 - **kebab-case** em templates: `:user-name="..."`, `:is-disabled="..."`
 
-### 6.4 Eventos
+### 6.5 Eventos
 
 - **camelCase** em código: `updateValue`, `submitForm`
 - Prefixo `on` nos handlers: `onUpdateValue`, `onSubmitForm`
 - Use verbos no imperativo: `click`, `submit`, `open`, `close`
 
-### 6.5 Composables
+### 6.6 Composables
 
 - Prefixo `use`: `useAuth`, `useApi`, `useLocalStorage`
 - **camelCase**: `useUserProfile`, `useFormValidation`
 
-### 6.6 Stores
+### 6.7 Stores
 
 - Sufixo `Store`: `useAuthStore`, `useUserStore`
 - **camelCase**: `useUserStore`, `useRoteiroStore`
 
-### 6.7 Tipos
+### 6.8 Tipos
 
 - Sufixo `Props`: `AvatarProps`, `CardAtividadeProps`
 - Sufixo `Emits`: `AvatarEmits`, `CardAtividadeEmits`
@@ -831,13 +857,13 @@ export {
 - Sufixo `Type`: `AvatarType`, `CardAtividadeType` (agregador)
 - Interfaces em **PascalCase**: `User`, `Activity`, `Route`
 
-### 6.8 Mocks
+### 6.9 Mocks
 
 - Prefixo `mock`: `mockAvatarDefault`, `mockCardAtividadeLoading`
 - Sufixo descritivo do estado: `*Default`, `*Loading`, `*Error`, `*Empty`
 - **camelCase**: `mockUserProfileComplete`, `mockActivityListEmpty`
 
-### 6.9 BEM (CSS)
+### 6.10 BEM (CSS)
 
 - **Block**: `.component-name`
 - **Element**: `.component-name__element`
@@ -1784,7 +1810,7 @@ Antes de criar PR, verifique:
 
 #### Estrutura
 
-- [ ] Pasta em `PascalCase` dentro da camada correta
+- [ ] Pasta em `kebab-case` dentro da camada correta
 - [ ] Arquivo `.types.ts` criado
 - [ ] Arquivo `.vue` criado
 - [ ] Arquivo `.mock.ts` criado
@@ -1963,7 +1989,7 @@ Antes de criar PR, verifique:
 **Estrutura:**
 
 ```
-src/components/atomos/CustomBadge/
+src/components/atoms/custom-badge/
 ├── CustomBadge.vue
 ├── CustomBadge.types.ts
 ├── CustomBadge.mock.ts
@@ -2091,7 +2117,7 @@ const iconSize = computed(() => {
 **Estrutura:**
 
 ```
-src/components/moleculas/ItemBuscaUsuario/
+src/components/molecules/item-busca-usuario/
 ├── ItemBuscaUsuario.vue
 ├── ItemBuscaUsuario.types.ts
 ├── ItemBuscaUsuario.mock.ts
@@ -2168,7 +2194,7 @@ export interface ItemBuscaUsuarioEmits {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Avatar } from 'src/components/atomos/Avatar';
+import { Avatar } from 'src/components/atoms/avatar';
 import type { ItemBuscaUsuarioProps, ItemBuscaUsuarioEmits } from './ItemBuscaUsuario.types';
 
 const props = withDefaults(defineProps<ItemBuscaUsuarioProps>(), {
