@@ -9,13 +9,20 @@ import os from 'os';
 import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  atomicLevelDir,
   detectComponents,
-  isComponentEntry,
+  detectProjectLanguage,
+  findAtomicLevelDirs,
   findComponentDirectories,
   findComponentFiles,
+  findComponentsDirectory,
   getComponentBaseName,
+  isAtomicLevel,
+  isComponentEntry,
   isComponentFile,
   isPascalCase,
+  toAtomicLevel,
+  toAtomicLevelFromAlias,
   toExpectedFileName,
 } from './component-detector.js';
 
@@ -118,6 +125,127 @@ describe('component-detector - expected file names', () => {
       const unchanged = toExpectedFileName(name) === name;
       expect(unchanged).toBe(isPascalCase(getComponentBaseName(name)));
     }
+  });
+});
+
+describe('component-detector - atomic levels', () => {
+  it('recognizes a level folder in either language', () => {
+    expect(isAtomicLevel('atoms')).toBe(true);
+    expect(isAtomicLevel('atomos')).toBe(true);
+    expect(isAtomicLevel('moleculas')).toBe(true);
+    expect(isAtomicLevel('paginas')).toBe(true);
+    expect(isAtomicLevel('ORGANISMOS')).toBe(true);
+    expect(isAtomicLevel('widgets')).toBe(false);
+  });
+
+  it('resolves a folder name to its canonical level', () => {
+    expect(toAtomicLevel('atomos')).toBe('atoms');
+    expect(toAtomicLevel('organisms')).toBe('organisms');
+    expect(toAtomicLevel('templates')).toBe('templates');
+    expect(toAtomicLevel('nope')).toBeNull();
+  });
+
+  it('accepts what a user types for a level, in either language and number', () => {
+    const aliases: Record<string, string> = {
+      atom: 'atoms',
+      atoms: 'atoms',
+      atomo: 'atoms',
+      atomos: 'atoms',
+      Átomo: 'atoms',
+      molecule: 'molecules',
+      molecula: 'molecules',
+      MOLÉCULAS: 'molecules',
+      organismo: 'organisms',
+      template: 'templates',
+      page: 'pages',
+      pagina: 'pages',
+      páginas: 'pages',
+    };
+
+    for (const [input, expected] of Object.entries(aliases)) {
+      expect(toAtomicLevelFromAlias(input), input).toBe(expected);
+    }
+
+    expect(toAtomicLevelFromAlias('widget')).toBeNull();
+  });
+
+  it('names a level folder per project language', () => {
+    expect(atomicLevelDir('atoms', 'en')).toBe('atoms');
+    expect(atomicLevelDir('atoms', 'pt')).toBe('atomos');
+    // Spelled the same in both, which is why it never identifies a language
+    expect(atomicLevelDir('templates', 'en')).toBe(atomicLevelDir('templates', 'pt'));
+  });
+});
+
+describe('component-detector - project language and components directory', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-lang-'));
+  });
+
+  afterEach(async () => {
+    await fs.remove(tempDir);
+  });
+
+  it('finds the levels a project has, whatever language they are in', async () => {
+    await fs.ensureDir(path.join(tempDir, 'atomos'));
+    await fs.ensureDir(path.join(tempDir, 'moleculas'));
+    await fs.ensureDir(path.join(tempDir, 'templates'));
+
+    const found = findAtomicLevelDirs(tempDir);
+
+    expect(found.map(f => f.level)).toEqual(['atoms', 'molecules', 'templates']);
+    expect(found.map(f => f.dirName)).toEqual(['atomos', 'moleculas', 'templates']);
+  });
+
+  it('counts a level once even when both spellings exist', async () => {
+    await fs.ensureDir(path.join(tempDir, 'atoms'));
+    await fs.ensureDir(path.join(tempDir, 'atomos'));
+
+    expect(findAtomicLevelDirs(tempDir)).toHaveLength(1);
+  });
+
+  it('ignores a file that happens to be named like a level', async () => {
+    await fs.writeFile(path.join(tempDir, 'atoms'), 'not a directory');
+
+    expect(findAtomicLevelDirs(tempDir)).toEqual([]);
+  });
+
+  it('infers the project language from its level folders', async () => {
+    await fs.ensureDir(path.join(tempDir, 'atomos'));
+    await fs.ensureDir(path.join(tempDir, 'organismos'));
+
+    expect(detectProjectLanguage(tempDir)).toBe('pt');
+  });
+
+  it('falls back to English when there is nothing to go on', async () => {
+    expect(detectProjectLanguage(tempDir)).toBe('en');
+
+    // `templates` is spelled the same in both, so it decides nothing
+    await fs.ensureDir(path.join(tempDir, 'templates'));
+    expect(detectProjectLanguage(tempDir)).toBe('en');
+  });
+
+  it('locates a conventional components directory', async () => {
+    const componentsDir = path.join(tempDir, 'src', 'components');
+    await fs.ensureDir(componentsDir);
+
+    expect(findComponentsDirectory(tempDir)).toBe(componentsDir);
+  });
+
+  it('falls back to the project root for a monorepo layout', async () => {
+    const nested = path.join(tempDir, 'packages', 'ui', 'src', 'atoms', 'badge');
+    await fs.ensureDir(nested);
+    await fs.writeFile(path.join(nested, 'Badge.vue'), '<template />');
+
+    expect(findComponentsDirectory(tempDir)).toBe(tempDir);
+  });
+
+  it('returns null when a project holds no components at all', async () => {
+    await fs.ensureDir(path.join(tempDir, 'docs'));
+
+    expect(findComponentsDirectory(tempDir)).toBeNull();
   });
 });
 

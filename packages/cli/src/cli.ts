@@ -10,7 +10,7 @@ import { Command } from 'commander';
 import path from 'path';
 import { version } from '../package.json';
 import { analyzeProject, displayResults } from './analyzer.js';
-import type { ComponentLevel } from './generate/Generate.types.js';
+import { ATOMIC_LEVEL_KEYS, toAtomicLevelFromAlias } from './component-detector.js';
 import { generateComponent } from './generate/index.js';
 import { normalizeComponents } from './normalize-components/index.js';
 import type { NormalizeReport } from './normalize-components/index.js';
@@ -37,28 +37,19 @@ program
 program
   .command('generate <type> <name>')
   .alias('g')
-  .description('Gerar um novo componente (atomo, molecula, organismo, template)')
+  .description('Gerar um novo componente (atom, molecule, organism, template, page)')
   .option('-p, --path <path>', 'Caminho customizado para o componente')
   .action(async (type: string, name: string, options: { path?: string }) => {
-    // Map singular to plural (folder names)
-    const typeMap: Record<string, ComponentLevel> = {
-      atomo: 'atomos',
-      atomos: 'atomos',
-      molecula: 'moleculas',
-      moleculas: 'moleculas',
-      organismo: 'organismos',
-      organismos: 'organismos',
-      template: 'templates',
-      templates: 'templates',
-    };
+    // Accepts either language, singular or plural, with or without accents
+    const level = toAtomicLevelFromAlias(type);
 
-    const mappedType = typeMap[type.toLowerCase()];
-
-    if (!mappedType) {
+    if (!level) {
       console.error(chalk.red(`Tipo de componente inválido: ${type}`));
-      console.log(chalk.yellow('Tipos válidos: atomo, molecula, organismo, template'));
+      console.log(chalk.yellow(`Tipos válidos: ${ATOMIC_LEVEL_KEYS.join(', ')}`));
       console.log(
-        chalk.gray('(formas plurais também aceitas: atomos, moleculas, organismos, templates)')
+        chalk.gray(
+          '(singular, plural e os nomes em português também são aceitos: atomo, atomos, ...)'
+        )
       );
       process.exit(1);
     }
@@ -68,7 +59,7 @@ program
     try {
       const result = await generateComponent({
         name,
-        type: mappedType,
+        type: level,
         path: options.path,
       });
 

@@ -8,19 +8,19 @@ import fs from 'fs-extra';
 import ora, { type Ora } from 'ora';
 import path from 'path';
 import {
-  ATOMIC_LEVELS,
+  ATOMIC_LEVEL_KEYS,
   AUXILIARY_PATTERNS,
   BARREL_FILES,
   COMPONENT_EXTENSIONS,
   detectComponents,
-  findComponentDirectories,
+  findAtomicLevelDirs,
   findComponentFiles,
+  findComponentsDirectory,
   getComponentBaseName,
   isPascalCase,
   STORY_PATTERNS,
   TEST_PATTERNS,
   toExpectedFileName,
-  toKebabCase,
 } from './component-detector.js';
 
 export interface AnalysisResult {
@@ -128,10 +128,8 @@ async function analyzeStructure(projectPath: string, spinner: Ora): Promise<Cate
     };
   }
 
-  // Check for Atomic Design folders
-  const foundLevels = ATOMIC_LEVELS.filter(level =>
-    fs.existsSync(path.join(componentsPath, level))
-  );
+  // Atomic Design folders, in whatever language the project names them
+  const foundLevels = findAtomicLevelDirs(componentsPath);
 
   items.push({
     name: 'Diretório de componentes',
@@ -145,8 +143,8 @@ async function analyzeStructure(projectPath: string, spinner: Ora): Promise<Cate
     name: 'Níveis Atomic Design',
     passed: foundLevels.length >= 3,
     points: foundLevels.length * 5,
-    maxPoints: 25,
-    message: `Encontrados: ${foundLevels.join(', ') || 'nenhum'} (${foundLevels.length}/5)`,
+    maxPoints: ATOMIC_LEVEL_KEYS.length * 5,
+    message: `Encontrados: ${foundLevels.map(l => l.dirName).join(', ') || 'nenhum'} (${foundLevels.length}/${ATOMIC_LEVEL_KEYS.length})`,
   });
 
   // Check component organization
@@ -482,37 +480,6 @@ async function analyzeDocumentation(projectPath: string, spinner: Ora): Promise<
     percentage: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0,
     items,
   };
-}
-
-/**
- * Helper: Find components directory
- * First checks common paths, then falls back to scanning for ANY directory with .vue files.
- * This ensures monorepo structures (packages/, apps/, libs/) are supported.
- */
-function findComponentsDirectory(projectPath: string): string | null {
-  // Check common paths first (fast path)
-  const possiblePaths = [
-    path.join(projectPath, 'src', 'components'),
-    path.join(projectPath, 'components'),
-    path.join(projectPath, 'src', 'views'),
-    path.join(projectPath, 'app', 'components'),
-  ];
-
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      return p;
-    }
-  }
-
-  // Fallback: scan the project for any directory containing .vue files
-  // This matches the normalize command's recursive detection
-  const vueDirs = findComponentDirectories(projectPath);
-  if (vueDirs.length > 0) {
-    // If components are in a monorepo layout, return project root so findAllComponents walks all
-    return projectPath;
-  }
-
-  return null;
 }
 
 /**
