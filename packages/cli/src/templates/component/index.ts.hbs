@@ -1,4 +1,4 @@
 export * from './{{pascalCase name}}.types';
-export * from './{{pascalCase name}}.mock';
-export * as Stories from './{{pascalCase name}}.stories';
-export { default } from './{{pascalCase name}}.vue';
+{{#if hasMock}}export * from './{{pascalCase name}}.mock';
+{{/if}}{{#if hasStories}}export * as Stories from './{{pascalCase name}}.stories';
+{{/if}}export { default } from '{{entry}}';

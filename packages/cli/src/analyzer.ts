@@ -9,9 +9,6 @@ import ora, { type Ora } from 'ora';
 import path from 'path';
 import {
   ATOMIC_LEVEL_KEYS,
-  AUXILIARY_PATTERNS,
-  BARREL_FILES,
-  COMPONENT_EXTENSIONS,
   detectComponents,
   findAtomicLevelDirs,
   findComponentFiles,
@@ -500,24 +497,9 @@ function findAllComponents(dir: string): string[] {
 }
 
 /**
- * Helper: Count components by language
- */
-function countComponentsByLanguage(dir: string): {
-  total: number;
-  typescript: number;
-} {
-  const components = findAllComponents(dir);
-  const typescript = components.filter(
-    file => file.endsWith('.ts') || file.endsWith('.tsx')
-  ).length;
-
-  return { total: components.length, typescript };
-}
-
-/**
  * Helper: Find files by pattern
  */
-function findFilesByPattern(dir: string, patterns: string[]): string[] {
+function findFilesByPattern(dir: string, patterns: readonly string[]): string[] {
   const files: string[] = [];
 
   function walk(currentDir: string) {
@@ -579,7 +561,7 @@ function stripExt(filePath: string): string {
 /**
  * Helper: Strip test/story suffix from file path to get base component path
  */
-function stripTestSuffix(filePath: string, patterns: string[]): string {
+function stripTestSuffix(filePath: string, patterns: readonly string[]): string {
   for (const pattern of patterns) {
     if (filePath.includes(pattern)) {
       return filePath.replace(pattern, '');

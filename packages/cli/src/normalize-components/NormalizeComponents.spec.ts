@@ -2074,6 +2074,77 @@ describe('NormalizeComponents - Promotion of loose components', () => {
     expect(entry).toContain("from './atoms/badge/Badge.types'");
   });
 
+  it('completes a component with the canonical files, and only those', async () => {
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    const dir = path.join(atomsDir, 'progress-bar');
+    expect((await fs.readdir(dir)).sort()).toEqual([
+      'ProgressBar.spec.ts',
+      'ProgressBar.types.ts',
+      'ProgressBar.vue',
+      'index.ts',
+    ]);
+
+    // A story and a mock are the person's to write, so normalize leaves them out
+    expect(await fs.pathExists(path.join(dir, 'ProgressBar.stories.ts'))).toBe(false);
+    expect(await fs.pathExists(path.join(dir, 'ProgressBar.mock.ts'))).toBe(false);
+  });
+
+  it('renders the completed files from the shared templates', async () => {
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
+
+    await normalizeComponents({ path: tempDir, dryRun: false });
+
+    const dir = path.join(atomsDir, 'progress-bar');
+
+    // The barrel exports only what exists: no mock, no stories
+    const barrel = await fs.readFile(path.join(dir, 'index.ts'), 'utf-8');
+    expect(barrel).toContain("export * from './ProgressBar.types'");
+    expect(barrel).toContain("export { default } from './ProgressBar.vue'");
+    expect(barrel).not.toContain('.mock');
+    expect(barrel).not.toContain('.stories');
+
+    // The generated spec mounts a .vue component and does not reach for a mock
+    const spec = await fs.readFile(path.join(dir, 'ProgressBar.spec.ts'), 'utf-8');
+    expect(spec).toContain("import { mount } from '@vue/test-utils'");
+    expect(spec).toContain('mount(ProgressBar)');
+    expect(spec).not.toContain('generateMockData');
+  });
+
+  it('exports an existing mock and story from a barrel it creates', async () => {
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.mock.ts'), 'export const m = 1;');
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.stories.ts'), 'export default {};');
+
+    await normalizeComponents({ path: tempDir, dryRun: false });
+
+    const barrel = await fs.readFile(path.join(atomsDir, 'progress-bar', 'index.ts'), 'utf-8');
+    expect(barrel).toContain("export * from './ProgressBar.mock'");
+    expect(barrel).toContain("export * as Stories from './ProgressBar.stories'");
+  });
+
+  it('completes a .ts component without assuming Vue', async () => {
+    const dir = path.join(tempDir, 'organisms', 'taskin');
+    await fs.ensureDir(dir);
+    await fs.writeFile(path.join(dir, 'Taskin.ts'), 'export default {};');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    const barrel = await fs.readFile(path.join(dir, 'index.ts'), 'utf-8');
+    expect(barrel).toContain("export { default } from './Taskin'");
+    expect(barrel).not.toContain('Taskin.vue');
+
+    const spec = await fs.readFile(path.join(dir, 'Taskin.spec.ts'), 'utf-8');
+    expect(spec).not.toContain('@vue/test-utils');
+    expect(spec).toContain('expect(Taskin).toBeDefined()');
+  });
+
   it('changes nothing in dry-run', async () => {
     await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
 

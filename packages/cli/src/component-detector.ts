@@ -11,24 +11,67 @@ import path from 'path';
 
 export const COMPONENT_EXTENSIONS = ['.vue', '.tsx', '.ts'] as const;
 
-export const TEST_PATTERNS = ['.spec.ts', '.spec.tsx', '.test.ts', '.test.tsx'];
+export const BARREL_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'] as const;
 
-export const STORY_PATTERNS = ['.stories.ts', '.stories.tsx', '.story.ts', '.story.tsx'];
+export const DECLARATION_PATTERNS = ['.d.ts', '.d.tsx', '.d.mts', '.d.cts'] as const;
 
+export const IGNORED_DIRECTORIES = ['node_modules', 'dist', 'coverage', 'dist-storybook'] as const;
+
+/**
+ * The roles a file can play inside a component, and the suffixes that mark
+ * each one. This table is the single source of truth: the pattern lists, the
+ * base-name stripping and `getFileType` are all derived from it, so adding a
+ * role is one edit here instead of three that can drift apart.
+ *
+ * The first suffix of each role is the canonical one — the form the tooling
+ * writes. The rest are accepted when already present.
+ */
+export const COMPONENT_FILE_ROLES = {
+  types: ['.types.ts', '.types.tsx'],
+  test: ['.spec.ts', '.spec.tsx', '.test.ts', '.test.tsx'],
+  stories: ['.stories.ts', '.stories.tsx', '.story.ts', '.story.tsx'],
+  mock: ['.mock.ts', '.mock.tsx', '.mocks.ts', '.mocks.tsx'],
+  controller: ['.controller.ts', '.controller.tsx'],
+} as const;
+
+export type ComponentFileRole = keyof typeof COMPONENT_FILE_ROLES;
+
+export const COMPONENT_FILE_ROLE_KEYS = Object.keys(COMPONENT_FILE_ROLES) as ComponentFileRole[];
+
+export const TEST_PATTERNS = COMPONENT_FILE_ROLES.test;
+
+export const STORY_PATTERNS = COMPONENT_FILE_ROLES.stories;
+
+/**
+ * Suffixes of files that belong to a component without being the component:
+ * every role except the ones that stand on their own as tests and stories.
+ */
 export const AUXILIARY_PATTERNS = [
-  '.types.ts',
-  '.types.tsx',
-  '.mock.ts',
-  '.mock.tsx',
-  '.mocks.ts',
-  '.mocks.tsx',
-  '.controller.ts',
-  '.controller.tsx',
-];
+  ...COMPONENT_FILE_ROLES.types,
+  ...COMPONENT_FILE_ROLES.mock,
+  ...COMPONENT_FILE_ROLES.controller,
+] as const;
 
-export const BARREL_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
+export type ComponentExtension = (typeof COMPONENT_EXTENSIONS)[number];
 
-export const DECLARATION_PATTERNS = ['.d.ts', '.d.tsx', '.d.mts', '.d.cts'];
+export type ComponentFileType = ComponentFileRole | 'component' | 'index' | 'other';
+
+/** Every suffix that marks a file as belonging to a component rather than being one */
+const ALL_ROLE_SUFFIXES: readonly string[] = COMPONENT_FILE_ROLE_KEYS.flatMap(
+  role => COMPONENT_FILE_ROLES[role]
+);
+
+/**
+ * `Avatar.types.ts` -> `Avatar`. Built from the role table, so a role added
+ * there is stripped here without a second edit.
+ */
+const ROLE_SUFFIX_PATTERN = new RegExp(
+  `\\.(${COMPONENT_FILE_ROLE_KEYS.flatMap(role =>
+    COMPONENT_FILE_ROLES[role].map(suffix => suffix.split('.')[1])
+  )
+    .filter((word, index, words) => words.indexOf(word) === index)
+    .join('|')})\\.(ts|tsx|js|jsx)$`
+);
 
 /**
  * The Atomic Design levels, and the folder name each takes per project
@@ -85,13 +128,6 @@ function stripAccents(input: string): string {
   return input.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-export const IGNORED_DIRECTORIES = ['node_modules'];
-
-export type ComponentExtension = (typeof COMPONENT_EXTENSIONS)[number];
-
-export type ComponentFileType =
-  'component' | 'types' | 'test' | 'stories' | 'mock' | 'controller' | 'index' | 'other';
-
 /**
  * Check if a file *name* could belong to a component (not a test, story,
  * auxiliary file, barrel or type declaration).
@@ -100,16 +136,14 @@ export type ComponentFileType =
  * `isComponentEntry`, which adds the directory context.
  */
 export function isComponentFile(fileName: string): boolean {
-  const ext = fileName.slice(fileName.lastIndexOf('.'));
-  if (!COMPONENT_EXTENSIONS.includes(ext as ComponentExtension)) return false;
+  const extension = fileName.slice(fileName.lastIndexOf('.'));
+  if (!COMPONENT_EXTENSIONS.includes(extension as ComponentExtension)) return false;
 
-  const isTest = TEST_PATTERNS.some(p => fileName.endsWith(p));
-  const isStory = STORY_PATTERNS.some(p => fileName.endsWith(p));
-  const isAuxiliary = AUXILIARY_PATTERNS.some(p => fileName.endsWith(p));
-  const isDeclaration = DECLARATION_PATTERNS.some(p => fileName.endsWith(p));
-  const isBarrel = BARREL_FILES.includes(fileName);
+  const playsAnotherRole = ALL_ROLE_SUFFIXES.some(suffix => fileName.endsWith(suffix));
+  const isDeclaration = DECLARATION_PATTERNS.some(suffix => fileName.endsWith(suffix));
+  const isBarrel = (BARREL_FILES as readonly string[]).includes(fileName);
 
-  return !isTest && !isStory && !isAuxiliary && !isDeclaration && !isBarrel;
+  return !playsAnotherRole && !isDeclaration && !isBarrel;
 }
 
 /**
@@ -240,7 +274,7 @@ function isDirectory(candidate: string): boolean {
  * Check if a directory should be skipped while walking a project
  */
 export function isIgnoredDirectory(dirName: string): boolean {
-  return dirName.startsWith('.') || IGNORED_DIRECTORIES.includes(dirName);
+  return dirName.startsWith('.') || (IGNORED_DIRECTORIES as readonly string[]).includes(dirName);
 }
 
 /**
@@ -284,9 +318,9 @@ export function toPascalCase(str: string): string {
  * `progressBar.stories.ts` -> `progressBar`
  */
 export function getComponentBaseName(filePath: string): string {
-  const fileName = path.basename(filePath);
-  return fileName
-    .replace(/\.(types|stories|story|spec|test|mock|mocks|controller)\.(ts|tsx|js|jsx)$/, '')
+  return path
+    .basename(filePath)
+    .replace(ROLE_SUFFIX_PATTERN, '')
     .replace(/\.(ts|tsx|js|jsx|vue)$/, '');
 }
 
@@ -294,14 +328,67 @@ export function getComponentBaseName(filePath: string): string {
  * Determine the role a file plays inside a component directory
  */
 export function getFileType(fileName: string): ComponentFileType {
-  if (BARREL_FILES.includes(fileName)) return 'index';
-  if (fileName.includes('.types.')) return 'types';
-  if (fileName.includes('.spec.') || fileName.includes('.test.')) return 'test';
-  if (fileName.includes('.stories.') || fileName.includes('.story.')) return 'stories';
-  if (fileName.includes('.mock.') || fileName.includes('.mocks.')) return 'mock';
-  if (fileName.includes('.controller.')) return 'controller';
-  if (isComponentFile(fileName)) return 'component';
-  return 'other';
+  if ((BARREL_FILES as readonly string[]).includes(fileName)) return 'index';
+
+  const role = COMPONENT_FILE_ROLE_KEYS.find(candidate =>
+    COMPONENT_FILE_ROLES[candidate].some(suffix => fileName.endsWith(suffix))
+  );
+  if (role) return role;
+
+  return isComponentFile(fileName) ? 'component' : 'other';
+}
+
+/**
+ * The files a complete component has.
+ *
+ * `completesFolder` marks the ones the tooling writes into an existing
+ * component to make its folder valid: a barrel, a types file and a test file
+ * are useful as stubs. A story and a mock need the component's real props to be
+ * worth anything, so they are scaffolded only for a brand-new component — for
+ * an existing one `analyze` reports them and a person writes them.
+ */
+export const COMPONENT_FILE_SET = [
+  { role: 'index', completesFolder: true },
+  { role: 'types', completesFolder: true },
+  { role: 'test', completesFolder: true },
+  { role: 'stories', completesFolder: false },
+  { role: 'mock', completesFolder: false },
+] as const satisfies readonly { role: ComponentFileType; completesFolder: boolean }[];
+
+export interface ComponentFileSpec {
+  role: ComponentFileType;
+  /** The name the tooling writes when the file is missing */
+  fileName: string;
+  /** Names that already satisfy this role, so nothing is written */
+  accepted: string[];
+  /** Whether the tooling writes it to complete an existing component */
+  completesFolder: boolean;
+}
+
+/**
+ * Resolve the canonical file set for one component.
+ *
+ * Both `generate`, which writes a whole component, and `normalize`, which
+ * completes an existing one, read this — so the two can never disagree on what
+ * a component is made of.
+ */
+export function componentFileSet(componentName: string): ComponentFileSpec[] {
+  return COMPONENT_FILE_SET.map(({ role, completesFolder }) => {
+    const accepted =
+      role === 'index'
+        ? [...BARREL_FILES]
+        : COMPONENT_FILE_ROLES[role as ComponentFileRole].map(
+            suffix => `${componentName}${suffix}`
+          );
+
+    return {
+      role,
+      // The first accepted name is the canonical one
+      fileName: accepted[0],
+      accepted,
+      completesFolder,
+    };
+  });
 }
 
 /**
