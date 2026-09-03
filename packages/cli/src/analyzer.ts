@@ -12,9 +12,15 @@ import {
   AUXILIARY_PATTERNS,
   BARREL_FILES,
   COMPONENT_EXTENSIONS,
-  isComponentFile,
+  detectComponents,
+  findComponentDirectories,
+  findComponentFiles,
+  getComponentBaseName,
+  isPascalCase,
   STORY_PATTERNS,
   TEST_PATTERNS,
+  toExpectedFileName,
+  toKebabCase,
 } from './component-detector.js';
 
 export interface AnalysisResult {
@@ -373,27 +379,8 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
 
   const componentFiles = findAllComponents(componentsPath);
 
-  // Helper function to get the base component name (handles .types.ts, .stories.ts, etc.)
-  const getComponentBaseName = (file: string): string => {
-    const fileName = path.basename(file);
-    // Remove .types.ts, .stories.ts, .spec.ts, .test.ts, etc.
-    return fileName
-      .replace(/\.(types|stories|story|spec|test)\.(ts|tsx|js|jsx)$/, '')
-      .replace(/\.(ts|tsx|js|jsx|vue)$/, '');
-  };
-
-  const pascalCaseFiles = componentFiles.filter(file => {
-    const baseName = getComponentBaseName(file);
-    // index.ts é uma convenção legítima para arquivos de exportação
-    if (baseName === 'index') return true;
-    return /^[A-Z][a-zA-Z0-9]*$/.test(baseName);
-  });
-  const nonPascalFiles = componentFiles.filter(file => {
-    const baseName = getComponentBaseName(file);
-    // index.ts é uma convenção legítima para arquivos de exportação
-    if (baseName === 'index') return false;
-    return !/^[A-Z][a-zA-Z0-9]*$/.test(baseName);
-  });
+  const pascalCaseFiles = componentFiles.filter(file => isPascalCase(getComponentBaseName(file)));
+  const nonPascalFiles = componentFiles.filter(file => !isPascalCase(getComponentBaseName(file)));
 
   const pascalCasePercentage =
     componentFiles.length > 0 ? (pascalCaseFiles.length / componentFiles.length) * 100 : 0;
@@ -404,29 +391,14 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
     points: Math.round((pascalCasePercentage / 100) * 10),
     maxPoints: 10,
     message: `${pascalCaseFiles.length}/${componentFiles.length} componentes (${Math.round(pascalCasePercentage)}%)`,
+    // `toExpectedFileName` is the same rule `normalize` applies, so the
+    // suggested name is exactly the name normalize would produce
     fileIssues: nonPascalFiles
-      .map(f => {
-        const oldName = path.basename(f);
-        const baseName = getComponentBaseName(f);
-
-        // Convert to PascalCase
-        const pascalName = baseName
-          .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
-          .replace(/^(.)/, (_, c: string) => c.toUpperCase());
-
-        // Reconstruct the full filename with same suffixes
-        const suffix = oldName.replace(
-          new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
-          ''
-        );
-        const newName = `${pascalName}${suffix}`;
-
-        return {
-          file: f,
-          oldName,
-          newName,
-        };
-      })
+      .map(f => ({
+        file: f,
+        oldName: path.basename(f),
+        newName: toExpectedFileName(path.basename(f)),
+      }))
       // Only include files where the name actually needs to change
       .filter(({ oldName, newName }) => oldName !== newName)
       .map(({ file, oldName, newName }) => ({
@@ -436,23 +408,26 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
       })),
   });
 
-  // Check if components are organized in folders (Component/Component.vue pattern)
-  const folderedComponents = componentFiles.filter(file => {
-    const dir = path.dirname(file);
-    const fileName = path.basename(file, path.extname(file));
-    const parentFolder = path.basename(dir);
-    return fileName === parentFolder || fileName === 'index';
-  });
+  // Each component owns a folder named after it. This reads the very plan
+  // `normalize` would execute, so the score can only be lowered by something
+  // normalize knows how to fix — and the suggested folder is the one it creates.
+  const detected = detectComponents(componentsPath);
+  const looseComponents = detected.filter(c => c.needsPromotion);
+  const folderedCount = detected.length - looseComponents.length;
 
-  const folderOrganization =
-    componentFiles.length > 0 ? (folderedComponents.length / componentFiles.length) * 100 : 0;
+  const folderOrganization = detected.length > 0 ? (folderedCount / detected.length) * 100 : 0;
 
   items.push({
     name: 'Organização por pastas',
     passed: folderOrganization >= 60,
     points: Math.round((folderOrganization / 100) * 5),
     maxPoints: 5,
-    message: `${folderedComponents.length}/${componentFiles.length} componentes (${Math.round(folderOrganization)}%)`,
+    message: `${folderedCount}/${detected.length} componentes (${Math.round(folderOrganization)}%)`,
+    fileIssues: looseComponents.map(component => ({
+      file: component.entryPath,
+      issue: 'Componente sem pasta própria',
+      fix: `Mova para ${component.targetDir}/ (ou rode: storytype normalize)`,
+    })),
   });
 
   const score = items.reduce((sum, item) => sum + item.points, 0);
@@ -531,45 +506,13 @@ function findComponentsDirectory(projectPath: string): string | null {
 
   // Fallback: scan the project for any directory containing .vue files
   // This matches the normalize command's recursive detection
-  const vueDirs = findVueComponentDirectories(projectPath);
+  const vueDirs = findComponentDirectories(projectPath);
   if (vueDirs.length > 0) {
     // If components are in a monorepo layout, return project root so findAllComponents walks all
     return projectPath;
   }
 
   return null;
-}
-
-/**
- * Scan a directory recursively for folders containing .vue component files
- */
-function findVueComponentDirectories(dir: string): string[] {
-  const results: string[] = [];
-
-  function walk(currentDir: string) {
-    if (!fs.existsSync(currentDir)) return;
-
-    try {
-      const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-
-      const hasComponents = entries.some(e => e.isFile() && isComponentFile(e.name));
-      if (hasComponents) {
-        results.push(currentDir);
-        return;
-      }
-
-      for (const entry of entries) {
-        if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
-          walk(path.join(currentDir, entry.name));
-        }
-      }
-    } catch {
-      // Skip directories we can't read
-    }
-  }
-
-  walk(dir);
-  return results;
 }
 
 /**
@@ -580,30 +523,13 @@ function countComponents(dir: string): number {
 }
 
 /**
- * Helper: Find all component files
+ * Helper: Find all component files.
+ *
+ * Thin alias over the shared detector so every count in this file uses the
+ * same definition of "component" that `normalize` acts on.
  */
 function findAllComponents(dir: string): string[] {
-  const components: string[] = [];
-
-  function walk(currentDir: string) {
-    if (!fs.existsSync(currentDir)) return;
-
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-
-      if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-        walk(fullPath);
-      } else if (entry.isFile() && isComponentFile(entry.name)) {
-        components.push(fullPath);
-      }
-    }
-  }
-
-  walk(dir);
-  return components;
+  return findComponentFiles(dir);
 }
 
 /**

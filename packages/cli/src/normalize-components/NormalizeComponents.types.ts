@@ -2,6 +2,8 @@
  * Types for component normalization utility
  */
 
+import type { ComponentFileType } from '../component-detector.js';
+
 export interface ComponentFile {
   /** Current file path */
   currentPath: string;
@@ -10,7 +12,7 @@ export interface ComponentFile {
   /** Whether file is tracked by Git */
   isGitTracked: boolean;
   /** File type */
-  type: 'component' | 'types' | 'test' | 'stories' | 'mock' | 'index' | 'other';
+  type: ComponentFileType;
 }
 
 export interface ComponentDirectory {
@@ -26,6 +28,8 @@ export interface ComponentDirectory {
   missingFiles: string[];
   /** Whether directory needs renaming */
   needsRename: boolean;
+  /** Whether files are loose in an Atomic Design level and need a folder of their own */
+  needsPromotion: boolean;
   /** Import references that need updating */
   importReferences: ImportReference[];
 }
@@ -48,6 +52,8 @@ export interface NormalizeReport {
   components: ComponentDirectory[];
   /** Total directories to rename */
   directoriesToRename: number;
+  /** Total components to move into a folder of their own */
+  componentsToPromote: number;
   /** Total files to rename */
   filesToRename: number;
   /** Total files to create */
@@ -56,7 +62,7 @@ export interface NormalizeReport {
   importsToUpdate: number;
   /** Detailed import references */
   importReferences: ImportReference[];
-  /** Directories skipped and the reason */
+  /** Directories skipped and the reason (e.g. a promotion target already exists) */
   skippedDirectories: Array<{ path: string; reason: string }>;
   /** Executed successfully */
   success: boolean;

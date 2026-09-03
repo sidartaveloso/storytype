@@ -13,8 +13,21 @@ import { analyzeProject, displayResults } from './analyzer.js';
 import type { ComponentLevel } from './generate/Generate.types.js';
 import { generateComponent } from './generate/index.js';
 import { normalizeComponents } from './normalize-components/index.js';
+import type { NormalizeReport } from './normalize-components/index.js';
 
 const program = new Command();
+
+/**
+ * Every change a normalize run would make
+ */
+function totalChanges(report: NormalizeReport): number {
+  return (
+    report.directoriesToRename +
+    report.componentsToPromote +
+    report.filesToRename +
+    report.filesToCreate
+  );
+}
 
 program
   .name('storytype')
@@ -109,6 +122,9 @@ program
           console.log(chalk.green('\n✓ Análise completa!'));
           console.log(chalk.gray(`\nComponentes encontrados: ${result.components.length}`));
           console.log(chalk.gray(`Diretórios a renomear: ${result.directoriesToRename}`));
+          console.log(
+            chalk.gray(`Componentes a mover para pasta própria: ${result.componentsToPromote}`)
+          );
           console.log(chalk.gray(`Arquivos a renomear: ${result.filesToRename}`));
           console.log(chalk.gray(`Arquivos a criar: ${result.filesToCreate}`));
           if (result.importsToUpdate > 0) {
@@ -125,20 +141,25 @@ program
           };
 
           // Show detailed changes in dry-run mode or verbose mode
-          if (
-            (options?.dryRun || options?.verbose) &&
-            result.directoriesToRename + result.filesToRename + result.filesToCreate > 0
-          ) {
+          if ((options?.dryRun || options?.verbose) && totalChanges(result) > 0) {
             console.log(chalk.cyan('\n📋 Mudanças detalhadas:\n'));
 
             result.components.forEach(comp => {
               const hasChanges =
                 comp.needsRename ||
+                comp.needsPromotion ||
                 comp.missingFiles.length > 0 ||
                 comp.files.some(f => f.currentPath !== f.targetPath);
 
               if (hasChanges) {
                 console.log(chalk.bold(`\n  Componente: ${comp.componentName}`));
+
+                // Show promotion into a folder of its own
+                if (comp.needsPromotion) {
+                  console.log(chalk.yellow(`    📦 Mover para pasta própria:`));
+                  console.log(chalk.gray(`       ${relativePath(comp.currentPath)}/`));
+                  console.log(chalk.gray(`       → ${relativePath(comp.targetPath)}/`));
+                }
 
                 // Show directory rename
                 if (comp.needsRename) {
@@ -147,11 +168,12 @@ program
                   console.log(chalk.gray(`       → ${relativePath(comp.targetPath)}`));
                 }
 
-                // Show file renames
+                // Show file renames / moves
                 const filesToRename = comp.files.filter(f => f.currentPath !== f.targetPath);
                 if (filesToRename.length > 0) {
+                  const label = comp.needsPromotion ? 'Mover' : 'Renomear';
                   console.log(
-                    chalk.yellow(`    📄 Renomear arquivo${filesToRename.length > 1 ? 's' : ''}:`)
+                    chalk.yellow(`    📄 ${label} arquivo${filesToRename.length > 1 ? 's' : ''}:`)
                   );
                   filesToRename.forEach(file => {
                     console.log(chalk.gray(`       ${relativePath(file.currentPath)}`));
@@ -165,7 +187,8 @@ program
                     chalk.green(`    ✨ Criar arquivo${comp.missingFiles.length > 1 ? 's' : ''}:`)
                   );
                   comp.missingFiles.forEach(fileName => {
-                    const targetDir = comp.needsRename ? comp.targetPath : comp.currentPath;
+                    const targetDir =
+                      comp.needsRename || comp.needsPromotion ? comp.targetPath : comp.currentPath;
                     const fullPath = `${targetDir}/${fileName}`;
                     console.log(chalk.gray(`       ${relativePath(fullPath)}`));
                   });
@@ -191,7 +214,7 @@ program
           if (options?.dryRun) {
             console.log(chalk.yellow('\n⚠️  Modo dry-run: nenhuma mudança foi feita'));
             console.log(chalk.gray('Execute sem --dry-run para aplicar as mudanças\n'));
-          } else if (result.directoriesToRename + result.filesToRename + result.filesToCreate > 0) {
+          } else if (totalChanges(result) > 0) {
             console.log(chalk.green('\n✓ Normalização concluída com sucesso!'));
           } else {
             console.log(
