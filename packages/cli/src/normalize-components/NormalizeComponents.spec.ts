@@ -428,6 +428,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
   describe('Simple Project Structure', () => {
     it('should keep srv folder name intact', async () => {
       const projectPath = path.join(fixturesDir, 'simple-project', 'src', 'components');
+      const srvDir = path.join(projectPath, 'srv');
 
       const options: NormalizeOptions = {
         path: projectPath,
@@ -436,12 +437,17 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const result = await analyzeComponentStructure(options);
 
-      const srvComponent = result.components.find(c => path.basename(c.currentPath) === 'srv');
+      // srv/ holds two components, so it is a container: the folder keeps its
+      // name — it is never widened to `server/` by a file inside it — and each
+      // component gets a folder of its own within it
+      const srvComponents = result.components.filter(c => c.currentPath === srvDir);
 
-      expect(srvComponent).toBeDefined();
-      expect(srvComponent?.needsRename).toBe(false);
-      expect(path.basename(srvComponent!.currentPath)).toBe('srv');
-      expect(path.basename(srvComponent!.targetPath)).toBe('srv');
+      expect(srvComponents.map(c => c.componentName)).toEqual(['Server', 'Service']);
+      expect(srvComponents.every(c => c.needsRename)).toBe(false);
+      expect(srvComponents.map(c => c.targetPath)).toEqual([
+        path.join(srvDir, 'server'),
+        path.join(srvDir, 'service'),
+      ]);
     });
 
     it('should normalize SRV uppercase to srv lowercase', async () => {
@@ -838,7 +844,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       expect(result.importsToUpdate).toBeGreaterThan(0);
     });
 
-    it('should report skipped directories in verbose dry-run on monorepo', async () => {
+    it('should promote a loose component in an atomic level on monorepo', async () => {
       const atomsDir = path.join(tempDir, 'packages', 'ui', 'src', 'atoms');
       await fs.ensureDir(atomsDir);
       await fs.writeFile(
@@ -855,12 +861,44 @@ describe('NormalizeComponents - Monorepo Support', () => {
       const result = await analyzeComponentStructure(options);
 
       expect(result.success).toBe(true);
-      expect(result.components.length).toBe(0);
-      expect(result.skippedDirectories.length).toBeGreaterThan(0);
+      expect(result.components.length).toBe(1);
+      expect(result.skippedDirectories.length).toBe(0);
 
-      const atomsSkip = result.skippedDirectories.find(s => s.path.includes('atoms'));
-      expect(atomsSkip).toBeDefined();
-      expect(atomsSkip?.reason).toContain('Atomic Design');
+      const button = result.components[0];
+      expect(button.componentName).toBe('Button');
+      expect(button.needsPromotion).toBe(true);
+      expect(button.needsRename).toBe(false);
+      expect(button.currentPath).toBe(atomsDir);
+      expect(button.targetPath).toBe(path.join(atomsDir, 'button'));
+      expect(result.componentsToPromote).toBe(1);
+    });
+
+    it('should skip promotion when the target folder already exists', async () => {
+      const atomsDir = path.join(tempDir, 'packages', 'ui', 'src', 'atoms');
+      await fs.ensureDir(path.join(atomsDir, 'button'));
+      await fs.writeFile(
+        path.join(atomsDir, 'Button.vue'),
+        '<template><div>Loose</div></template>'
+      );
+      await fs.writeFile(
+        path.join(atomsDir, 'button', 'Button.vue'),
+        '<template><div>Nested</div></template>'
+      );
+
+      const options: NormalizeOptions = {
+        path: tempDir,
+        dryRun: true,
+        verbose: true,
+      };
+
+      const result = await analyzeComponentStructure(options);
+
+      expect(result.success).toBe(true);
+      expect(result.componentsToPromote).toBe(0);
+
+      const skip = result.skippedDirectories.find(s => s.path === atomsDir);
+      expect(skip).toBeDefined();
+      expect(skip?.reason).toContain('já existe');
     });
 
     it('should handle full pipeline in monorepo: rename + imports + .ts', async () => {
@@ -1219,10 +1257,13 @@ describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
 
     const result = await analyzeComponentStructure(options);
 
-    const moleculesComponent = result.components.find(
-      c => path.basename(c.currentPath) === 'molecules'
-    );
-    expect(moleculesComponent).toBeUndefined();
+    // The level itself is never renamed; its loose files get promoted instead
+    const renamedLevel = result.components.find(c => c.needsRename);
+    expect(renamedLevel).toBeUndefined();
+
+    const someComponent = result.components.find(c => c.componentName === 'SomeComponent');
+    expect(someComponent?.needsPromotion).toBe(true);
+    expect(someComponent?.targetPath).toBe(path.join(moleculesDir, 'some-component'));
   });
 
   it('should not exclude non-atomic directory names', async () => {
@@ -1282,8 +1323,14 @@ describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
 
     const result = await analyzeComponentStructure(options);
 
-    const atomsComponent = result.components.find(c => path.basename(c.currentPath) === 'Atoms');
-    expect(atomsComponent).toBeUndefined();
+    // `Atoms/` is recognized as a level despite the casing, so it is not
+    // renamed to a component name — the loose Button is promoted inside it
+    const renamedLevel = result.components.find(c => c.needsRename);
+    expect(renamedLevel).toBeUndefined();
+
+    const button = result.components.find(c => c.componentName === 'Button');
+    expect(button?.needsPromotion).toBe(true);
+    expect(button?.targetPath).toBe(path.join(atomsDir, 'button'));
   });
 });
 
@@ -1653,5 +1700,410 @@ describe('NormalizeComponents - Git History Preservation', () => {
 
     expect(stdout).toMatch(/^R\d*\s/m);
     expect(stdout).toContain('user-profile/UserProfile.vue');
+  });
+});
+
+describe('NormalizeComponents - Promotion of loose components', () => {
+  let tempDir: string;
+  let atomsDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-promote-test-'));
+    atomsDir = path.join(tempDir, 'atoms');
+    await fs.ensureDir(atomsDir);
+  });
+
+  afterEach(async () => {
+    await fs.remove(tempDir);
+  });
+
+  it('moves a loose component into its own folder with the conventional files', async () => {
+    await fs.writeFile(
+      path.join(atomsDir, 'ProgressBar.vue'),
+      '<template><div>ProgressBar</div></template>'
+    );
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.stories.ts'), 'export default {};');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+    expect(result.componentsToPromote).toBe(1);
+
+    const progressBarDir = path.join(atomsDir, 'progress-bar');
+    expect(await fs.pathExists(path.join(progressBarDir, 'ProgressBar.vue'))).toBe(true);
+    expect(await fs.pathExists(path.join(progressBarDir, 'ProgressBar.stories.ts'))).toBe(true);
+
+    // The files the component was missing are created in the new folder
+    expect(await fs.pathExists(path.join(progressBarDir, 'index.ts'))).toBe(true);
+    expect(await fs.pathExists(path.join(progressBarDir, 'ProgressBar.types.ts'))).toBe(true);
+    expect(await fs.pathExists(path.join(progressBarDir, 'ProgressBar.spec.ts'))).toBe(true);
+
+    // Nothing is left behind in the level
+    expect(await fs.pathExists(path.join(atomsDir, 'ProgressBar.vue'))).toBe(false);
+    expect(await fs.pathExists(path.join(atomsDir, 'ProgressBar.stories.ts'))).toBe(false);
+  });
+
+  it('rewrites the level barrel to point at the new folder', async () => {
+    await fs.writeFile(path.join(atomsDir, 'Avatar.vue'), '<template><div>Avatar</div></template>');
+    await fs.writeFile(path.join(atomsDir, 'Badge.vue'), '<template><div>Badge</div></template>');
+    await fs.writeFile(
+      path.join(atomsDir, 'index.ts'),
+      "export { default as Avatar } from './Avatar.vue';\n" +
+        "export { default as Badge } from './Badge.vue';\n"
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+    expect(result.componentsToPromote).toBe(2);
+
+    const barrel = await fs.readFile(path.join(atomsDir, 'index.ts'), 'utf-8');
+    expect(barrel).toContain("from './avatar/Avatar.vue'");
+    expect(barrel).toContain("from './badge/Badge.vue'");
+    expect(barrel).not.toContain("from './Avatar.vue'");
+    expect(barrel).not.toContain("from './Badge.vue'");
+  });
+
+  it('rewrites a sibling that imported the promoted one, following both moves', async () => {
+    await fs.writeFile(path.join(atomsDir, 'Badge.vue'), '<template><div>Badge</div></template>');
+    await fs.writeFile(
+      path.join(atomsDir, 'TaskHeader.vue'),
+      '<script setup lang="ts">\nimport Badge from \'./Badge.vue\';\n</script>\n'
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    // Both components moved into folders of their own, so the import has to
+    // climb out of task-header/ and back down into badge/
+    const taskHeader = await fs.readFile(
+      path.join(atomsDir, 'task-header', 'TaskHeader.vue'),
+      'utf-8'
+    );
+    expect(taskHeader).toContain("from '../badge/Badge.vue'");
+  });
+
+  it('rewrites an importer that stays put when only the target moves', async () => {
+    await fs.writeFile(path.join(atomsDir, 'Badge.vue'), '<template><div>Badge</div></template>');
+    await fs.ensureDir(path.join(atomsDir, 'task-header'));
+    await fs.writeFile(
+      path.join(atomsDir, 'task-header', 'TaskHeader.vue'),
+      '<script setup lang="ts">\nimport Badge from \'../Badge.vue\';\n</script>\n'
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    const taskHeader = await fs.readFile(
+      path.join(atomsDir, 'task-header', 'TaskHeader.vue'),
+      'utf-8'
+    );
+    expect(taskHeader).toContain("from '../badge/Badge.vue'");
+  });
+
+  it('keeps imports among the promoted component own files untouched', async () => {
+    await fs.writeFile(
+      path.join(atomsDir, 'Avatar.vue'),
+      '<script setup lang="ts">\nimport type { AvatarProps } from \'./Avatar.types\';\n</script>\n'
+    );
+    await fs.writeFile(path.join(atomsDir, 'Avatar.types.ts'), 'export interface AvatarProps {}');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    const avatarDir = path.join(atomsDir, 'avatar');
+    const avatar = await fs.readFile(path.join(avatarDir, 'Avatar.vue'), 'utf-8');
+    expect(avatar).toContain("from './Avatar.types'");
+    expect(avatar).not.toContain('avatar/Avatar.types');
+  });
+
+  it('PascalCases a loose component while promoting it', async () => {
+    await fs.writeFile(
+      path.join(atomsDir, 'progressBar.vue'),
+      '<template><div>ProgressBar</div></template>'
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'progress-bar', 'ProgressBar.vue'))).toBe(true);
+  });
+
+  it('does not recognize an existing .test.ts as missing', async () => {
+    await fs.writeFile(path.join(atomsDir, 'Avatar.vue'), '<template />');
+    await fs.writeFile(path.join(atomsDir, 'Avatar.test.ts'), 'export {};');
+
+    const result = await analyzeComponentStructure({ path: tempDir, dryRun: true });
+
+    const avatar = result.components.find(c => c.componentName === 'Avatar');
+    expect(avatar?.missingFiles).not.toContain('Avatar.spec.ts');
+    expect(avatar?.missingFiles).toContain('index.ts');
+  });
+
+  it('leaves an orphan story with no component behind in the level', async () => {
+    await fs.writeFile(path.join(atomsDir, 'Avatar.vue'), '<template />');
+    await fs.writeFile(path.join(atomsDir, 'EffectsOverview.stories.ts'), 'export default {};');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'EffectsOverview.stories.ts'))).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'avatar', 'Avatar.vue'))).toBe(true);
+  });
+
+  it('deepens the promoted component own outward imports', async () => {
+    // Promotion pushes the component one level down, so imports of files that
+    // never move still need another `../`
+    await fs.ensureDir(path.join(tempDir, 'types'));
+    await fs.writeFile(path.join(tempDir, 'types', 'index.ts'), 'export type User = {};');
+    await fs.ensureDir(path.join(tempDir, 'styles'));
+    await fs.writeFile(path.join(tempDir, 'styles', 'variables.css'), ':root {}');
+
+    // atoms/ sits directly under tempDir, so the shared folders are one hop up
+    await fs.writeFile(
+      path.join(atomsDir, 'Avatar.vue'),
+      '<script setup lang="ts">\n' +
+        "import type { User } from '../types';\n" +
+        '</script>\n' +
+        "<style>@import '../styles/variables.css';</style>\n"
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    const avatar = await fs.readFile(path.join(atomsDir, 'avatar', 'Avatar.vue'), 'utf-8');
+    expect(avatar).toContain("from '../../types'");
+    expect(avatar).toContain("'../../styles/variables.css'");
+  });
+
+  it('keeps a directory import pointed at the directory', async () => {
+    const moleculesDir = path.join(tempDir, 'molecules');
+    await fs.ensureDir(moleculesDir);
+    await fs.writeFile(path.join(atomsDir, 'index.ts'), 'export const atoms = 1;');
+    await fs.writeFile(
+      path.join(moleculesDir, 'TaskHeader.vue'),
+      '<script setup lang="ts">\nimport { atoms } from \'../atoms\';\n</script>\n'
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    const taskHeader = await fs.readFile(
+      path.join(moleculesDir, 'task-header', 'TaskHeader.vue'),
+      'utf-8'
+    );
+    expect(taskHeader).toContain("from '../../atoms'");
+  });
+
+  it('preserves a bundler query suffix on a specifier', async () => {
+    await fs.writeFile(path.join(atomsDir, 'icon.svg'), '<svg />');
+    await fs.writeFile(
+      path.join(atomsDir, 'Avatar.vue'),
+      '<script setup lang="ts">\nimport raw from \'./icon.svg?raw\';\n</script>\n'
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    // The svg is not a component file, so it stays in the level
+    const avatar = await fs.readFile(path.join(atomsDir, 'avatar', 'Avatar.vue'), 'utf-8');
+    expect(avatar).toContain("from '../icon.svg?raw'");
+  });
+
+  it('leaves an import alone when neither end moves', async () => {
+    const buttonDir = path.join(atomsDir, 'button');
+    await fs.ensureDir(buttonDir);
+    await fs.writeFile(
+      path.join(buttonDir, 'Button.vue'),
+      '<script setup lang="ts">\nimport type { ButtonProps } from \'./Button.types\';\n</script>\n'
+    );
+    await fs.writeFile(path.join(buttonDir, 'Button.types.ts'), 'export interface ButtonProps {}');
+    await fs.writeFile(path.join(buttonDir, 'Button.spec.ts'), 'export {};');
+    await fs.writeFile(path.join(buttonDir, 'index.ts'), "export { default } from './Button.vue';");
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: true });
+
+    expect(result.importsToUpdate).toBe(0);
+    expect(result.filesToRename).toBe(0);
+    expect(result.componentsToPromote).toBe(0);
+  });
+
+  it('breaks a container folder into one folder per component', async () => {
+    // The real organisms/taskin/ shape: several components sharing a folder,
+    // one of which the folder is named after, plus files that belong to none
+    const taskinDir = path.join(tempDir, 'organisms', 'taskin');
+    await fs.ensureDir(taskinDir);
+    await fs.writeFile(
+      path.join(taskinDir, 'Taskin.ts'),
+      "import { control } from './Taskin.controller';\nexport default control;\n"
+    );
+    await fs.writeFile(path.join(taskinDir, 'Taskin.types.ts'), 'export interface Taskin {}');
+    await fs.writeFile(path.join(taskinDir, 'Taskin.controller.ts'), 'export const control = 1;');
+    await fs.writeFile(path.join(taskinDir, 'TaskinWithShhh.vue'), '<template />');
+    await fs.writeFile(path.join(taskinDir, 'TaskinWithShhh.spec.ts'), 'export {};');
+    await fs.writeFile(
+      path.join(taskinDir, 'index.ts'),
+      "export { default as Taskin } from './Taskin';\n" +
+        "export * from './Taskin.controller';\n" +
+        "export * from './Taskin.types';\n" +
+        "export { default as TaskinWithShhh } from './TaskinWithShhh.vue';\n"
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+    expect(result.componentsToPromote).toBe(2);
+
+    // Each component now owns a folder, the one naming the container included
+    expect(await fs.pathExists(path.join(taskinDir, 'taskin', 'Taskin.ts'))).toBe(true);
+    expect(await fs.pathExists(path.join(taskinDir, 'taskin', 'Taskin.types.ts'))).toBe(true);
+    expect(
+      await fs.pathExists(path.join(taskinDir, 'taskin-with-shhh', 'TaskinWithShhh.vue'))
+    ).toBe(true);
+
+    // `.controller` is a component suffix, so it travels with its component
+    expect(await fs.pathExists(path.join(taskinDir, 'taskin', 'Taskin.controller.ts'))).toBe(true);
+    expect(await fs.pathExists(path.join(taskinDir, 'Taskin.controller.ts'))).toBe(false);
+
+    // Files belonging to no component stay in the container
+    expect(await fs.pathExists(path.join(taskinDir, 'index.ts'))).toBe(true);
+
+    // The container barrel keeps exporting the same names, through the new folders
+    const barrel = await fs.readFile(path.join(taskinDir, 'index.ts'), 'utf-8');
+    expect(barrel).toContain("from './taskin/Taskin'");
+    expect(barrel).toContain("from './taskin/Taskin.types'");
+    expect(barrel).toContain("from './taskin/Taskin.controller'");
+    expect(barrel).toContain("from './taskin-with-shhh/TaskinWithShhh.vue'");
+
+    // The controller moved alongside its component, so that import is untouched
+    const taskin = await fs.readFile(path.join(taskinDir, 'taskin', 'Taskin.ts'), 'utf-8');
+    expect(taskin).toContain("from './Taskin.controller'");
+  });
+
+  it('treats a controller as part of its component, never as a component', async () => {
+    await fs.writeFile(path.join(atomsDir, 'Badge.vue'), '<template />');
+    await fs.writeFile(path.join(atomsDir, 'Badge.controller.ts'), 'export const c = 1;');
+    // A controller with no component of its own is left alone entirely
+    await fs.writeFile(path.join(atomsDir, 'Orphan.controller.ts'), 'export const o = 1;');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+    expect(result.componentsToPromote).toBe(1);
+
+    expect(await fs.pathExists(path.join(atomsDir, 'badge', 'Badge.controller.ts'))).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'Orphan.controller.ts'))).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'orphan'))).toBe(false);
+  });
+
+  it('PascalCases a controller along with its component', async () => {
+    await fs.writeFile(path.join(atomsDir, 'badge.vue'), '<template />');
+    await fs.writeFile(path.join(atomsDir, 'badge.controller.ts'), 'export const c = 1;');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'badge', 'Badge.vue'))).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'badge', 'Badge.controller.ts'))).toBe(true);
+  });
+
+  it('is idempotent on a container it already split', async () => {
+    const taskinDir = path.join(tempDir, 'organisms', 'taskin');
+    await fs.ensureDir(taskinDir);
+    await fs.writeFile(path.join(taskinDir, 'Taskin.ts'), 'export default {};');
+    await fs.writeFile(path.join(taskinDir, 'TaskinWithShhh.vue'), '<template />');
+
+    await normalizeComponents({ path: tempDir, dryRun: false });
+    const second = await normalizeComponents({ path: tempDir, dryRun: true });
+
+    expect(second.componentsToPromote).toBe(0);
+    expect(second.filesToRename).toBe(0);
+    expect(second.filesToCreate).toBe(0);
+    expect(second.importsToUpdate).toBe(0);
+  });
+
+  it('generates a barrel that imports a .ts entry without an extension', async () => {
+    await fs.writeFile(path.join(atomsDir, 'Badge.ts'), 'export default {};');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    const badgeDir = path.join(atomsDir, 'badge');
+    const barrel = await fs.readFile(path.join(badgeDir, 'index.ts'), 'utf-8');
+    expect(barrel).toContain("export { default } from './Badge';");
+    expect(barrel).not.toContain('Badge.vue');
+
+    const spec = await fs.readFile(path.join(badgeDir, 'Badge.spec.ts'), 'utf-8');
+    expect(spec).toContain("from './Badge';");
+    expect(spec).not.toContain('Badge.vue');
+  });
+
+  it('generates a barrel that imports a .vue entry with its extension', async () => {
+    await fs.writeFile(path.join(atomsDir, 'Badge.vue'), '<template />');
+
+    await normalizeComponents({ path: tempDir, dryRun: false });
+
+    const barrel = await fs.readFile(path.join(atomsDir, 'badge', 'index.ts'), 'utf-8');
+    expect(barrel).toContain("export { default } from './Badge.vue';");
+  });
+
+  it('rewrites a deep import from outside the component tree', async () => {
+    // A package entry point reaching past the level barrel straight into a
+    // component file — nowhere near the component that moves
+    await fs.writeFile(path.join(atomsDir, 'Badge.vue'), '<template />');
+    await fs.writeFile(path.join(atomsDir, 'Badge.types.ts'), 'export interface BadgeProps {}');
+    await fs.writeFile(
+      path.join(tempDir, 'index.ts'),
+      "export { default as Badge } from './atoms/Badge.vue';\n" +
+        "export * from './atoms/Badge.types';\n"
+    );
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+
+    const entry = await fs.readFile(path.join(tempDir, 'index.ts'), 'utf-8');
+    expect(entry).toContain("from './atoms/badge/Badge.vue'");
+    expect(entry).toContain("from './atoms/badge/Badge.types'");
+  });
+
+  it('changes nothing in dry-run', async () => {
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: true });
+
+    expect(result.componentsToPromote).toBe(1);
+    expect(await fs.pathExists(path.join(atomsDir, 'progress-bar'))).toBe(false);
+    expect(await fs.pathExists(path.join(atomsDir, 'ProgressBar.vue'))).toBe(true);
+  });
+
+  it('skips promotion under --files-only', async () => {
+    await fs.writeFile(path.join(atomsDir, 'progressBar.vue'), '<template />');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false, filesOnly: true });
+
+    expect(result.success).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'progress-bar'))).toBe(false);
+    // The file is still PascalCased in place
+    expect(await fs.pathExists(path.join(atomsDir, 'ProgressBar.vue'))).toBe(true);
+  });
+
+  it('promotes without creating files under --dirs-only', async () => {
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false, dirsOnly: true });
+
+    expect(result.success).toBe(true);
+
+    const progressBarDir = path.join(atomsDir, 'progress-bar');
+    expect(await fs.pathExists(path.join(progressBarDir, 'ProgressBar.vue'))).toBe(true);
+    expect(await fs.pathExists(path.join(progressBarDir, 'index.ts'))).toBe(false);
   });
 });
