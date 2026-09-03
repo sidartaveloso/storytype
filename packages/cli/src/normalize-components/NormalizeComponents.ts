@@ -9,12 +9,14 @@ import path from 'path';
 import { promisify } from 'util';
 import {
   BARREL_FILES,
+  componentFileSet,
   type DetectedComponent,
   detectComponents,
   isIgnoredDirectory,
   toKebabCase,
   toPascalCase,
 } from '../component-detector.js';
+import { renderComponentFileByName, type ScaffoldContext } from '../component-scaffold.js';
 import type {
   ComponentDirectory,
   ComponentFile,
@@ -266,7 +268,8 @@ function buildSpecifier(
 
   const extension = path.extname(resolvedOld);
   const wroteExtension = extension.length > 0 && specifierPath.endsWith(extension);
-  const wroteDirectory = BARREL_FILES.includes(path.basename(resolvedOld)) && !wroteExtension;
+  const wroteDirectory =
+    (BARREL_FILES as readonly string[]).includes(path.basename(resolvedOld)) && !wroteExtension;
 
   let destination = target;
   if (wroteDirectory) {
@@ -279,10 +282,6 @@ function buildSpecifier(
   const posix = relative.split(path.sep).join('/');
 
   return `${posix.startsWith('.') ? posix : `./${posix}`}${suffix}`;
-}
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -410,100 +409,42 @@ async function planComponent(
 }
 
 /**
- * Conventional files a component directory must have.
+ * Files the canonical set says are missing from a component.
  *
  * Existence is checked against the *target* names, so a component whose files
  * are about to be PascalCased is not told to create a file it already has.
  */
 function findMissingFiles(component: DetectedComponent): string[] {
-  const targetNames = new Set(component.files.map(f => f.targetName));
-  const missingFiles: string[] = [];
+  const targetNames = new Set(component.files.map(file => file.targetName));
 
-  if (!targetNames.has('index.ts') && !targetNames.has('index.js')) {
-    missingFiles.push('index.ts');
-  }
-  if (!targetNames.has(`${component.name}.types.ts`)) {
-    missingFiles.push(`${component.name}.types.ts`);
-  }
-  if (
-    !targetNames.has(`${component.name}.spec.ts`) &&
-    !targetNames.has(`${component.name}.test.ts`)
-  ) {
-    missingFiles.push(`${component.name}.spec.ts`);
-  }
-
-  return missingFiles;
+  return componentFileSet(component.name)
+    .filter(spec => spec.completesFolder)
+    .filter(spec => !spec.accepted.some(accepted => targetNames.has(accepted)))
+    .map(spec => spec.fileName);
 }
 
 /**
- * How the component's entry file is imported from its own folder: a `.vue`
- * needs its extension, a `.ts` is imported without one.
+ * Render the files a component is missing, from the shared templates — the
+ * same ones `generate` uses, so a role always produces the same file.
  */
-function entrySpecifier(componentName: string, entryExtension: string): string {
-  return entryExtension === '.vue' ? `./${componentName}.vue` : `./${componentName}`;
-}
+async function writeMissingFiles(component: ComponentDirectory): Promise<void> {
+  if (component.missingFiles.length === 0) return;
 
-/**
- * The extension of a component's entry file, which decides how the generated
- * files import it
- */
-function entryExtensionOf(component: ComponentDirectory): string {
   const entryFile = component.files.find(file => file.type === 'component');
+  const presentRoles = component.files.map(file => file.type);
 
-  return entryFile ? path.extname(entryFile.targetPath) : '.vue';
-}
+  const context: ScaffoldContext = {
+    componentName: component.componentName,
+    entryExtension: entryFile ? path.extname(entryFile.targetPath) : '.vue',
+    presentRoles,
+  };
 
-/**
- * Generate template content for missing files
- */
-function generateFileContent(
-  fileName: string,
-  componentName: string,
-  entryExtension: string
-): string {
-  const entry = entrySpecifier(componentName, entryExtension);
+  for (const missingFile of component.missingFiles) {
+    const content = await renderComponentFileByName(missingFile, context);
+    if (content === null) continue;
 
-  if (fileName === 'index.ts') {
-    return `export * from './${componentName}.types';
-export { default } from '${entry}';
-`;
+    await fs.writeFile(path.join(component.targetPath, missingFile), content, 'utf-8');
   }
-
-  if (fileName.endsWith('.types.ts')) {
-    return `export interface ${componentName}Type {
-  models: ${componentName}Models;
-  props: ${componentName}Props;
-  emits: ${componentName}Emits;
-}
-
-export interface ${componentName}Models {
-  //TODO: Add models here
-}
-
-export interface ${componentName}Props {
-  //TODO: Add props here
-}
-
-export interface ${componentName}Emits {
-  //TODO: Add emits here
-}
-`;
-  }
-
-  if (fileName.endsWith('.spec.ts')) {
-    return `import { describe, it, expect } from 'vitest';
-import ${componentName} from '${entry}';
-
-describe('${componentName}', () => {
-  it('should render', () => {
-    // TODO: Add tests
-    expect(${componentName}).toBeDefined();
-  });
-});
-`;
-  }
-
-  return '';
 }
 
 /**
@@ -543,15 +484,7 @@ export async function normalizeComponents(options: NormalizeOptions): Promise<No
 
     // Missing conventional files, created where the component now lives
     for (const component of analysis.components) {
-      const entryExtension = entryExtensionOf(component);
-
-      for (const missingFile of component.missingFiles) {
-        await fs.writeFile(
-          path.join(component.targetPath, missingFile),
-          generateFileContent(missingFile, component.componentName, entryExtension),
-          'utf-8'
-        );
-      }
+      await writeMissingFiles(component);
     }
 
     // Imports last, once every file is at its final path

@@ -57,9 +57,17 @@ progress-bar/
   ProgressBar.types.ts         # tipos
   ProgressBar.spec.ts          # testes da unidade
   ProgressBar.stories.ts       # stories Storybook
-  ProgressBar.mock.ts          # mock, para uso pelos testes de OUTROS módulos
+  ProgressBar.mock.ts          # mock, que alimenta as stories e os testes
   index.ts                     # barrel
 ```
+
+Este conjunto é definido em um só lugar no código —
+`COMPONENT_FILE_SET`, em `packages/cli/src/component-detector.ts` — e é de lá
+que o `storytype generate` e o `storytype normalize` leem. `generate` escreve o
+conjunto inteiro; `normalize` completa barrel, tipos e teste num componente que
+já existe, e deixa story e mock para uma pessoa escrever, porque precisam das
+props reais para valerem algo. Ver §5.1 da
+[Especificação storytype](../packages/core/storytype-spec.md).
 
 A pasta continua kebab-case, como em qualquer módulo — o que muda é o nome dos
 arquivos, que acompanha o nome do componente em PascalCase. Isso existe porque o

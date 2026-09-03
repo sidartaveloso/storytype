@@ -250,20 +250,37 @@ Tem lógica de domínio complexa?
 
 ## 5. Estrutura de Arquivos
 
-### 5.1 Arquivos Obrigatórios
+### 5.1 O Conjunto Canônico
 
-Todo componente **DEVE** ter:
+Todo componente completo tem estes arquivos. O conjunto é definido **em um só
+lugar no código** — `COMPONENT_FILE_SET`, em `packages/cli/src/component-detector.ts`
+— e é de lá que o `generate` e o `normalize` leem, então os dois não podem
+divergir.
 
-1. **`ComponentName.vue`** — Componente Vue
-2. **`ComponentName.types.ts`** — Definições TypeScript
-3. **`ComponentName.stories.ts`** — Stories Storybook
-4. **`index.ts`** — Barrel export
+| Arquivo                      | Papel   | `generate` cria | `normalize` completa | `analyze` pontua      |
+| ---------------------------- | ------- | --------------- | -------------------- | --------------------- |
+| `ComponentName.vue` (ou `.ts`) | entrada | ✅              | é a entrada          | conta como componente |
+| `index.ts`                   | barrel  | ✅              | ✅                   | —                     |
+| `ComponentName.types.ts`     | tipos   | ✅              | ✅                   | Arquivos de tipos     |
+| `ComponentName.spec.ts`      | teste   | ✅              | ✅                   | Cobertura de testes   |
+| `ComponentName.stories.ts`   | story   | ✅              | —                    | Cobertura de stories  |
+| `ComponentName.mock.ts`      | mock    | ✅              | —                    | —                     |
 
-### 5.2 Arquivos Opcionais
+O `normalize` completa apenas barrel, tipos e teste: são úteis como esqueleto.
+Story e mock precisam das props reais do componente para valerem algo, então só
+são criados junto de um componente novo — num componente existente o `analyze`
+aponta a falta e uma pessoa escreve.
 
-- **`ComponentName.mock.ts`** — Dados mock para stories/testes
-- **`ComponentName.spec.ts`** — Testes unitários (quando lógica complexa)
-- **`ComponentName.scss`** — Estilos externos (para estilos muito grandes)
+Cada papel aceita uma grafia alternativa quando já existe: `.test.ts` no lugar
+de `.spec.ts`, `.story.ts` no lugar de `.stories.ts`, `.mocks.ts` no lugar de
+`.mock.ts`, `index.js` no lugar de `index.ts`. A primeira forma é a que a
+ferramenta escreve.
+
+### 5.2 Arquivos Complementares
+
+- **`ComponentName.controller.ts`** — lógica extraída do componente. Acompanha o
+  componente nos movimentos do `normalize`, como `.types.ts` e `.mock.ts`
+- **`ComponentName.scss`** — estilos externos, para estilos muito grandes
 
 ### 5.3 Template de `*.types.ts`
 
@@ -1810,11 +1827,14 @@ Antes de criar PR, verifique:
 
 #### Estrutura
 
+O conjunto canônico está em §5.1. `storytype analyze --verbose` verifica isto.
+
 - [ ] Pasta em `kebab-case` dentro da camada correta
+- [ ] Arquivo `.vue` (ou `.ts`) criado
 - [ ] Arquivo `.types.ts` criado
-- [ ] Arquivo `.vue` criado
-- [ ] Arquivo `.mock.ts` criado
+- [ ] Arquivo `.spec.ts` criado
 - [ ] Arquivo `.stories.ts` criado
+- [ ] Arquivo `.mock.ts` criado
 - [ ] Arquivo `index.ts` criado
 
 #### Tipos

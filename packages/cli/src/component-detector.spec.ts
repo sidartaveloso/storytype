@@ -16,7 +16,9 @@ import {
   findComponentDirectories,
   findComponentFiles,
   findComponentsDirectory,
+  componentFileSet,
   getComponentBaseName,
+  getFileType,
   isAtomicLevel,
   isComponentEntry,
   isComponentFile,
@@ -124,6 +126,48 @@ describe('component-detector - expected file names', () => {
     for (const name of ['Avatar.vue', 'progressBar.vue', 'progress-bar.types.ts']) {
       const unchanged = toExpectedFileName(name) === name;
       expect(unchanged).toBe(isPascalCase(getComponentBaseName(name)));
+    }
+  });
+});
+
+describe('component-detector - canonical file set', () => {
+  it('names each file of the set after the component', () => {
+    const set = componentFileSet('Badge');
+
+    expect(set.map(spec => [spec.role, spec.fileName])).toEqual([
+      ['index', 'index.ts'],
+      ['types', 'Badge.types.ts'],
+      ['test', 'Badge.spec.ts'],
+      ['stories', 'Badge.stories.ts'],
+      ['mock', 'Badge.mock.ts'],
+    ]);
+  });
+
+  it('accepts the alternative spelling of a role', () => {
+    const set = componentFileSet('Badge');
+    const test = set.find(spec => spec.role === 'test');
+
+    expect(test?.accepted).toContain('Badge.spec.ts');
+    expect(test?.accepted).toContain('Badge.test.ts');
+
+    const index = set.find(spec => spec.role === 'index');
+    expect(index?.accepted).toContain('index.ts');
+    expect(index?.accepted).toContain('index.js');
+  });
+
+  it('marks the files that complete an existing component', () => {
+    const completes = componentFileSet('Badge')
+      .filter(spec => spec.completesFolder)
+      .map(spec => spec.role);
+
+    // A story and a mock need the component's real props, so a person writes
+    // those; the rest are useful as stubs
+    expect(completes).toEqual(['index', 'types', 'test']);
+  });
+
+  it('keeps the role table and the file types in step', () => {
+    for (const spec of componentFileSet('Badge')) {
+      expect(getFileType(spec.fileName)).toBe(spec.role);
     }
   });
 });
