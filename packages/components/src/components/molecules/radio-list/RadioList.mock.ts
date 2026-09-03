@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import type {
   RadioListType,
   RadioListProps,
@@ -31,7 +32,7 @@ export const generateMockData = (): RadioListType => {
   };
 
   const models: RadioListModels = { modelValue: props.modelValue };
-  const emits: RadioListEmits = {} as RadioListEmits;
+  const emits: RadioListEmits = vi.fn() as RadioListEmits;
 
   return {
     props,

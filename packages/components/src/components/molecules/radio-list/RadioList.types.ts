@@ -35,9 +35,7 @@ export interface RadioListProps {
   textColor?: string;
 }
 
-export interface RadioListEmits {
-  (e: 'update:modelValue', value: number | null): void;
-}
+export type RadioListEmits = (e: 'update:modelValue', value: number | null) => void;
 
 export interface RadioListType {
   models: RadioListModels;

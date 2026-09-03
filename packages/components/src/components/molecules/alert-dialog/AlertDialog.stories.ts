@@ -82,7 +82,7 @@ export const Interacao: Story = {
       <AlertDialog v-bind="args" v-model="open" />
     `,
   }),
-  play: async ({ canvasElement }) => {
+  play: async () => {
     await new Promise(r => setTimeout(r, 0));
     const confirm = screen.getByRole('button', { name: 'Ir para a atividade' });
     expect(confirm).toBeDefined();

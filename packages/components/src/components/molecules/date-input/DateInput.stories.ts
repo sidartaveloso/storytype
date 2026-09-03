@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, within } from '@storybook/test';
+import { expect } from '@storybook/test';
 import DateInput from './DateInput.vue';
 import { generateMockData } from './DateInput.mock';
 
@@ -91,7 +91,6 @@ export const ResponsivoTablet: Story = {
 export const Interacao: Story = {
   name: 'Interação (play function)',
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
     await new Promise(r => setTimeout(r, 0));
     expect(canvasElement).toBeDefined();
   },

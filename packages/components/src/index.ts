@@ -12,21 +12,21 @@
  */
 
 // --- Atoms ---
-export { default as Avatar } from './components/atoms/Avatar/Avatar.vue';
-export * from './components/atoms/Avatar/Avatar.types';
-export { default as TitleUserName } from './components/atoms/TitleUserName/TitleUserName.vue';
-export * from './components/atoms/TitleUserName/TitleUserName.types';
+export { default as Avatar } from './components/atoms/avatar/Avatar.vue';
+export * from './components/atoms/avatar/Avatar.types';
+export { default as TitleUserName } from './components/atoms/title-user-name/TitleUserName.vue';
+export * from './components/atoms/title-user-name/TitleUserName.types';
 
 // --- Molecules ---
-export { default as AlertDialog } from './components/molecules/AlertDialog/AlertDialog.vue';
-export * from './components/molecules/AlertDialog/AlertDialog.types';
-export { default as CardAction } from './components/molecules/CardAction/CardAction.vue';
-export * from './components/molecules/CardAction/CardAction.types';
-export { default as DateInput } from './components/molecules/DateInput/DateInput.vue';
-export * from './components/molecules/DateInput/DateInput.types';
-export { default as GroupCards } from './components/molecules/GroupCards/GroupCards.vue';
-export * from './components/molecules/GroupCards/GroupCards.types';
-export { default as NewPassword } from './components/molecules/NewPassword/NewPassword.vue';
-export * from './components/molecules/NewPassword/NewPassword.types';
-export { default as RadioList } from './components/molecules/RadioList/RadioList.vue';
-export * from './components/molecules/RadioList/RadioList.types';
+export { default as AlertDialog } from './components/molecules/alert-dialog/AlertDialog.vue';
+export * from './components/molecules/alert-dialog/AlertDialog.types';
+export { default as CardAction } from './components/molecules/card-action/CardAction.vue';
+export * from './components/molecules/card-action/CardAction.types';
+export { default as DateInput } from './components/molecules/date-input/DateInput.vue';
+export * from './components/molecules/date-input/DateInput.types';
+export { default as GroupCards } from './components/molecules/group-cards/GroupCards.vue';
+export * from './components/molecules/group-cards/GroupCards.types';
+export { default as NewPassword } from './components/molecules/new-password/NewPassword.vue';
+export * from './components/molecules/new-password/NewPassword.types';
+export { default as RadioList } from './components/molecules/radio-list/RadioList.vue';
+export * from './components/molecules/radio-list/RadioList.types';
