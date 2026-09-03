@@ -6,42 +6,75 @@ import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Handlebars from 'handlebars';
-import type { GenerateComponentOptions, GenerateResult } from './Generate.types.js';
+import {
+  type AtomicLevel,
+  ATOMIC_LEVELS,
+  atomicLevelDir,
+  detectProjectLanguage,
+  findComponentsDirectory,
+  type ProjectLanguage,
+  toKebabCase,
+  toPascalCase,
+} from '../component-detector.js';
+import type {
+  ComponentTarget,
+  GenerateComponentOptions,
+  GenerateResult,
+} from './Generate.types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/**
- * Convert string to kebab-case
- */
-function toKebabCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
-    .replace(/[\s_]+/g, '-')
-    .toLowerCase();
-}
-
-/**
- * Convert string to PascalCase
- */
-function toPascalCase(str: string): string {
-  if (/^[A-Z][a-zA-Z0-9]*$/.test(str)) {
-    return str;
-  }
-
-  const withHyphens = str.replace(/([a-z])([A-Z])/g, '$1-$2');
-
-  return withHyphens
-    .split(/[-_\s]+/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
-}
-
-// Register Handlebars helpers
 Handlebars.registerHelper('kebabCase', (str: string) => toKebabCase(str));
 Handlebars.registerHelper('pascalCase', (str: string) => toPascalCase(str));
-Handlebars.registerHelper('eq', (a: any, b: any) => a === b);
+Handlebars.registerHelper('eq', (a: unknown, b: unknown) => a === b);
+
+/**
+ * Decide where a component is written.
+ *
+ * `--path` wins. Otherwise the project's own components directory is located
+ * and its level folder named in the project's language, so a component
+ * generated into `src/components/atomos/` is one `analyze` recognizes — the
+ * two commands read the same convention.
+ */
+function resolveTarget(options: GenerateComponentOptions): ComponentTarget {
+  const componentsDir =
+    options.path ??
+    findComponentsDirectory(process.cwd()) ??
+    path.join(process.cwd(), 'src', 'components');
+
+  const language = detectProjectLanguage(componentsDir);
+  const levelDir = path.join(componentsDir, atomicLevelDir(options.type, language));
+
+  return {
+    componentsDir,
+    levelDir,
+    componentDir: path.join(levelDir, toKebabCase(options.name)),
+    language,
+  };
+}
+
+/**
+ * Name of the Storybook section a level occupies, in the project's language.
+ * Keyed by level so a level added to ATOMIC_LEVELS cannot be forgotten here.
+ */
+const STORYBOOK_SECTIONS: Record<AtomicLevel, Record<ProjectLanguage, string>> = {
+  atoms: { en: 'Atoms', pt: 'Átomos' },
+  molecules: { en: 'Molecules', pt: 'Moléculas' },
+  organisms: { en: 'Organisms', pt: 'Organismos' },
+  templates: { en: 'Templates', pt: 'Templates' },
+  pages: { en: 'Pages', pt: 'Páginas' },
+};
+
+/**
+ * `01 - Atoms`: the numeric prefix is what orders the sections in Storybook's
+ * sidebar, and it comes from the level's own order.
+ */
+function storybookSection(level: AtomicLevel, language: ProjectLanguage): string {
+  const order = String(ATOMIC_LEVELS[level].order).padStart(2, '0');
+
+  return `${order} - ${STORYBOOK_SECTIONS[level][language]}`;
+}
 
 /**
  * Get template directory path
@@ -101,8 +134,15 @@ async function generateTypesFile(componentName: string): Promise<string> {
 /**
  * Generate Storybook stories file
  */
-async function generateStoriesFile(componentName: string, type: string): Promise<string> {
-  return compileTemplate('stories.ts.hbs', { name: componentName, type });
+async function generateStoriesFile(
+  componentName: string,
+  level: AtomicLevel,
+  language: ProjectLanguage
+): Promise<string> {
+  return compileTemplate('stories.ts.hbs', {
+    name: componentName,
+    section: storybookSection(level, language),
+  });
 }
 
 /**
@@ -127,11 +167,9 @@ export async function generateComponent(
 ): Promise<GenerateResult> {
   try {
     const componentName = toPascalCase(options.name);
-    const dirName = toKebabCase(options.name);
-    const basePath = options.path || process.cwd();
+    const target = resolveTarget(options);
+    const componentDir = target.componentDir;
 
-    // Create component directory structure
-    const componentDir = path.join(basePath, options.type, dirName);
     await fs.ensureDir(componentDir);
 
     const files: string[] = [];
@@ -148,7 +186,10 @@ export async function generateComponent(
 
     // Generate stories file
     const storiesFile = path.join(componentDir, `${componentName}.stories.ts`);
-    await fs.writeFile(storiesFile, await generateStoriesFile(componentName, options.type));
+    await fs.writeFile(
+      storiesFile,
+      await generateStoriesFile(componentName, options.type, target.language)
+    );
     files.push(storiesFile);
 
     // Generate mock file

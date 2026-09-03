@@ -30,7 +30,60 @@ export const BARREL_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
 
 export const DECLARATION_PATTERNS = ['.d.ts', '.d.tsx', '.d.mts', '.d.cts'];
 
-export const ATOMIC_LEVELS = ['atoms', 'molecules', 'organisms', 'templates', 'pages'];
+/**
+ * The Atomic Design levels, and the folder name each takes per project
+ * language. The canonical key is English; a project names its folders in its
+ * own language and both are recognized.
+ *
+ * `templates` is spelled the same in both, so it never identifies a language.
+ */
+export const ATOMIC_LEVELS = {
+  atoms: { order: 1, dir: { en: 'atoms', pt: 'atomos' } },
+  molecules: { order: 2, dir: { en: 'molecules', pt: 'moleculas' } },
+  organisms: { order: 3, dir: { en: 'organisms', pt: 'organismos' } },
+  templates: { order: 4, dir: { en: 'templates', pt: 'templates' } },
+  pages: { order: 5, dir: { en: 'pages', pt: 'paginas' } },
+} as const;
+
+export type AtomicLevel = keyof typeof ATOMIC_LEVELS;
+
+export type ProjectLanguage = keyof (typeof ATOMIC_LEVELS)['atoms']['dir'];
+
+export const ATOMIC_LEVEL_KEYS = Object.keys(ATOMIC_LEVELS) as AtomicLevel[];
+
+export const PROJECT_LANGUAGES: ProjectLanguage[] = ['en', 'pt'];
+
+/**
+ * The words a user may type to name a level on the command line: the folder
+ * name in either language, plus the singular of each. Derived from
+ * ATOMIC_LEVELS so a level added there is accepted here with no extra edit.
+ */
+export const ATOMIC_LEVEL_ALIASES: Record<string, AtomicLevel> = Object.fromEntries(
+  ATOMIC_LEVEL_KEYS.flatMap(level =>
+    PROJECT_LANGUAGES.flatMap(language => {
+      const plural = ATOMIC_LEVELS[level].dir[language];
+      const singular = plural.replace(/s$/, '');
+
+      return [plural, singular].map(alias => [alias, level] as const);
+    })
+  )
+);
+
+/**
+ * Resolve what a user typed for a level (`atom`, `atomos`, `MOLECULE`) to its
+ * canonical key. Returns null when it names no level.
+ */
+export function toAtomicLevelFromAlias(input: string): AtomicLevel | null {
+  return ATOMIC_LEVEL_ALIASES[stripAccents(input.toLowerCase())] ?? null;
+}
+
+/**
+ * Accents are how the same word is written, not a different word: `átomo`
+ * must name the same level as `atomo`.
+ */
+function stripAccents(input: string): string {
+  return input.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 
 export const IGNORED_DIRECTORIES = ['node_modules'];
 
@@ -83,10 +136,104 @@ export function isComponentEntry(filePath: string): boolean {
 }
 
 /**
- * Check if a directory name is an Atomic Design level (atoms, molecules, etc.)
+ * Resolve a directory name to the Atomic Design level it denotes, in any
+ * supported language. Returns null when it denotes none.
+ */
+export function toAtomicLevel(dirName: string): AtomicLevel | null {
+  const normalized = dirName.toLowerCase();
+
+  return (
+    ATOMIC_LEVEL_KEYS.find(level =>
+      PROJECT_LANGUAGES.some(language => ATOMIC_LEVELS[level].dir[language] === normalized)
+    ) ?? null
+  );
+}
+
+/**
+ * Check if a directory name is an Atomic Design level (atoms, atomos, ...)
  */
 export function isAtomicLevel(dirName: string): boolean {
-  return ATOMIC_LEVELS.includes(dirName.toLowerCase());
+  return toAtomicLevel(dirName) !== null;
+}
+
+/**
+ * The folder name a level takes in a given project language
+ */
+export function atomicLevelDir(level: AtomicLevel, language: ProjectLanguage): string {
+  return ATOMIC_LEVELS[level].dir[language];
+}
+
+/**
+ * The Atomic Design levels present directly inside a components directory.
+ *
+ * Grouped by canonical level, so a project holding both `atoms/` and `atomos/`
+ * counts one level, not two.
+ */
+export function findAtomicLevelDirs(
+  componentsDir: string
+): { level: AtomicLevel; dirName: string }[] {
+  const found: { level: AtomicLevel; dirName: string }[] = [];
+
+  for (const level of ATOMIC_LEVEL_KEYS) {
+    const dirName = PROJECT_LANGUAGES.map(language => ATOMIC_LEVELS[level].dir[language]).find(
+      candidate => isDirectory(path.join(componentsDir, candidate))
+    );
+
+    if (dirName) found.push({ level, dirName });
+  }
+
+  return found;
+}
+
+/**
+ * Infer the language a project names its component folders in, by looking at
+ * the level folders it already has. Falls back to English — the canonical form
+ * — when there is nothing to go on.
+ */
+export function detectProjectLanguage(componentsDir: string): ProjectLanguage {
+  const counts: Record<ProjectLanguage, number> = { en: 0, pt: 0 };
+
+  for (const { level, dirName } of findAtomicLevelDirs(componentsDir)) {
+    for (const language of PROJECT_LANGUAGES) {
+      // A name shared by both languages, like `templates`, says nothing
+      const isShared = PROJECT_LANGUAGES.every(
+        other => ATOMIC_LEVELS[level].dir[other] === dirName
+      );
+      if (!isShared && ATOMIC_LEVELS[level].dir[language] === dirName) counts[language] += 1;
+    }
+  }
+
+  return counts.pt > counts.en ? 'pt' : 'en';
+}
+
+/**
+ * Locate the directory holding a project's components.
+ *
+ * Shared so `analyze`, `normalize` and `generate` all agree on where
+ * components live, instead of each guessing.
+ */
+export function findComponentsDirectory(projectPath: string): string | null {
+  const conventionalPaths = [
+    path.join(projectPath, 'src', 'components'),
+    path.join(projectPath, 'components'),
+    path.join(projectPath, 'src', 'views'),
+    path.join(projectPath, 'app', 'components'),
+  ];
+
+  const conventional = conventionalPaths.find(candidate => isDirectory(candidate));
+  if (conventional) return conventional;
+
+  // Nothing conventional: fall back to the project root when the tree holds
+  // components at all, so a monorepo layout is still walked in full
+  return findComponentDirectories(projectPath).length > 0 ? projectPath : null;
+}
+
+function isDirectory(candidate: string): boolean {
+  try {
+    return fs.statSync(candidate).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 /**
