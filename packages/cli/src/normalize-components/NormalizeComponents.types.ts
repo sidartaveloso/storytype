@@ -2,7 +2,9 @@
  * Types for component normalization utility
  */
 
-import type { ComponentFileType } from '../component-detector.js';
+import type { ComponentAction, ComponentFileType } from '../component-detector.js';
+
+export type { ComponentAction };
 
 export interface ComponentFile {
   /** Current file path */
@@ -26,28 +28,44 @@ export interface ComponentDirectory {
   files: ComponentFile[];
   /** Files that need to be created */
   missingFiles: string[];
-  /** Whether directory needs renaming */
-  needsRename: boolean;
-  /** Whether files are loose in an Atomic Design level and need a folder of their own */
-  needsPromotion: boolean;
+  /** What has to happen to the directory */
+  action: ComponentAction;
   /** Import references that need updating */
   importReferences: ImportReference[];
 }
+
+/**
+ * How much of the normalization a run performs. `dirs` and `files` are
+ * opposites, so they are one field: as two flags, setting both produced a run
+ * that silently did nothing and reported it as "already normalized".
+ */
+export type NormalizeScope =
+  /** Move and rename directories, rename files, create what is missing */
+  | 'all'
+  /** Only move and rename directories */
+  | 'dirs'
+  /** Only rename files, and create what is missing */
+  | 'files';
 
 export interface NormalizeOptions {
   /** Target directory to analyze */
   path: string;
   /** Dry-run mode (don't execute changes) */
   dryRun?: boolean;
-  /** Only normalize directories */
-  dirsOnly?: boolean;
-  /** Only normalize files */
-  filesOnly?: boolean;
+  /** What the run touches; defaults to everything */
+  scope?: NormalizeScope;
   /** Verbose output */
   verbose?: boolean;
 }
 
-export interface NormalizeReport {
+/** A directory the run refused to touch, and why */
+export interface SkippedDirectory {
+  path: string;
+  reason: string;
+}
+
+/** What the run found, and what it would change */
+export interface NormalizePlan {
   /** Components analyzed */
   components: ComponentDirectory[];
   /** Total directories to rename */
@@ -63,12 +81,18 @@ export interface NormalizeReport {
   /** Detailed import references */
   importReferences: ImportReference[];
   /** Directories skipped and the reason (e.g. a promotion target already exists) */
-  skippedDirectories: Array<{ path: string; reason: string }>;
-  /** Executed successfully */
-  success: boolean;
-  /** Error message if failed */
-  error?: string;
+  skippedDirectories: SkippedDirectory[];
 }
+
+/**
+ * How the run ended. Discriminated on `success`, so a failure always carries a
+ * message and a success can never carry one — as two independent fields, a
+ * report could claim both, and no consumer could get `error` narrowed to a
+ * string.
+ */
+export type NormalizeOutcome = { success: true } | { success: false; error: string };
+
+export type NormalizeReport = NormalizePlan & NormalizeOutcome;
 
 export interface ImportReference {
   /** File containing the import */

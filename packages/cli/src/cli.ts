@@ -13,7 +13,7 @@ import { analyzeProject, displayResults } from './analyzer.js';
 import { ATOMIC_LEVEL_KEYS, toAtomicLevelFromAlias } from './component-detector.js';
 import { generateComponent } from './generate/index.js';
 import { normalizeComponents } from './normalize-components/index.js';
-import type { NormalizeReport } from './normalize-components/index.js';
+import type { NormalizeReport, NormalizeScope } from './normalize-components/index.js';
 
 const program = new Command();
 
@@ -98,14 +98,26 @@ program
         verbose?: boolean;
       }
     ) => {
+      // Opposites: together they used to produce a run that did nothing and
+      // reported it as "already normalized"
+      if (options?.dirsOnly && options?.filesOnly) {
+        console.error(chalk.red('✗ --dirs-only e --files-only sao opostos: escolha um.'));
+        process.exit(1);
+      }
+
+      const scope: NormalizeScope = options?.dirsOnly
+        ? 'dirs'
+        : options?.filesOnly
+          ? 'files'
+          : 'all';
+
       try {
         console.log(chalk.blue('Analisando estrutura de componentes...'));
 
         const result = await normalizeComponents({
           path: targetPath || process.cwd(),
           dryRun: options?.dryRun || false,
-          dirsOnly: options?.dirsOnly || false,
-          filesOnly: options?.filesOnly || false,
+          scope,
           verbose: options?.verbose || false,
         });
 
@@ -137,8 +149,7 @@ program
 
             result.components.forEach(comp => {
               const hasChanges =
-                comp.needsRename ||
-                comp.needsPromotion ||
+                comp.action !== 'none' ||
                 comp.missingFiles.length > 0 ||
                 comp.files.some(f => f.currentPath !== f.targetPath);
 
@@ -146,14 +157,14 @@ program
                 console.log(chalk.bold(`\n  Componente: ${comp.componentName}`));
 
                 // Show promotion into a folder of its own
-                if (comp.needsPromotion) {
+                if (comp.action === 'promote') {
                   console.log(chalk.yellow(`    📦 Mover para pasta própria:`));
                   console.log(chalk.gray(`       ${relativePath(comp.currentPath)}/`));
                   console.log(chalk.gray(`       → ${relativePath(comp.targetPath)}/`));
                 }
 
                 // Show directory rename
-                if (comp.needsRename) {
+                if (comp.action === 'rename') {
                   console.log(chalk.yellow(`    📁 Renomear diretório:`));
                   console.log(chalk.gray(`       ${relativePath(comp.currentPath)}`));
                   console.log(chalk.gray(`       → ${relativePath(comp.targetPath)}`));
@@ -162,7 +173,7 @@ program
                 // Show file renames / moves
                 const filesToRename = comp.files.filter(f => f.currentPath !== f.targetPath);
                 if (filesToRename.length > 0) {
-                  const label = comp.needsPromotion ? 'Mover' : 'Renomear';
+                  const label = comp.action === 'promote' ? 'Mover' : 'Renomear';
                   console.log(
                     chalk.yellow(`    📄 ${label} arquivo${filesToRename.length > 1 ? 's' : ''}:`)
                   );
@@ -178,8 +189,7 @@ program
                     chalk.green(`    ✨ Criar arquivo${comp.missingFiles.length > 1 ? 's' : ''}:`)
                   );
                   comp.missingFiles.forEach(fileName => {
-                    const targetDir =
-                      comp.needsRename || comp.needsPromotion ? comp.targetPath : comp.currentPath;
+                    const targetDir = comp.action === 'none' ? comp.currentPath : comp.targetPath;
                     const fullPath = `${targetDir}/${fileName}`;
                     console.log(chalk.gray(`       ${relativePath(fullPath)}`));
                   });

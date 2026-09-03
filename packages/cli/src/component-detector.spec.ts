@@ -315,7 +315,7 @@ describe('component-detector - detectComponents', () => {
     const components = detectComponents(tempDir);
 
     expect(components.map(c => c.name)).toEqual(['Badge', 'ProgressBar']);
-    expect(components.every(c => c.needsPromotion)).toBe(true);
+    expect(components.every(c => c.action === 'promote')).toBe(true);
     expect(components.every(c => c.atomicLevel === 'atoms')).toBe(true);
 
     const progressBar = components.find(c => c.name === 'ProgressBar');
@@ -337,8 +337,8 @@ describe('component-detector - detectComponents', () => {
     const [component] = detectComponents(tempDir);
 
     expect(component.name).toBe('TaskinArms');
-    expect(component.needsPromotion).toBe(false);
-    expect(component.needsDirRename).toBe(false);
+    expect(component.action).not.toBe('promote');
+    expect(component.action).toBe('none');
     expect(component.targetDir).toBe(dir);
     expect(component.atomicLevel).toBe('atoms');
   });
@@ -350,7 +350,7 @@ describe('component-detector - detectComponents', () => {
 
     const [component] = detectComponents(tempDir);
 
-    expect(component.needsDirRename).toBe(true);
+    expect(component.action).toBe('rename');
     expect(component.targetDir).toBe(path.join(tempDir, 'srv'));
   });
 
@@ -424,7 +424,7 @@ describe('component-detector - detectComponents', () => {
         ?.files.map(f => f.name)
         .sort()
     ).toEqual(['Taskin.controller.ts', 'Taskin.ts']);
-    expect(components.every(c => c.needsPromotion)).toBe(true);
+    expect(components.every(c => c.action === 'promote')).toBe(true);
     expect(components.find(c => c.name === 'Taskin')?.targetDir).toBe(path.join(dir, 'taskin'));
     expect(components.find(c => c.name === 'TaskinWithShhh')?.targetDir).toBe(
       path.join(dir, 'taskin-with-shhh')
@@ -442,7 +442,7 @@ describe('component-detector - detectComponents', () => {
     const [component] = detectComponents(tempDir);
 
     expect(component.name).toBe('Taskin');
-    expect(component.needsPromotion).toBe(false);
-    expect(component.needsDirRename).toBe(false);
+    expect(component.action).not.toBe('promote');
+    expect(component.action).toBe('none');
   });
 });

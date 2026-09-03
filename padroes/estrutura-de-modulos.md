@@ -119,10 +119,19 @@ flowchart LR
 ## Tipagem
 
 - **Discriminated unions** para estados e variantes — com campo discriminante
-  explícito e exaustividade garantida por `casoImpossivel(x: never)` (ver
-  [typestate-handles.md](./typestate-handles.md)).
+  explícito e exaustividade garantida por uma função que recebe `never` (ver
+  [typestate-handles.md](./typestate-handles.md)). O nome dela segue o idioma do
+  projeto, como qualquer outro: `casoImpossivel` num projeto em português,
+  `assertNever` num projeto em inglês.
+- **Estado impossível não se representa.** Dois booleanos para três estados
+  mutuamente exclusivos, ou um `success: boolean` ao lado de um `error?: string`,
+  admitem combinações que não existem — e o consumidor não consegue estreitar o
+  tipo. Vira união discriminada.
 - Sem `any`. Entrada externa entra como `unknown` e é estreitada.
 - Tipos vivem em `.types.ts`; a implementação importa deles.
+- Listas de constantes levam `as const`, e os tipos saem delas
+  (`typeof LISTA[number]`, `keyof typeof TABELA`) em vez de serem escritos à mão
+  ao lado — declarar os dois deixa que divirjam.
 
 ## Idioma
 

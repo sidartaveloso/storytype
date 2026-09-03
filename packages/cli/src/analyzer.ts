@@ -407,7 +407,7 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
   // `normalize` would execute, so the score can only be lowered by something
   // normalize knows how to fix — and the suggested folder is the one it creates.
   const detected = detectComponents(componentsPath);
-  const looseComponents = detected.filter(c => c.needsPromotion);
+  const looseComponents = detected.filter(c => c.action === 'promote');
   const folderedCount = detected.length - looseComponents.length;
 
   const folderOrganization = detected.length > 0 ? (folderedCount / detected.length) * 100 : 0;
