@@ -108,8 +108,6 @@ describe('NormalizeComponents - Component Detection', () => {
     const options: NormalizeOptions = {
       path: tempDir,
       dryRun: true,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
 
@@ -130,8 +128,6 @@ describe('NormalizeComponents - Component Detection', () => {
     const options: NormalizeOptions = {
       path: tempDir,
       dryRun: true,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
 
@@ -158,8 +154,6 @@ describe('NormalizeComponents - Component Detection', () => {
     const options: NormalizeOptions = {
       path: tempDir,
       dryRun: true,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
 
@@ -169,7 +163,7 @@ describe('NormalizeComponents - Component Detection', () => {
       c.currentPath.includes('UserProfile')
     );
     expect(component).toBeDefined();
-    expect(component?.needsRename).toBe(true);
+    expect(component?.action).toBe('rename');
     expect(component?.targetPath).toContain('user-profile');
   });
 
@@ -197,8 +191,6 @@ describe('NormalizeComponents - Component Detection', () => {
     const options: NormalizeOptions = {
       path: tempDir,
       dryRun: true,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
 
@@ -207,7 +199,7 @@ describe('NormalizeComponents - Component Detection', () => {
     const component = result.components.find((c: ComponentDirectory) =>
       c.currentPath.includes('user-profile')
     );
-    expect(component?.needsRename).toBe(false);
+    expect(component?.action).not.toBe('rename');
     expect(component?.missingFiles.length).toBe(0);
   });
 });
@@ -234,8 +226,6 @@ describe('NormalizeComponents - Dry Run', () => {
     const options: NormalizeOptions = {
       path: tempDir,
       dryRun: true,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
 
@@ -257,8 +247,6 @@ describe('NormalizeComponents - Dry Run', () => {
     const options: NormalizeOptions = {
       path: tempDir,
       dryRun: true,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
 
@@ -292,8 +280,6 @@ describe('NormalizeComponents - Execution', () => {
     const options: NormalizeOptions = {
       path: tempDir,
       dryRun: false,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
 
@@ -315,8 +301,6 @@ describe('NormalizeComponents - Execution', () => {
     const options: NormalizeOptions = {
       path: tempDir,
       dryRun: false,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
 
@@ -381,7 +365,7 @@ describe('NormalizeComponents - Case-Only Changes', () => {
     // Should detect that directory needs renaming
     expect(analysis.success).toBe(true);
     expect(analysis.components.length).toBe(1);
-    expect(analysis.components[0].needsRename).toBe(true);
+    expect(analysis.components[0].action).toBe('rename');
     expect(path.basename(analysis.components[0].currentPath)).toBe('Botao');
     expect(path.basename(analysis.components[0].targetPath)).toBe('botao');
   });
@@ -443,7 +427,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       const srvComponents = result.components.filter(c => c.currentPath === srvDir);
 
       expect(srvComponents.map(c => c.componentName)).toEqual(['Server', 'Service']);
-      expect(srvComponents.every(c => c.needsRename)).toBe(false);
+      expect(srvComponents.every(c => c.action === 'promote')).toBe(true);
       expect(srvComponents.map(c => c.targetPath)).toEqual([
         path.join(srvDir, 'server'),
         path.join(srvDir, 'service'),
@@ -472,7 +456,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
         const srvComponent = result.components.find(c => path.basename(c.currentPath) === 'SRV');
 
         expect(srvComponent).toBeDefined();
-        expect(srvComponent?.needsRename).toBe(true);
+        expect(srvComponent?.action).toBe('rename');
         expect(path.basename(srvComponent!.currentPath)).toBe('SRV');
         expect(path.basename(srvComponent!.targetPath)).toBe('srv');
       } finally {
@@ -495,7 +479,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       );
 
       expect(profileComponent).toBeDefined();
-      expect(profileComponent?.needsRename).toBe(true);
+      expect(profileComponent?.action).toBe('rename');
       expect(path.basename(profileComponent!.targetPath)).toBe('user-profile');
     });
   });
@@ -560,7 +544,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       );
 
       expect(buttonComponent).toBeDefined();
-      expect(buttonComponent?.needsRename).toBe(true);
+      expect(buttonComponent?.action).toBe('rename');
       expect(path.basename(buttonComponent!.targetPath)).toBe('button');
     });
 
@@ -581,7 +565,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       );
 
       expect(srvComponent).toBeDefined();
-      expect(srvComponent?.needsRename).toBe(false);
+      expect(srvComponent?.action).not.toBe('rename');
       expect(path.basename(srvComponent!.targetPath)).toBe('srv');
     });
 
@@ -600,7 +584,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       );
 
       expect(dashboardComponent).toBeDefined();
-      expect(dashboardComponent?.needsRename).toBe(true);
+      expect(dashboardComponent?.action).toBe('rename');
       expect(path.basename(dashboardComponent!.targetPath)).toBe('dashboard');
     });
   });
@@ -641,7 +625,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       );
 
       expect(srvComponent).toBeDefined();
-      expect(srvComponent?.needsRename).toBe(false);
+      expect(srvComponent?.action).not.toBe('rename');
       expect(path.basename(srvComponent!.targetPath)).toBe('srv');
     });
 
@@ -660,7 +644,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       );
 
       expect(headerComponent).toBeDefined();
-      expect(headerComponent?.needsRename).toBe(true);
+      expect(headerComponent?.action).toBe('rename');
       expect(path.basename(headerComponent!.targetPath)).toBe('header');
     });
   });
@@ -701,7 +685,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       );
 
       expect(buttonComponent).toBeDefined();
-      expect(buttonComponent?.needsRename).toBe(true);
+      expect(buttonComponent?.action).toBe('rename');
       expect(path.basename(buttonComponent!.targetPath)).toBe('button');
     });
 
@@ -722,7 +706,7 @@ describe('NormalizeComponents - Monorepo Support', () => {
       );
 
       expect(headerComponent).toBeDefined();
-      expect(headerComponent?.needsRename).toBe(true);
+      expect(headerComponent?.action).toBe('rename');
       expect(path.basename(headerComponent!.targetPath)).toBe('header');
     });
 
@@ -866,8 +850,8 @@ describe('NormalizeComponents - Monorepo Support', () => {
 
       const button = result.components[0];
       expect(button.componentName).toBe('Button');
-      expect(button.needsPromotion).toBe(true);
-      expect(button.needsRename).toBe(false);
+      expect(button.action).toBe('promote');
+      expect(button.action).not.toBe('rename');
       expect(button.currentPath).toBe(atomsDir);
       expect(button.targetPath).toBe(path.join(atomsDir, 'button'));
       expect(result.componentsToPromote).toBe(1);
@@ -1258,11 +1242,11 @@ describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
     const result = await analyzeComponentStructure(options);
 
     // The level itself is never renamed; its loose files get promoted instead
-    const renamedLevel = result.components.find(c => c.needsRename);
+    const renamedLevel = result.components.find(c => c.action === 'rename');
     expect(renamedLevel).toBeUndefined();
 
     const someComponent = result.components.find(c => c.componentName === 'SomeComponent');
-    expect(someComponent?.needsPromotion).toBe(true);
+    expect(someComponent?.action).toBe('promote');
     expect(someComponent?.targetPath).toBe(path.join(moleculesDir, 'some-component'));
   });
 
@@ -1325,11 +1309,11 @@ describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
 
     // `Atoms/` is recognized as a level despite the casing, so it is not
     // renamed to a component name — the loose Button is promoted inside it
-    const renamedLevel = result.components.find(c => c.needsRename);
+    const renamedLevel = result.components.find(c => c.action === 'rename');
     expect(renamedLevel).toBeUndefined();
 
     const button = result.components.find(c => c.componentName === 'Button');
-    expect(button?.needsPromotion).toBe(true);
+    expect(button?.action).toBe('promote');
     expect(button?.targetPath).toBe(path.join(atomsDir, 'button'));
   });
 });
@@ -1633,8 +1617,6 @@ describe('NormalizeComponents - Git History Preservation', () => {
     const options: NormalizeOptions = {
       path: path.join(repoDir, 'components'),
       dryRun: false,
-      dirsOnly: false,
-      filesOnly: false,
       verbose: false,
     };
     const result = await normalizeComponents(options);
@@ -2145,6 +2127,68 @@ describe('NormalizeComponents - Promotion of loose components', () => {
     expect(spec).toContain('expect(Taskin).toBeDefined()');
   });
 
+  it('reports one action per component, never two', async () => {
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
+    const renamed = path.join(tempDir, 'organisms', 'TaskCard');
+    await fs.ensureDir(renamed);
+    await fs.writeFile(path.join(renamed, 'TaskCard.vue'), '<template />');
+
+    const result = await analyzeComponentStructure({ path: tempDir, dryRun: true });
+
+    const actions = result.components.map(c => c.action).sort();
+    expect(actions).toEqual(['promote', 'rename']);
+  });
+
+  it('scope dirs moves the folder without creating files', async () => {
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false, scope: 'dirs' });
+
+    expect(result.success).toBe(true);
+    expect(result.filesToCreate).toBe(0);
+    expect(await fs.pathExists(path.join(atomsDir, 'progress-bar', 'ProgressBar.vue'))).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'progress-bar', 'index.ts'))).toBe(false);
+  });
+
+  it('scope files renames in place without moving the folder', async () => {
+    await fs.writeFile(path.join(atomsDir, 'progressBar.vue'), '<template />');
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false, scope: 'files' });
+
+    expect(result.success).toBe(true);
+    expect(result.componentsToPromote).toBe(0);
+    expect(await fs.pathExists(path.join(atomsDir, 'ProgressBar.vue'))).toBe(true);
+    expect(await fs.pathExists(path.join(atomsDir, 'progress-bar'))).toBe(false);
+  });
+
+  it('carries a message on every failure', async () => {
+    await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
+    // Read-only, so creating the component folder inside it fails
+    await fs.chmod(atomsDir, 0o500);
+
+    try {
+      const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+      expect(result.success).toBe(false);
+      if (result.success) return;
+
+      // The union guarantees a string here, not string | undefined
+      expect(result.error).toBeTypeOf('string');
+      expect(result.error.length).toBeGreaterThan(0);
+      // And the plan is still there, so the caller sees what was attempted
+      expect(result.components).toHaveLength(1);
+    } finally {
+      await fs.chmod(atomsDir, 0o700);
+    }
+  });
+
+  it('reports an empty plan for a path with nothing in it', async () => {
+    const result = await analyzeComponentStructure({ path: path.join(tempDir, 'vazio') });
+
+    expect(result.success).toBe(true);
+    expect(result.components).toEqual([]);
+  });
+
   it('changes nothing in dry-run', async () => {
     await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
 
@@ -2158,7 +2202,7 @@ describe('NormalizeComponents - Promotion of loose components', () => {
   it('skips promotion under --files-only', async () => {
     await fs.writeFile(path.join(atomsDir, 'progressBar.vue'), '<template />');
 
-    const result = await normalizeComponents({ path: tempDir, dryRun: false, filesOnly: true });
+    const result = await normalizeComponents({ path: tempDir, dryRun: false, scope: 'files' });
 
     expect(result.success).toBe(true);
     expect(await fs.pathExists(path.join(atomsDir, 'progress-bar'))).toBe(false);
@@ -2169,7 +2213,7 @@ describe('NormalizeComponents - Promotion of loose components', () => {
   it('promotes without creating files under --dirs-only', async () => {
     await fs.writeFile(path.join(atomsDir, 'ProgressBar.vue'), '<template />');
 
-    const result = await normalizeComponents({ path: tempDir, dryRun: false, dirsOnly: true });
+    const result = await normalizeComponents({ path: tempDir, dryRun: false, scope: 'dirs' });
 
     expect(result.success).toBe(true);
 

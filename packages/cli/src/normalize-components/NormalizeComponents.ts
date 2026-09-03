@@ -18,12 +18,15 @@ import {
 } from '../component-detector.js';
 import { renderComponentFileByName, type ScaffoldContext } from '../component-scaffold.js';
 import type {
+  ComponentAction,
   ComponentDirectory,
   ComponentFile,
   ImportReference,
   NormalizeOptions,
   NormalizeReport,
+  SkippedDirectory,
 } from './NormalizeComponents.types.js';
+import { assertNever } from '../assert-never.js';
 
 // Re-exported so consumers keep importing the case helpers from here, while the
 // single implementation lives in the shared detector.
@@ -290,7 +293,7 @@ function buildSpecifier(
 export async function analyzeComponentStructure(
   options: NormalizeOptions
 ): Promise<NormalizeReport> {
-  const skippedDirectories: Array<{ path: string; reason: string }> = [];
+  const skippedDirectories: SkippedDirectory[] = [];
 
   const rootDir = path.resolve(options.path);
 
@@ -325,8 +328,8 @@ export async function analyzeComponentStructure(
 
     return {
       components,
-      directoriesToRename: components.filter(c => c.needsRename).length,
-      componentsToPromote: components.filter(c => c.needsPromotion).length,
+      directoriesToRename: components.filter(c => c.action === 'rename').length,
+      componentsToPromote: components.filter(c => c.action === 'promote').length,
       filesToRename: components.reduce(
         (sum, c) => sum + c.files.filter(f => f.currentPath !== f.targetPath).length,
         0
@@ -358,8 +361,8 @@ export async function analyzeComponentStructure(
  * either another component or a half-done move, and overwriting it would
  * destroy files.
  */
-function promotionConflict(component: DetectedComponent): { path: string; reason: string } | null {
-  if (!component.needsPromotion) return null;
+function promotionConflict(component: DetectedComponent): SkippedDirectory | null {
+  if (component.action !== 'promote') return null;
   if (!fs.existsSync(component.targetDir)) return null;
 
   return {
@@ -381,8 +384,9 @@ async function planComponent(
   component: DetectedComponent,
   options: NormalizeOptions
 ): Promise<ComponentDirectory> {
-  const movesDirectories = !options.filesOnly;
-  const renamesFiles = !options.dirsOnly;
+  const scope = options.scope ?? 'all';
+  const movesDirectories = scope !== 'files';
+  const renamesFiles = scope !== 'dirs';
 
   const targetDir = movesDirectories ? component.targetDir : component.currentDir;
 
@@ -401,11 +405,17 @@ async function planComponent(
     componentName: component.name,
     files,
     missingFiles: renamesFiles ? findMissingFiles(component) : [],
-    needsRename: component.needsDirRename && movesDirectories,
-    needsPromotion: component.needsPromotion && movesDirectories,
+    action: plannedAction(component, movesDirectories),
     // Filled in once every component's plan is known
     importReferences: [],
   };
+}
+
+/**
+ * What the run will do to a component's directory
+ */
+function plannedAction(component: DetectedComponent, movesDirectories: boolean): ComponentAction {
+  return movesDirectories ? component.action : 'none';
 }
 
 /**
@@ -461,17 +471,24 @@ export async function normalizeComponents(options: NormalizeOptions): Promise<No
     // Directory work first: a loose component gains a folder, a misnamed one is
     // renamed. Both carry their files along, so file renames come after.
     for (const component of analysis.components) {
-      if (component.needsPromotion) {
-        await promoteComponent(component);
-      } else if (component.needsRename) {
-        await moveDirectory(component);
+      switch (component.action) {
+        case 'promote':
+          await promoteComponent(component);
+          break;
+        case 'rename':
+          await moveDirectory(component);
+          break;
+        case 'none':
+          break;
+        default:
+          assertNever(component.action, 'component action');
       }
     }
 
     // File names, at whatever location the component now sits
     for (const component of analysis.components) {
       // A promoted component was moved file by file, already under its target name
-      if (component.needsPromotion) continue;
+      if (component.action === 'promote') continue;
 
       for (const file of component.files) {
         const currentPath = path.join(component.targetPath, path.basename(file.currentPath));

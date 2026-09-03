@@ -36,7 +36,9 @@ export const COMPONENT_FILE_ROLES = {
 
 export type ComponentFileRole = keyof typeof COMPONENT_FILE_ROLES;
 
-export const COMPONENT_FILE_ROLE_KEYS = Object.keys(COMPONENT_FILE_ROLES) as ComponentFileRole[];
+export const COMPONENT_FILE_ROLE_KEYS: readonly ComponentFileRole[] = Object.keys(
+  COMPONENT_FILE_ROLES
+) as ComponentFileRole[];
 
 export const TEST_PATTERNS = COMPONENT_FILE_ROLES.test;
 
@@ -92,9 +94,11 @@ export type AtomicLevel = keyof typeof ATOMIC_LEVELS;
 
 export type ProjectLanguage = keyof (typeof ATOMIC_LEVELS)['atoms']['dir'];
 
-export const ATOMIC_LEVEL_KEYS = Object.keys(ATOMIC_LEVELS) as AtomicLevel[];
+export const ATOMIC_LEVEL_KEYS: readonly AtomicLevel[] = Object.keys(
+  ATOMIC_LEVELS
+) as AtomicLevel[];
 
-export const PROJECT_LANGUAGES: ProjectLanguage[] = ['en', 'pt'];
+export const PROJECT_LANGUAGES: readonly ProjectLanguage[] = ['en', 'pt'];
 
 /**
  * The words a user may type to name a level on the command line: the folder
@@ -409,13 +413,15 @@ export function toExpectedFileName(fileName: string): string {
 export function findComponentFiles(rootDir: string): string[] {
   const files: string[] = [];
 
-  walkDirectories(rootDir, (dirPath, entries) => {
+  walkDirectories(rootDir, (dirPath, entries): WalkDecision => {
     for (const entry of entries) {
       const filePath = path.join(dirPath, entry.name);
       if (entry.isFile() && isComponentEntry(filePath)) {
         files.push(filePath);
       }
     }
+
+    return undefined;
   });
 
   return files;
@@ -427,7 +433,7 @@ export function findComponentFiles(rootDir: string): string[] {
 export function findComponentDirectories(rootDir: string): string[] {
   const directories: string[] = [];
 
-  walkDirectories(rootDir, (dirPath, entries) => {
+  walkDirectories(rootDir, (dirPath, entries): WalkDecision => {
     if (entries.some(e => e.isFile() && isComponentEntry(path.join(dirPath, e.name)))) {
       directories.push(dirPath);
       return 'skip-children';
@@ -448,6 +454,19 @@ export interface DetectedComponentFile {
   type: ComponentFileType;
 }
 
+/**
+ * What has to happen to a component's directory. The three states are
+ * mutually exclusive, so they are one field rather than a pair of booleans
+ * that could both be true.
+ */
+export type ComponentAction =
+  /** Files sit alongside others and need a folder of their own */
+  | 'promote'
+  /** The folder is the component's, but its name is not kebab-case */
+  | 'rename'
+  /** The folder is already where and what it should be */
+  | 'none';
+
 export interface DetectedComponent {
   /** Component name in PascalCase */
   name: string;
@@ -460,11 +479,9 @@ export interface DetectedComponent {
   /** Files belonging to this component */
   files: DetectedComponentFile[];
   /** Enclosing Atomic Design level, when there is one */
-  atomicLevel: string | null;
-  /** Files sit loose in an Atomic Design level and need a folder of their own */
-  needsPromotion: boolean;
-  /** The holding directory needs a kebab-case rename */
-  needsDirRename: boolean;
+  atomicLevel: AtomicLevel | null;
+  /** What has to happen to the directory */
+  action: ComponentAction;
 }
 
 /**
@@ -473,7 +490,7 @@ export interface DetectedComponent {
  * A component owns a directory. A directory holds a component only when that
  * component is alone in it and the directory is not an Atomic Design level;
  * otherwise the directory is a container, and each entry in it is reported with
- * `needsPromotion` and the folder it belongs in.
+ * action `promote` and the folder it belongs in.
  *
  * The result therefore holds exactly one component per entry file, which is why
  * `analyze` can count from it and `normalize` can act on it.
@@ -481,7 +498,7 @@ export interface DetectedComponent {
 export function detectComponents(rootDir: string): DetectedComponent[] {
   const components: DetectedComponent[] = [];
 
-  walkDirectories(rootDir, (dirPath, entries) => {
+  walkDirectories(rootDir, (dirPath, entries): WalkDecision => {
     const fileNames = entries.filter(e => e.isFile()).map(e => e.name);
     const entryFiles = fileNames
       .filter(fileName => isComponentEntry(path.join(dirPath, fileName)))
@@ -528,8 +545,7 @@ function promotedComponent(
     entryPath: path.join(containerDir, entryFile),
     files: ownFiles.map(fileName => describeFile(containerDir, fileName)),
     atomicLevel: findAtomicLevel(containerDir),
-    needsPromotion: true,
-    needsDirRename: false,
+    action: 'promote',
   };
 }
 
@@ -555,8 +571,7 @@ function ownedComponent(
     entryPath: path.join(dirPath, entryFile),
     files: fileNames.map(fileName => describeFile(dirPath, fileName)),
     atomicLevel: findAtomicLevel(dirPath),
-    needsPromotion: false,
-    needsDirRename: dirName !== expectedDirName,
+    action: dirName === expectedDirName ? 'none' : 'rename',
   };
 }
 
@@ -572,15 +587,17 @@ function describeFile(dirPath: string, fileName: string): DetectedComponentFile 
 /**
  * Nearest ancestor directory that is an Atomic Design level
  */
-function findAtomicLevel(dirPath: string): string | null {
+function findAtomicLevel(dirPath: string): AtomicLevel | null {
   for (const segment of dirPath.split(path.sep).reverse()) {
-    if (isAtomicLevel(segment)) return segment;
+    const level = toAtomicLevel(segment);
+    if (level) return level;
   }
 
   return null;
 }
 
-type WalkResult = 'skip-children' | void;
+/** What a visitor tells the walk to do next; nothing means "keep descending" */
+type WalkDecision = 'skip-children' | undefined;
 
 /**
  * Walk a directory tree once, skipping dotfiles and ignored directories.
@@ -588,7 +605,7 @@ type WalkResult = 'skip-children' | void;
  */
 function walkDirectories(
   rootDir: string,
-  visit: (dirPath: string, entries: fs.Dirent[]) => WalkResult
+  visit: (dirPath: string, entries: fs.Dirent[]) => WalkDecision
 ): void {
   if (!fs.existsSync(rootDir)) return;
 
