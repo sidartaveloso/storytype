@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "jsx": "preserve",
+    "allowImportingTsExtensions": false,
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["src/**/*.spec.ts", "node_modules", "dist", "dist-storybook"]
+}

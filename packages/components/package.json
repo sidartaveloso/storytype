@@ -1,0 +1,110 @@
+{
+  "name": "@storytype/components",
+  "version": "0.1.0",
+  "description": "Battle-tested Vue 3 components following Storytype standard | Componentes Vue 3 validados seguindo o padrão Storytype",
+  "keywords": [
+    "vue",
+    "vue3",
+    "typescript",
+    "components",
+    "storytype",
+    "atomic-design",
+    "quasar",
+    "ui-library",
+    "componentes-vue",
+    "biblioteca-componentes"
+  ],
+  "author": "Sidarta Veloso <sidartaveloso@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sidartaveloso/storytype.git",
+    "directory": "packages/components"
+  },
+  "bugs": {
+    "url": "https://github.com/sidartaveloso/storytype/issues"
+  },
+  "homepage": "https://github.com/sidartaveloso/storytype#readme",
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./atoms/*": {
+      "types": "./dist/atoms/*/index.d.ts",
+      "import": "./dist/atoms/*/index.js"
+    },
+    "./molecules/*": {
+      "types": "./dist/molecules/*/index.d.ts",
+      "import": "./dist/molecules/*/index.js"
+    },
+    "./organisms/*": {
+      "types": "./dist/organisms/*/index.d.ts",
+      "import": "./dist/organisms/*/index.js"
+    },
+    "./templates/*": {
+      "types": "./dist/templates/*/index.d.ts",
+      "import": "./dist/templates/*/index.js"
+    },
+    "./styles": {
+      "import": "./dist/styles.css"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "README.pt-BR.md"
+  ],
+  "scripts": {
+    "build": "vite build && vue-tsc --declaration --emitDeclarationOnly",
+    "dev": "vite build --watch",
+    "test": "vitest run && vitest run --config vitest.storybook.config.ts",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "analyze": "storytype analyze . --verbose",
+    "validate": "pnpm analyze && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "lint": "biome lint src",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.typecheck.json",
+    "clean": "rm -rf dist dist-storybook",
+    "test:stories": "vitest run --config vitest.storybook.config.ts"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "quasar": "^2.17.0"
+  },
+  "devDependencies": {
+    "@quasar/extras": "^2.0.2",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-vitest": "~10.6.0",
+    "@storybook/vue3": "^10.6.0",
+    "@storybook/vue3-vite": "^10.6.0",
+    "@types/node": "^20.19.43",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vitest/browser": "^4.1.11",
+    "@vitest/browser-playwright": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.11",
+    "@vue/test-utils": "^2.4.11",
+    "jsdom": "^30.0.1",
+    "playwright": "^1.61.1",
+    "quasar": "^2.17.0",
+    "sass": "^1.93.2",
+    "storybook": "^10.6.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.11",
+    "vue": "^3.5.39",
+    "vue-tsc": "^3.3.9"
+  }
+}

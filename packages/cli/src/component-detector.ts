@@ -15,7 +15,21 @@ export const BARREL_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'] a
 
 export const DECLARATION_PATTERNS = ['.d.ts', '.d.tsx', '.d.mts', '.d.cts'] as const;
 
-export const IGNORED_DIRECTORIES = ['node_modules', 'dist', 'coverage', 'dist-storybook'] as const;
+/**
+ * Directories that never hold source components: dependency trees and build
+ * output. Walking them yields false positives — a built `dist` looks like a
+ * component tree. Dotted directories are skipped by the rule itself, so
+ * `.turbo` and `.storybook` need no entry here.
+ */
+export const IGNORED_DIRECTORIES = [
+  'node_modules',
+  'dist',
+  'dist-storybook',
+  'storybook-static',
+  'build',
+  'out',
+  'coverage',
+] as const;
 
 /**
  * The roles a file can play inside a component, and the suffixes that mark
@@ -441,6 +455,28 @@ export function findComponentDirectories(rootDir: string): string[] {
   });
 
   return directories;
+}
+
+/**
+ * Recursively collect files whose name contains one of `patterns`.
+ *
+ * Shares the traversal — and therefore the ignore rules — with the rest of the
+ * detection, so a build output directory is never counted.
+ */
+export function findFilesMatching(rootDir: string, patterns: readonly string[]): string[] {
+  const files: string[] = [];
+
+  walkDirectories(rootDir, (dirPath, entries): WalkDecision => {
+    for (const entry of entries) {
+      if (entry.isFile() && patterns.some(pattern => entry.name.includes(pattern))) {
+        files.push(path.join(dirPath, entry.name));
+      }
+    }
+
+    return undefined;
+  });
+
+  return files;
 }
 
 export interface DetectedComponentFile {
