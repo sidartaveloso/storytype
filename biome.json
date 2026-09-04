@@ -13,7 +13,9 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.vue"],
+      "includes": [
+        "**/*.vue"
+      ],
       "linter": {
         "rules": {
           "correctness": {
@@ -26,11 +28,35 @@
       }
     },
     {
-      "includes": ["**/*.types.ts"],
+      "includes": [
+        "**/*.types.ts"
+      ],
       "linter": {
         "rules": {
           "suspicious": {
             "noEmptyInterface": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "**/*.mock.ts",
+        "**/*.mock.tsx",
+        "**/*.stories.ts",
+        "**/*.stories.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "vitest": "Mock e story sao carregados pelo Storybook, nao pelo runner de teste. Importar vitest aqui traz o modulo cru para o preview, sem o setup que o `storybook/test` faz, e derruba todas as stories do componente com \"Cannot read properties of undefined (reading 'customEqualityTesters')\". Use `storybook/test` para expect/within/userEvent, ou uma funcao no-op quando o mock precisa de algo chamavel."
+                }
+              }
+            }
           }
         }
       }
