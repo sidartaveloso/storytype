@@ -12,6 +12,7 @@ coverage
 
 # Build outputs
 dist
+storybook-static
 .next
 out
 build
@@ -50,3 +51,5 @@ cache/
 # Taskin configuration
 .taskin.json
 .pnpm-store
+
+*.tgz
