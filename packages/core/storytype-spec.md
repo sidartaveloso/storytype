@@ -276,6 +276,20 @@ de `.spec.ts`, `.story.ts` no lugar de `.stories.ts`, `.mocks.ts` no lugar de
 `.mock.ts`, `index.js` no lugar de `index.ts`. A primeira forma é a que a
 ferramenta escreve.
 
+**`.mock.ts` e `.stories.ts` são neutros em runtime.** Diferente do `.spec.ts`,
+os dois são carregados pelo Storybook, não pelo runner de teste — a story
+importa o mock para alimentar os seus `args`. Importar `vitest` neles traz o
+módulo cru para o preview, sem o setup que o `storybook/test` faz antes, e
+derruba **todas** as stories do componente com
+`Cannot read properties of undefined (reading 'customEqualityTesters')` — na
+carga do módulo, então até a story sem play function quebra.
+
+Para asserção e interação dentro da story, use `storybook/test`
+(`expect`, `within`, `userEvent`), que é a versão instrumentada. Quando o mock
+precisa de algo chamável — um `emits` cujo tipo é função —, use uma função
+no-op em vez de `vi.fn()`. Uma regra de lint (`noRestrictedImports` no
+`biome.json`) bloqueia o import e explica o motivo.
+
 ### 5.2 Arquivos Complementares
 
 - **`ComponentName.controller.ts`** — lógica extraída do componente. Acompanha o
