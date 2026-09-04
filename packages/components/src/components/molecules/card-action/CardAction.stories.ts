@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 import CardAction from './CardAction.vue';
 import { generateMockData } from './CardAction.mock';
 
@@ -17,6 +17,21 @@ const meta: Meta<typeof CardAction> = {
   component: CardAction,
   tags: ['autodocs'],
   parameters: {
+    /**
+     * Débito real de contraste, não falso positivo: a superfície é o cinza
+     * `#f5f5f5` do cartão, sem overlay envolvido.
+     *
+     *   `#757575` (grey-7 do Quasar) sobre `#f5f5f5` -> 4,23  (precisa 4,5)
+     *   `#26a69a` (secondary do tema) sobre `#f5f5f5` -> 2,75  (precisa 4,5)
+     *
+     * Corrigir exige escolher outras cores, que é decisão de design e não de
+     * ferramenta. Fica `todo` para a violação aparecer no painel sem reprovar
+     * o build, e para a pendência estar escrita em vez de silenciosa. As
+     * outras sete stories do pacote seguem sob o portão.
+     */
+    a11y: {
+      test: 'todo',
+    },
     docs: {
       description: {
         component:

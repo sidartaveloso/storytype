@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, within } from '@storybook/test';
+import { expect, within } from 'storybook/test';
 import GroupCards from './GroupCards.vue';
 import { generateMockData } from './GroupCards.mock';
 import type { GroupCardsProps } from './GroupCards.types';
