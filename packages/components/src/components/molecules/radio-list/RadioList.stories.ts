@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, within, userEvent } from '@storybook/test';
+import { expect, within, userEvent } from 'storybook/test';
 import { ref } from 'vue';
 import RadioList from './RadioList.vue';
 import { generateMockData } from './RadioList.mock';

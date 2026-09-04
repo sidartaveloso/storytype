@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, screen, userEvent } from '@storybook/test';
+import { expect, screen, userEvent } from 'storybook/test';
 import { ref } from 'vue';
 import AlertDialog from './AlertDialog.vue';
 import { generateMockData } from './AlertDialog.mock';
@@ -20,6 +20,23 @@ const meta: Meta<typeof AlertDialog> = {
   component: AlertDialog,
   tags: ['autodocs'],
   parameters: {
+    a11y: {
+      config: {
+        rules: [
+          /**
+           * Falso positivo do axe, não débito: o backdrop do Quasar é um
+           * overlay `position: fixed` decorativo (`aria-hidden`), e o axe o
+           * mistura como fundo dos botões em vez da superfície do diálogo.
+           * Mede 3,31 contra o backdrop `#999999`; sobre o card branco, que é
+           * o fundo real, `#2c3f91` dá 9,43 — passa com folga.
+           *
+           * A regra fica desligada só aqui, e só ela: as outras continuam
+           * valendo para estas stories.
+           */
+          { id: 'color-contrast', enabled: false },
+        ],
+      },
+    },
     docs: {
       description: {
         component:

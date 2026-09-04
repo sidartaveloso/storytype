@@ -57,6 +57,18 @@ setup(app => {
 
 const preview: Preview = {
   parameters: {
+    /**
+     * `error` faz a violacao de acessibilidade reprovar a story, em vez de
+     * so aparecer no painel do Storybook. E o portao de qualidade: uma
+     * regressao de a11y quebra o `pnpm test`.
+     *
+     * Uma story que ainda tem debito declara `a11y: { test: 'todo' }` nos seus
+     * proprios parameters, com o motivo — assim a pendencia fica explicita e
+     * nao vira excecao silenciosa para todas as outras.
+     */
+    a11y: {
+      test: 'error',
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,

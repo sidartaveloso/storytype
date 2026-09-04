@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect } from '@storybook/test';
+import { expect } from 'storybook/test';
 import Avatar from './Avatar.vue';
 import { generateMockData } from './Avatar.mock';
 

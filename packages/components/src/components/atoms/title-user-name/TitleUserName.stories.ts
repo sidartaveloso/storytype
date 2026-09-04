@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, within } from '@storybook/test';
+import { expect, within } from 'storybook/test';
 import TitleUserName from './TitleUserName.vue';
 import { generateMockData } from './TitleUserName.mock';
 
