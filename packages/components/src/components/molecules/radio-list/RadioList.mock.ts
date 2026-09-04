@@ -1,4 +1,3 @@
-import { vi } from 'vitest';
 import type {
   RadioListType,
   RadioListProps,
@@ -32,7 +31,12 @@ export const generateMockData = (): RadioListType => {
   };
 
   const models: RadioListModels = { modelValue: props.modelValue };
-  const emits: RadioListEmits = vi.fn() as RadioListEmits;
+  // `RadioListEmits` e um tipo de funcao, entao o mock precisa de algo
+  // chamavel. Um no-op mantem este arquivo neutro em runtime: ele e importado
+  // pelas stories, e trazer `vi` do vitest para o preview do Storybook quebra
+  // o registro do chai (`customEqualityTesters`) e derruba todas as stories do
+  // componente. Ver storybookjs/storybook#31400.
+  const emits: RadioListEmits = () => {};
 
   return {
     props,
