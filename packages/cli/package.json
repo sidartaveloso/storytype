@@ -1,6 +1,6 @@
 {
   "name": "@storytype/cli",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "CLI tool for scaffolding Storytype components and analyzing project structure",
   "keywords": [
     "cli",
@@ -53,7 +53,7 @@
     "dev": "tsup src/cli.ts src/index.ts --format esm --dts --watch",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "test:no-coverage": "vitest run",
@@ -69,7 +69,6 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/handlebars": "^4.1.0",
     "@types/node": "^20.11.30",
     "@types/prompts": "^2.4.9",
     "@vitest/coverage-v8": "^4.1.5",

@@ -3,10 +3,23 @@
  * Analyzes and scores projects based on Storytype best practices
  */
 
-import fs from 'fs-extra';
-import path from 'path';
 import chalk from 'chalk';
+import fs from 'fs-extra';
 import ora, { type Ora } from 'ora';
+import path from 'path';
+import {
+  ATOMIC_LEVEL_KEYS,
+  detectComponents,
+  findAtomicLevelDirs,
+  findComponentFiles,
+  findFilesMatching,
+  findComponentsDirectory,
+  getComponentBaseName,
+  isPascalCase,
+  STORY_PATTERNS,
+  TEST_PATTERNS,
+  toExpectedFileName,
+} from './component-detector.js';
 
 export interface AnalysisResult {
   score: number;
@@ -42,23 +55,6 @@ export interface CheckItem {
 export interface DisplayOptions {
   verbose?: boolean;
 }
-
-const ATOMIC_LEVELS = ['atoms', 'molecules', 'organisms', 'templates', 'pages'];
-const COMPONENT_EXTENSIONS = ['.vue', '.tsx', '.ts'];
-const STORY_PATTERNS = ['.stories.ts', '.stories.tsx', '.story.ts', '.story.tsx'];
-const TEST_PATTERNS = ['.spec.ts', '.spec.tsx', '.test.ts', '.test.tsx'];
-// Arquivos auxiliares que acompanham um componente mas não são componentes em si.
-// Não devem ser contados como componentes separados (ex.: cobertura de testes/stories).
-const AUXILIARY_PATTERNS = [
-  '.types.ts',
-  '.types.tsx',
-  '.mock.ts',
-  '.mock.tsx',
-  '.mocks.ts',
-  '.mocks.tsx',
-];
-// Arquivos de barril (re-exportação) que não representam um componente.
-const BARREL_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'];
 
 /**
  * Analyze a project directory
@@ -130,10 +126,8 @@ async function analyzeStructure(projectPath: string, spinner: Ora): Promise<Cate
     };
   }
 
-  // Check for Atomic Design folders
-  const foundLevels = ATOMIC_LEVELS.filter(level =>
-    fs.existsSync(path.join(componentsPath, level))
-  );
+  // Atomic Design folders, in whatever language the project names them
+  const foundLevels = findAtomicLevelDirs(componentsPath);
 
   items.push({
     name: 'Diretório de componentes',
@@ -147,8 +141,8 @@ async function analyzeStructure(projectPath: string, spinner: Ora): Promise<Cate
     name: 'Níveis Atomic Design',
     passed: foundLevels.length >= 3,
     points: foundLevels.length * 5,
-    maxPoints: 25,
-    message: `Encontrados: ${foundLevels.join(', ') || 'nenhum'} (${foundLevels.length}/5)`,
+    maxPoints: ATOMIC_LEVEL_KEYS.length * 5,
+    message: `Encontrados: ${foundLevels.map(l => l.dirName).join(', ') || 'nenhum'} (${foundLevels.length}/${ATOMIC_LEVEL_KEYS.length})`,
   });
 
   // Check component organization
@@ -293,8 +287,8 @@ async function analyzeTestsAndStories(projectPath: string, spinner: Ora): Promis
   }
 
   const componentFiles = findAllComponents(componentsPath);
-  const testFiles = findFilesByPattern(componentsPath, TEST_PATTERNS);
-  const storyFiles = findFilesByPattern(componentsPath, STORY_PATTERNS);
+  const testFiles = findFilesMatching(componentsPath, TEST_PATTERNS);
+  const storyFiles = findFilesMatching(componentsPath, STORY_PATTERNS);
 
   const testFileBases = new Set(testFiles.map(f => stripTestSuffix(f, TEST_PATTERNS)));
   const storyFileBases = new Set(storyFiles.map(f => stripTestSuffix(f, STORY_PATTERNS)));
@@ -381,27 +375,8 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
 
   const componentFiles = findAllComponents(componentsPath);
 
-  // Helper function to get the base component name (handles .types.ts, .stories.ts, etc.)
-  const getComponentBaseName = (file: string): string => {
-    const fileName = path.basename(file);
-    // Remove .types.ts, .stories.ts, .spec.ts, .test.ts, etc.
-    return fileName
-      .replace(/\.(types|stories|story|spec|test)\.(ts|tsx|js|jsx)$/, '')
-      .replace(/\.(ts|tsx|js|jsx|vue)$/, '');
-  };
-
-  const pascalCaseFiles = componentFiles.filter(file => {
-    const baseName = getComponentBaseName(file);
-    // index.ts é uma convenção legítima para arquivos de exportação
-    if (baseName === 'index') return true;
-    return /^[A-Z][a-zA-Z0-9]*$/.test(baseName);
-  });
-  const nonPascalFiles = componentFiles.filter(file => {
-    const baseName = getComponentBaseName(file);
-    // index.ts é uma convenção legítima para arquivos de exportação
-    if (baseName === 'index') return false;
-    return !/^[A-Z][a-zA-Z0-9]*$/.test(baseName);
-  });
+  const pascalCaseFiles = componentFiles.filter(file => isPascalCase(getComponentBaseName(file)));
+  const nonPascalFiles = componentFiles.filter(file => !isPascalCase(getComponentBaseName(file)));
 
   const pascalCasePercentage =
     componentFiles.length > 0 ? (pascalCaseFiles.length / componentFiles.length) * 100 : 0;
@@ -412,29 +387,14 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
     points: Math.round((pascalCasePercentage / 100) * 10),
     maxPoints: 10,
     message: `${pascalCaseFiles.length}/${componentFiles.length} componentes (${Math.round(pascalCasePercentage)}%)`,
+    // `toExpectedFileName` is the same rule `normalize` applies, so the
+    // suggested name is exactly the name normalize would produce
     fileIssues: nonPascalFiles
-      .map(f => {
-        const oldName = path.basename(f);
-        const baseName = getComponentBaseName(f);
-
-        // Convert to PascalCase
-        const pascalName = baseName
-          .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
-          .replace(/^(.)/, (_, c: string) => c.toUpperCase());
-
-        // Reconstruct the full filename with same suffixes
-        const suffix = oldName.replace(
-          new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
-          ''
-        );
-        const newName = `${pascalName}${suffix}`;
-
-        return {
-          file: f,
-          oldName,
-          newName,
-        };
-      })
+      .map(f => ({
+        file: f,
+        oldName: path.basename(f),
+        newName: toExpectedFileName(path.basename(f)),
+      }))
       // Only include files where the name actually needs to change
       .filter(({ oldName, newName }) => oldName !== newName)
       .map(({ file, oldName, newName }) => ({
@@ -444,23 +404,26 @@ async function analyzeNaming(projectPath: string, spinner: Ora): Promise<Categor
       })),
   });
 
-  // Check if components are organized in folders (Component/Component.vue pattern)
-  const folderedComponents = componentFiles.filter(file => {
-    const dir = path.dirname(file);
-    const fileName = path.basename(file, path.extname(file));
-    const parentFolder = path.basename(dir);
-    return fileName === parentFolder || fileName === 'index';
-  });
+  // Each component owns a folder named after it. This reads the very plan
+  // `normalize` would execute, so the score can only be lowered by something
+  // normalize knows how to fix — and the suggested folder is the one it creates.
+  const detected = detectComponents(componentsPath);
+  const looseComponents = detected.filter(c => c.action === 'promote');
+  const folderedCount = detected.length - looseComponents.length;
 
-  const folderOrganization =
-    componentFiles.length > 0 ? (folderedComponents.length / componentFiles.length) * 100 : 0;
+  const folderOrganization = detected.length > 0 ? (folderedCount / detected.length) * 100 : 0;
 
   items.push({
     name: 'Organização por pastas',
     passed: folderOrganization >= 60,
     points: Math.round((folderOrganization / 100) * 5),
     maxPoints: 5,
-    message: `${folderedComponents.length}/${componentFiles.length} componentes (${Math.round(folderOrganization)}%)`,
+    message: `${folderedCount}/${detected.length} componentes (${Math.round(folderOrganization)}%)`,
+    fileIssues: looseComponents.map(component => ({
+      file: component.entryPath,
+      issue: 'Componente sem pasta própria',
+      fix: `Mova para ${component.targetDir}/ (ou rode: storytype normalize)`,
+    })),
   });
 
   const score = items.reduce((sum, item) => sum + item.points, 0);
@@ -518,26 +481,6 @@ async function analyzeDocumentation(projectPath: string, spinner: Ora): Promise<
 }
 
 /**
- * Helper: Find components directory
- */
-function findComponentsDirectory(projectPath: string): string | null {
-  const possiblePaths = [
-    path.join(projectPath, 'src', 'components'),
-    path.join(projectPath, 'components'),
-    path.join(projectPath, 'src', 'views'),
-    path.join(projectPath, 'app', 'components'),
-  ];
-
-  for (const p of possiblePaths) {
-    if (fs.existsSync(p)) {
-      return p;
-    }
-  }
-
-  return null;
-}
-
-/**
  * Helper: Count all components
  */
 function countComponents(dir: string): number {
@@ -545,83 +488,13 @@ function countComponents(dir: string): number {
 }
 
 /**
- * Helper: Find all component files
+ * Helper: Find all component files.
+ *
+ * Thin alias over the shared detector so every count in this file uses the
+ * same definition of "component" that `normalize` acts on.
  */
 function findAllComponents(dir: string): string[] {
-  const components: string[] = [];
-
-  function walk(currentDir: string) {
-    if (!fs.existsSync(currentDir)) return;
-
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-
-      if (entry.isDirectory()) {
-        // Skip node_modules and hidden directories
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-        walk(fullPath);
-      } else if (entry.isFile()) {
-        const ext = path.extname(entry.name);
-        if (COMPONENT_EXTENSIONS.includes(ext)) {
-          // Exclude test, story, auxiliary (.types/.mock) and barrel (index) files,
-          // que não são componentes em si e não devem ser contados separadamente.
-          const isTest = TEST_PATTERNS.some(pattern => entry.name.includes(pattern));
-          const isStory = STORY_PATTERNS.some(pattern => entry.name.includes(pattern));
-          const isAuxiliary = AUXILIARY_PATTERNS.some(pattern => entry.name.endsWith(pattern));
-          const isBarrel = BARREL_FILES.includes(entry.name);
-          if (!isTest && !isStory && !isAuxiliary && !isBarrel) {
-            components.push(fullPath);
-          }
-        }
-      }
-    }
-  }
-
-  walk(dir);
-  return components;
-}
-
-/**
- * Helper: Count components by language
- */
-function countComponentsByLanguage(dir: string): { total: number; typescript: number } {
-  const components = findAllComponents(dir);
-  const typescript = components.filter(
-    file => file.endsWith('.ts') || file.endsWith('.tsx')
-  ).length;
-
-  return { total: components.length, typescript };
-}
-
-/**
- * Helper: Find files by pattern
- */
-function findFilesByPattern(dir: string, patterns: string[]): string[] {
-  const files: string[] = [];
-
-  function walk(currentDir: string) {
-    if (!fs.existsSync(currentDir)) return;
-
-    const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const fullPath = path.join(currentDir, entry.name);
-
-      if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
-        walk(fullPath);
-      } else if (entry.isFile()) {
-        if (patterns.some(pattern => entry.name.includes(pattern))) {
-          files.push(fullPath);
-        }
-      }
-    }
-  }
-
-  walk(dir);
-  return files;
+  return findComponentFiles(dir);
 }
 
 /**
@@ -660,7 +533,7 @@ function stripExt(filePath: string): string {
 /**
  * Helper: Strip test/story suffix from file path to get base component path
  */
-function stripTestSuffix(filePath: string, patterns: string[]): string {
+function stripTestSuffix(filePath: string, patterns: readonly string[]): string {
   for (const pattern of patterns) {
     if (filePath.includes(pattern)) {
       return filePath.replace(pattern, '');

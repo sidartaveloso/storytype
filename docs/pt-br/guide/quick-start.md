@@ -483,20 +483,6 @@ Agora que você tem o Storytype configurado, você pode:
 
 ## Solução de Problemas
 
-### Erros do ESLint
-
-Se você ver erros do ESLint sobre o padrão:
-
-```bash
-# Instalar plugin ESLint
-pnpm add -D @storytype/eslint-plugin
-
-# Adicionar ao .eslintrc.js
-module.exports = {
-  extends: ['plugin:@storytype/recommended'],
-};
-```
-
 ### Storybook Não Inicia
 
 Certifique-se de ter as dependências corretas:

@@ -844,7 +844,7 @@ Antes de criar PR, verifique:
 
 - [ ] Componente renderiza no Storybook
 - [ ] Todas as stories funcionam
-- [ ] Zero erros ESLint: `pnpm lint`
+- [ ] Zero erros de lint (Biome): `pnpm lint`
 - [ ] Build passa: `pnpm build`
 
 ### Integração

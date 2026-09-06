@@ -138,6 +138,55 @@ git add -A
 git commit -m "refactor: normalize components to Storytype standard"
 ```
 
+## Monorepo Support
+
+The `normalize` command works with monorepo structures like TurboRepo, Nx, and pnpm workspaces.
+
+**How it works:**
+
+1. Scans **recursively** from the given path (or current directory)
+2. Container folders (`packages/`, `apps/`, `libs/`) are **preserved**
+3. Only directories that contain `.vue` files are treated as components
+4. Component directories are normalized to `kebab-case`
+5. Non-component directories (like `srv/`, `services/`, `types/`) are never renamed
+
+**TurboRepo example:**
+
+```
+workspace/
+├── packages/
+│   ├── ui/src/components/Button/     → packages/ui/src/components/button/
+│   └── shared/components/srv/        → preserved (srv/ kept)
+└── apps/
+    └── web/src/components/Dashboard/ → apps/web/src/components/dashboard/
+```
+
+**Nx monorepo example:**
+
+```
+monorepo/
+├── libs/ui/src/lib/Button/           → libs/ui/src/lib/button/
+└── apps/frontend/app/components/Header/ → apps/frontend/app/components/header/
+```
+
+**App-based structure:**
+
+```
+project/app/components/
+├── srv/                              → preserved (convention directory)
+└── Header/                           → header/
+```
+
+To normalize all components at once:
+
+```bash
+# From the monorepo root
+storytype normalize . --dry-run
+
+# Or a specific workspace
+storytype normalize packages/ui --dry-run
+```
+
 ## Git Integration
 
 Normalize automatically detects Git-tracked files:

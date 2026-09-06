@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import {{pascalCase name}} from './{{pascalCase name}}.vue';
-import { generateMockData } from './{{pascalCase name}}.mock';
+import {{pascalCase name}} from '{{entry}}';
+{{#if hasMock}}import { generateMockData } from './{{pascalCase name}}.mock';
+{{/if}}
 
 const meta: Meta<typeof {{pascalCase name}}> = {
-  title: '{{#if (eq type "atomos")}}01 - Átomos{{else if (eq type "moleculas")}}02 - Moléculas{{else if (eq type "organismos")}}03 - Organismos{{else if (eq type "templates")}}04 - Templates{{else}}05 - Pages{{/if}}/{{pascalCase name}}',
+  title: '{{section}}/{{pascalCase name}}',
   component: {{pascalCase name}},
   tags: ['autodocs'],
   parameters: {
@@ -18,7 +19,7 @@ const meta: Meta<typeof {{pascalCase name}}> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const mockData = generateMockData();
+{{#if hasMock}}const mockData = generateMockData();
 
 export const Default: Story = {
   args: {
@@ -26,3 +27,9 @@ export const Default: Story = {
     ...mockData.models,
   },
 };
+{{else}}export const Default: Story = {
+  args: {
+    //TODO: Add args here
+  },
+};
+{{/if}}

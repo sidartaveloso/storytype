@@ -388,7 +388,7 @@ Antes de criar PR, verifique:
 - [ ] Sem stores/rotas no componente
 - [ ] BEM nos estilos
 - [ ] Componente funciona no Storybook
-- [ ] Zero erros TypeScript/ESLint
+- [ ] Zero erros de lint (Biome)
 - [ ] Sem `any` ou `@ts-ignore`
 
 ---
