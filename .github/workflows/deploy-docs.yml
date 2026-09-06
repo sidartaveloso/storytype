@@ -29,15 +29,26 @@ jobs:
         with:
           fetch-depth: 0 # Necessário para lastUpdated funcionar
 
+      # As versoes saem do .tool-versions, como no release.yml. Fixa-las no yaml
+      # deixou este workflow em pnpm 9 enquanto o lockfile passou a ser gerado
+      # pelo 10, e o `--frozen-lockfile` parou com
+      # ERR_PNPM_LOCKFILE_CONFIG_MISMATCH: o pnpm 9 le o campo `overrides` de
+      # forma diferente do 10.
+      - name: Read tool versions
+        id: tool-versions
+        run: |
+          echo "node-version=$(grep 'nodejs' .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
+          echo "pnpm-version=$(grep 'pnpm' .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
+
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: ${{ steps.tool-versions.outputs.pnpm-version }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ steps.tool-versions.outputs.node-version }}
           cache: 'pnpm'
 
       - name: Setup Pages
