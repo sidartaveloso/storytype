@@ -216,8 +216,8 @@ importers:
   packages/storytype:
     dependencies:
       '@storytype/cli':
-        specifier: ^0.2.5
-        version: 0.2.5
+        specifier: workspace:^
+        version: link:../cli
 
 packages:
 
@@ -1897,10 +1897,6 @@ packages:
     peerDependencies:
       storybook: ^10.5.10
       vue: ^3.0.0
-
-  '@storytype/cli@0.2.5':
-    resolution: {integrity: sha512-BMg2WqtGQKHu9ODUJWTXSSnK3w0nyAsOy0ABft+V51G4gzBLI7qi1z23wiqoDYp5wXV+6tL/0jpiN1kGDZjc8g==}
-    hasBin: true
 
   '@swc/core-darwin-arm64@1.15.47':
     resolution: {integrity: sha512-GsoMtan3ojGGMGFbl31mmRu5ctZ56re8grGE8mO/OHJ8O+JRkzod02fe7X6ZQ8JvamA3imkEkx/h3u+vsOgPgA==}
@@ -7378,15 +7374,6 @@ snapshots:
       type-fest: 5.7.0
       vue: 3.5.39(typescript@6.0.3)
       vue-component-type-helpers: 3.3.9
-
-  '@storytype/cli@0.2.5':
-    dependencies:
-      chalk: 5.6.2
-      commander: 12.1.0
-      fs-extra: 11.3.6
-      handlebars: 4.7.9
-      ora: 8.2.0
-      prompts: 2.4.2
 
   '@swc/core-darwin-arm64@1.15.47':
     optional: true

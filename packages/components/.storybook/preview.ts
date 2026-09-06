@@ -3,7 +3,12 @@ import { setup } from '@storybook/vue3';
 import { Quasar } from 'quasar';
 import * as QuasarExports from 'quasar';
 import '@quasar/extras/material-icons/material-icons.css';
-import 'quasar/src/css/index.sass';
+// O CSS ja compilado, em vez de `quasar/src/css/index.sass`. O sass fonte do
+// Quasar usa `@import`, que o Dart Sass deprecou, e compila-lo enche o log de
+// 91 avisos de depreciacao que nao temos como corrigir — sao do Quasar. Nada
+// aqui depende de variavel sass dele: as cores da marca vem do `config.brand`
+// abaixo, que gera custom properties em runtime. O CSS de saida e o mesmo.
+import 'quasar/dist/quasar.css';
 
 /**
  * Registers every Quasar UI component and directive explicitly.
