@@ -1,3 +1,12 @@
+## [0.3.1](https://github.com/sidartaveloso/storytype/compare/v0.3.0...v0.3.1) (2026-09-06)
+
+
+### Bug Fixes
+
+* **components:** importa o CSS compilado do Quasar, nao o sass fonte ([5f5723b](https://github.com/sidartaveloso/storytype/commit/5f5723b389ee24a610e4ff59a7d2acfd6bdad9b5))
+* **deps:** atualiza o lockfile para o @storytype/cli@0.3.0 do release ([b9d85fa](https://github.com/sidartaveloso/storytype/commit/b9d85fae29e09b10a85efe16f6e1766f618f5a5a))
+* **release:** lockfile deixa de ficar atras do alias a cada versao ([015c1d2](https://github.com/sidartaveloso/storytype/commit/015c1d2ec8e25f0f7f7043b3e7e6bc278f9808db)), closes [pnpm/pnpm#11513](https://github.com/pnpm/pnpm/issues/11513)
+
 # [0.3.0](https://github.com/sidartaveloso/storytype/compare/v0.2.4...v0.3.0) (2026-09-06)
 
 
