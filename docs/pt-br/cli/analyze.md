@@ -1,6 +1,6 @@
 # Analyze - Analisar Estrutura de Componentes
 
-O comando `analyze` analisa a estrutura do seu projeto e identifica problemas, inconsistências e oportunidades de melhoria nos componentes Vue.
+O comando `analyze` pontua um projeto Vue contra o padrão Storytype. Ele lê a mesma definição de componente que o `normalize` usa — então tudo o que ele desconta, o `normalize` sabe corrigir.
 
 ## Uso Básico
 
@@ -12,196 +12,164 @@ storytype analyze [caminho] [opções]
 
 ### `caminho`
 
-- **Opcional** - Diretório para analisar (padrão: diretório atual)
-- Exemplo: `src/components`
+- **Opcional** - Raiz do projeto a analisar (padrão: diretório atual)
+- O diretório de componentes é localizado a partir dela
 
 ### Opções
 
-| Opção       | Descrição                                | Padrão  |
-| ----------- | ---------------------------------------- | ------- |
-| `--verbose` | Saída detalhada com todos os componentes | `false` |
-| `--json`    | Saída em formato JSON                    | `false` |
+| Opção           | Descrição                                          | Padrão  |
+| --------------- | -------------------------------------------------- | ------- |
+| `-v, --verbose` | Lista os problemas por arquivo e como corrigir cada um | `false` |
 
-> **Suporte a monorepo:** O `analyze` suporta estruturas de monorepo. Ele primeiro verifica diretórios comuns (`src/components`, `components`, `src/views`, `app/components`) e, se nenhum for encontrado, varre recursivamente o projeto por arquivos `.vue` — funciona com TurboRepo, Nx, pnpm workspaces e qualquer estrutura personalizada.
+> **Suporte a monorepo:** o `analyze` procura primeiro os diretórios convencionais (`src/components`, `components`, `src/views`, `app/components`). Se nenhum existir, varre o projeto por componentes e usa a raiz — funciona com TurboRepo, Nx, pnpm workspaces e qualquer estrutura.
 
-## O Que o Analyze Detecta?
+## O Que o Analyze Pontua?
 
-### 📊 Análise Estrutural
+O resultado é um **score de 0 a 135**, em cinco categorias:
 
-1. **Componentes Vue** (`.vue` files)
-2. **Arquivos TypeScript** (`.ts`, `.tsx`)
-3. **Testes** (`.spec.ts`, `.test.ts`)
-4. **Stories** (`.stories.ts`)
-5. **Organização** por tipo (átomos, moléculas, etc)
+| Categoria                  | Pontos | O que verifica                                                                    |
+| -------------------------- | ------ | --------------------------------------------------------------------------------- |
+| Estrutura Atomic Design    | 50     | diretório de componentes, níveis presentes (5 × 5 pts), organização geral         |
+| TypeScript                 | 30     | `tsconfig.json`, componentes em TypeScript, arquivos `.types.ts`                  |
+| Testes e Stories           | 30     | cobertura de `.spec.ts`/`.test.ts` e de `.stories.ts` (meta: 70%+)                |
+| Nomenclatura               | 15     | arquivos em `PascalCase` e **componentes em pasta própria**                       |
+| Documentação               | 10     | `README.md` e diretório de documentação                                           |
 
-### ⚠️ Problemas Identificados
+Os níveis Atomic Design são reconhecidos em inglês e em português — `atoms` ou `atomos`, `molecules` ou `moleculas`, `organisms` ou `organismos`, `templates`, `pages` ou `paginas`. Um projeto que tem os dois nomes para o mesmo nível conta um, não dois.
 
-- ❌ Componentes sem arquivo de tipos (`.types.ts`)
-- ❌ Componentes sem testes (`.spec.ts`)
-- ❌ Componentes sem stories (`.stories.ts`)
-- ❌ Arquivos com nomenclatura incorreta
-- ❌ Diretórios fora do padrão `kebab-case`
-- ❌ Arquivos sem `PascalCase`
-- ❌ Estrutura de pastas inconsistente
+### O que conta como componente
+
+- `.vue` e `.tsx` em qualquer lugar
+- um `.ts` só quando a pasta tem o nome dele (`taskin-effect-hearts/TaskinEffectHearts.ts`) ou quando é PascalCase dentro da árvore Atomic Design
+- nunca: `.d.ts`, testes, stories, `.types.ts`, `.mock.ts`, `.controller.ts` e `index.ts` — esses são arquivos **de** um componente
+
+Por isso `vite.config.ts` e `helpers.ts` não entram na conta, e `index.ts` não é apontado como "componente sem teste".
+
+### "Organização por pastas"
+
+Um componente está organizado quando é **dono da sua pasta**: sozinho nela, e a pasta não é um nível Atomic Design. `atoms/ProgressBar.vue` solto no nível, ou três componentes dentro de `organisms/taskin/`, não estão. Esse critério lê exatamente o plano que o `normalize` executaria, e o "como corrigir" imprime a pasta que ele criaria.
 
 ## Exemplos de Uso
 
 ### 📋 Análise Básica
 
 ```bash
-storytype analyze src/components
+storytype analyze
 ```
 
 **Saída:**
 
 ```
-Analisando projeto...
-
 ✔ Análise completa!
 
-📊 Resumo do Projeto
+============================================================
+📊 ANÁLISE DO PROJETO STORYTYPE
+============================================================
 
-Total de componentes: 78
-  • Átomos: 32
-  • Moléculas: 24
-  • Organismos: 15
-  • Templates: 5
-  • Pages: 2
+Score Geral: 62/135 (46%)
+Projeto precisa de melhorias significativas. ⚠️
 
-📁 Estrutura
-  • Diretórios corretos: 68
-  • Diretórios a corrigir: 10
 
-📄 Arquivos
-  • Arquivos corretos: 280
-  • Arquivos a renomear: 45
+Estrutura Atomic Design: 26/50 (52%)
+  ✓ Diretório de componentes: 10/10 pts
+     Encontrado em: src/components
+  ✗ Níveis Atomic Design: 10/25 pts
+     Encontrados: atoms, molecules (2/5)
+  ✗ Organização de componentes: 6/15 pts
+     2 componentes encontrados
 
-📝 Completude
-  • Com .types.ts: 65
-  • Sem .types.ts: 13
-  • Com testes: 52
-  • Sem testes: 26
-  • Com stories: 70
-  • Sem stories: 8
+TypeScript: 10/30 (33%)
+  ✓ Configuração TypeScript: 10/10 pts
+     tsconfig.json encontrado
+  ✗ Componentes TypeScript: 0/15 pts
+     0/2 componentes (0%)
+  ✗ Arquivos de tipos: 0/5 pts
+     Nenhum arquivo de tipos dedicado
+
+Testes e Stories: 8/30 (27%)
+  ✗ Cobertura de testes: 0/15 pts
+     0/2 componentes (0%)
+  ✗ Cobertura de stories: 8/15 pts
+     1/2 componentes (50%)
+
+Nomenclatura: 8/15 (53%)
+  ✗ Convenção PascalCase: 5/10 pts
+     1/2 componentes (50%)
+  ✗ Organização por pastas: 3/5 pts
+     1/2 componentes (50%)
+
+Documentação: 10/10 (100%)
+  ✓ README.md principal: 5/5 pts
+     README.md encontrado
+  ✓ Documentação do projeto: 5/5 pts
+     Diretório de documentação encontrado
+
+============================================================
 
 💡 Recomendações:
-  • Execute 'storytype normalize' para corrigir estrutura
-  • Adicione testes aos 26 componentes sem cobertura
-  • Adicione stories aos 8 componentes sem documentação
+
+1. Organize seus componentes em níveis Atomic Design (atoms, molecules, organisms, templates, pages)
+2. Migre mais componentes para TypeScript para melhor type safety
+3. Adicione mais testes unitários para seus componentes (meta: 70%+)
+4. Crie stories no Storybook para mais componentes (meta: 70%+)
+5. Use PascalCase para nomes de componentes (ex: MyComponent.vue)
 ```
 
 ### 🔍 Análise Verbose
 
-Mostra detalhes de cada componente:
-
 ```bash
-storytype analyze src/components --verbose
+storytype analyze --verbose
 ```
 
-**Saída detalhada:**
+Cada item reprovado lista os arquivos, o problema e a correção. É a saída para quem vai corrigir à mão — ou para conferir o que o `normalize` vai fazer:
 
 ```
-Analisando projeto...
-
-✓ src/components/atomos/botao
-  ✓ Botao.vue
-  ✓ Botao.types.ts
-  ✓ Botao.spec.ts
-  ✓ Botao.stories.ts
-  ✓ index.ts
-
-⚠ src/components/atomos/Input
-  ✓ Input.vue
-  ✗ Input.types.ts (faltando)
-  ✓ Input.spec.ts
-  ✓ Input.stories.ts
-  ⚠ Diretório deve ser 'input' (kebab-case)
-
-✗ src/components/moleculas/UserProfile
-  ✓ UserProfile.vue
-  ✗ UserProfile.types.ts (faltando)
-  ✗ UserProfile.spec.ts (faltando)
-  ✓ UserProfile.stories.ts
-  ⚠ Diretório deve ser 'user-profile' (kebab-case)
-  ⚠ Arquivo 'userProfile.vue' deve ser 'UserProfile.vue'
-
-✔ Análise completa! (78 componentes analisados)
-
-💡 Execute 'storytype normalize' para corrigir automaticamente
+Nomenclatura: 8/15 (53%)
+  ✗ Convenção PascalCase: 5/10 pts
+     1/2 componentes (50%)
+       ✗ /projeto/src/components/atoms/Botao/botao.vue
+         Problema: Nome em formato incorreto: "botao.vue"
+         Como corrigir: Renomeie para "Botao.vue"
+  ✗ Organização por pastas: 3/5 pts
+     1/2 componentes (50%)
+       ✗ /projeto/src/components/molecules/CardUsuario.vue
+         Problema: Componente sem pasta própria
+         Como corrigir: Mova para /projeto/src/components/molecules/card-usuario/ (ou rode: storytype normalize)
 ```
 
-### 📄 Análise em JSON
-
-Útil para integração com ferramentas:
-
-```bash
-storytype analyze src/components --json > analysis.json
-```
-
-**Formato JSON:**
-
-```json
-{
-  "success": true,
-  "components": {
-    "total": 78,
-    "byType": {
-      "atomos": 32,
-      "moleculas": 24,
-      "organismos": 15,
-      "templates": 5,
-      "pages": 2
-    }
-  },
-  "structure": {
-    "correctDirs": 68,
-    "incorrectDirs": 10,
-    "correctFiles": 280,
-    "incorrectFiles": 45
-  },
-  "completeness": {
-    "withTypes": 65,
-    "withoutTypes": 13,
-    "withTests": 52,
-    "withoutTests": 26,
-    "withStories": 70,
-    "withoutStories": 8
-  },
-  "issues": [
-    {
-      "component": "src/components/atomos/Input",
-      "type": "missing-types",
-      "message": "Missing Input.types.ts"
-    },
-    {
-      "component": "src/components/atomos/Input",
-      "type": "wrong-dir-name",
-      "message": "Directory should be 'input' (kebab-case)"
-    }
-  ]
-}
-```
+Listas longas são cortadas com `... e mais N arquivos`.
 
 ## Casos de Uso
 
 ### 🔍 Caso 1: Auditoria de Projeto
 
-Analise a saúde do projeto antes de iniciar refatoração:
-
 ```bash
-# Análise geral
-storytype analyze src/components > project-audit.txt
+# Visão geral
+storytype analyze > auditoria.txt
 
-# Análise detalhada
-storytype analyze src/components --verbose > detailed-audit.txt
-
-# Análise em JSON para métricas
-storytype analyze src/components --json > metrics.json
+# Com a lista de arquivos e correções
+storytype analyze --verbose > auditoria-detalhada.txt
 ```
 
-### 📊 Caso 2: Validação em CI/CD
+### 🎯 Caso 2: Antes e Depois de Normalizar
 
-Garanta que PRs seguem o padrão:
+```bash
+# 1. Estado atual
+storytype analyze
+
+# 2. Ver o plano do normalize
+storytype normalize --dry-run
+
+# 3. Executar
+storytype normalize
+
+# 4. O score e o "Organização por pastas" devem subir
+storytype analyze
+```
+
+O `analyze` e o `normalize` leem a mesma definição de componente, então o que um aponta o outro corrige — não há caso em que o `analyze` reprova algo que o `normalize` não enxerga.
+
+### 📊 Caso 3: Visibilidade em CI
 
 ```yaml
 # .github/workflows/validate.yml
@@ -212,157 +180,48 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v2
-      - run: pnpm add -g storytype
-      - run: storytype analyze src/components --json
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm dlx storytype analyze --verbose
 ```
 
-### 🎯 Caso 3: Antes de Normalizar
-
-Veja o que precisa ser corrigido:
-
-```bash
-# 1. Analisar estado atual
-storytype analyze src/components
-
-# 2. Simular correções
-storytype normalize src/components --dry-run
-
-# 3. Executar correções
-storytype normalize src/components
-
-# 4. Verificar resultado
-storytype analyze src/components
-```
-
-### 📈 Caso 4: Métricas de Qualidade
-
-Acompanhe evolução da qualidade:
-
-```bash
-# Gerar relatório mensal
-storytype analyze src/components --json > reports/$(date +%Y-%m).json
-
-# Comparar com mês anterior
-# Use ferramentas como jq para processar JSON
-```
+O relatório sai no log do job. Hoje o `analyze` **não** falha o job por score baixo — ele sai com código 0 sempre que consegue analisar. Se você precisa de um portão, compare o `Score Geral` da saída com um mínimo no próprio workflow.
 
 ## Interpretando os Resultados
 
-### ✅ Status Ideal
+A frase abaixo do `Score Geral` acompanha a porcentagem:
 
-```
-Total de componentes: 50
-  • Com .types.ts: 50 ✅
-  • Com testes: 50 ✅
-  • Com stories: 50 ✅
-  • Diretórios corretos: 50 ✅
-  • Arquivos corretos: 250 ✅
-```
+| Porcentagem | Mensagem                                          |
+| ----------- | ------------------------------------------------- |
+| ≥ 90%       | Excelente! Projeto muito bem estruturado! 🏆      |
+| ≥ 75%       | Muito bom! Algumas melhorias podem ser feitas. 🎯 |
+| ≥ 60%       | Bom começo! Há espaço para melhorias. 💪          |
+| ≥ 40%       | Projeto precisa de melhorias significativas. ⚠️   |
 
-### ⚠️ Projeto Precisa de Atenção
+Cada categoria fica verde a partir de 75%, amarela a partir de 60% e vermelha abaixo disso.
 
-```
-Total de componentes: 50
-  • Com .types.ts: 35 (70%) ⚠️
-  • Com testes: 20 (40%) ❌
-  • Com stories: 45 (90%) ✅
-  • Diretórios corretos: 30 (60%) ⚠️
-  • Arquivos corretos: 180 (72%) ⚠️
+**O que o `normalize` resolve sozinho:** PascalCase, organização por pastas, e os arquivos `index.ts`, `.types.ts` e `.spec.ts` faltantes — o que costuma levantar Nomenclatura para 15/15 e boa parte de TypeScript e Testes.
 
-Ações recomendadas:
-1. storytype normalize - corrigir estrutura
-2. Adicionar testes aos 30 componentes
-3. Adicionar .types.ts aos 15 componentes
-```
-
-## Integração com Outras Ferramentas
-
-### Biome
-
-Após normalizar, configure Biome para manter o padrão:
-
-```json
-// biome.json
-{
-  "linter": {
-    "rules": {
-      "style": {
-        "useNamingConvention": "info"
-      }
-    }
-  }
-}
-```
-
-### TypeScript
-
-Configure paths para imports limpos:
-
-```json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "paths": {
-      "@/components/*": ["src/components/*"],
-      "@/atomos/*": ["src/components/atomos/*"],
-      "@/moleculas/*": ["src/components/moleculas/*"]
-    }
-  }
-}
-```
-
-### Storybook
-
-Garanta que todos os components têm stories:
-
-```bash
-# Encontrar componentes sem stories
-storytype analyze src/components --json | jq '.issues[] | select(.type == "missing-stories")'
-```
+**O que precisa de gente:** stories e mocks (a ferramenta não inventa props), os níveis Atomic Design que o projeto ainda não tem, e migrar componentes para TypeScript.
 
 ## Scripts NPM Úteis
-
-Adicione ao seu `package.json`:
 
 ```json
 {
   "scripts": {
-    "analyze": "storytype analyze src/components",
-    "analyze:verbose": "storytype analyze src/components --verbose",
-    "analyze:json": "storytype analyze src/components --json",
+    "analyze": "storytype analyze",
+    "analyze:verbose": "storytype analyze --verbose",
     "validate": "pnpm analyze && pnpm typecheck && pnpm test"
   }
 }
 ```
 
-## Benchmarks e Performance
-
-O `analyze` é otimizado para projetos grandes:
-
-| Componentes | Tempo | Memória |
-| ----------- | ----- | ------- |
-| 50          | ~0.5s | ~50MB   |
-| 100         | ~1s   | ~80MB   |
-| 500         | ~3s   | ~150MB  |
-| 1000+       | ~6s   | ~250MB  |
-
 ## Próximos Passos
 
-Após analisar:
-
-1. 📋 **Revisar problemas** - Entenda o que precisa corrigir
-2. ⚙️ **Normalizar estrutura** - [`storytype normalize`](./normalize.md)
-3. 🎨 **Criar componentes** - [`storytype generate`](./generate.md)
-4. ✅ **Validar resultado** - Execute `analyze` novamente
-
-## Dicas
-
-- 💡 Execute antes de cada refatoração grande
-- 💡 Adicione ao pre-commit para validação contínua
-- 💡 Use `--json` para integração com dashboards
-- 💡 Compare análises ao longo do tempo
+1. 📋 **Ler o `--verbose`** — cada linha vem com a correção
+2. ⚙️ **Corrigir a estrutura** — [`storytype normalize`](./normalize.md)
+3. 🎨 **Criar componentes** — [`storytype generate`](./generate.md)
+4. ✅ **Rodar de novo** — o score deve subir
 
 ---
 

@@ -1,6 +1,6 @@
 # Normalize - Corrigir Componentes Existentes
 
-O comando `normalize` é uma **ferramenta essencial** para adequar projetos Vue existentes ao padrão Storytype. Ele corrige automaticamente a estrutura de diretórios e arquivos dos seus componentes.
+O comando `normalize` adequa um projeto Vue existente ao padrão Storytype. Ele corrige a estrutura de diretórios e arquivos dos componentes e reescreve os imports que essas mudanças quebrariam — tudo de uma vez, com histórico do Git preservado.
 
 ## Uso Básico
 
@@ -17,14 +17,22 @@ storytype normalize [caminho] [opções]
 
 ### Opções
 
-| Opção          | Descrição                    | Padrão  |
-| -------------- | ---------------------------- | ------- |
-| `--dry-run`    | Simula mudanças sem executar | `false` |
-| `--dirs-only`  | Normaliza apenas diretórios  | `false` |
-| `--files-only` | Normaliza apenas arquivos    | `false` |
-| `--verbose`    | Saída detalhada              | `false` |
+| Opção             | Descrição                                        | Padrão  |
+| ----------------- | ------------------------------------------------ | ------- |
+| `-d, --dry-run`   | Mostra as mudanças sem executá-las               | `false` |
+| `--dirs-only`     | Só move e renomeia diretórios                    | `false` |
+| `--files-only`    | Só renomeia arquivos e cria os que faltam        | `false` |
+| `-v, --verbose`   | Saída detalhada                                  | `false` |
+
+`--dirs-only` e `--files-only` são opostos. Passar os dois juntos é recusado com erro, em vez de produzir uma rodada que não faz nada:
+
+```
+✗ --dirs-only e --files-only sao opostos: escolha um.
+```
 
 ## O Que o Normalize Faz?
+
+A regra é uma só: **um componente é dono de uma pasta.** A pasta é kebab-case, os arquivos dentro dela são PascalCase, e ela tem o conjunto canônico de arquivos. Tudo abaixo decorre disso.
 
 ### 1. 📁 Renomeia Diretórios para `kebab-case`
 
@@ -46,6 +54,8 @@ components/
 └── api-service/
 ```
 
+O nome da pasta é o que decide o destino, não o nome do arquivo: `srv/` continua `srv/`, e não vira `server/` porque dentro dela existe um `Server.vue`.
+
 ### 2. 📄 Renomeia Arquivos para `PascalCase`
 
 **Antes:**
@@ -53,8 +63,8 @@ components/
 ```
 botao/
 ├── botao.vue
-├── botao-types.ts
-├── botao_stories.ts
+├── botao.types.ts
+├── botao.stories.ts
 ```
 
 **Depois:**
@@ -66,58 +76,104 @@ botao/
 ├── Botao.stories.ts
 ```
 
-### 3. ➕ Cria Arquivos Faltantes
+Os sufixos são preservados: `.types.ts`, `.spec.ts`, `.stories.ts`, `.mock.ts` e `.controller.ts` acompanham o nome do componente. `index.ts` nunca é renomeado.
 
-Para cada componente, garante que existam:
+### 3. 📦 Move Componente Solto para Pasta Própria
 
-- ✅ `index.ts` - Exporta o componente
-- ✅ `ComponentName.types.ts` - Tipos TypeScript
-- ✅ `ComponentName.spec.ts` - Testes unitários
+Um componente que vive direto num nível Atomic Design (`atoms/`, `molecules/`, …), ou numa pasta que abriga **vários** componentes, não tem pasta própria. O `normalize` cria uma e move para lá **todos** os arquivos dele — e só os dele.
 
-**Conteúdo gerado automaticamente:**
+**Antes:**
+
+```
+molecules/
+├── index.ts
+├── CardUsuario.vue
+├── CardUsuario.stories.ts
+└── EffectsOverview.stories.ts     ← story sem componente: fica
+```
+
+**Depois:**
+
+```
+molecules/
+├── index.ts
+├── EffectsOverview.stories.ts
+└── card-usuario/
+    ├── CardUsuario.vue
+    ├── CardUsuario.stories.ts
+    ├── CardUsuario.types.ts        ← criado
+    ├── CardUsuario.spec.ts         ← criado
+    └── index.ts                    ← criado
+```
+
+O mesmo vale para uma pasta que virou container. Se `organisms/taskin/` guarda `Taskin.ts`, `TaskinV1.ts` e `TaskinWithShhh.vue`, cada um ganha a sua: `taskin/taskin/`, `taskin/taskin-v1/`, `taskin/taskin-with-shhh/` — inclusive o que dá nome à pasta. O `index.ts` do container fica, com os imports reescritos.
+
+Se a pasta de destino **já existe**, o componente não é movido. Isso aparece em `Diretórios ignorados`, com o motivo, para você resolver à mão em vez de a ferramenta sobrescrever algo.
+
+### 4. ➕ Cria os Arquivos que Faltam
+
+O conjunto canônico de um componente é definido em um só lugar no CLI, e `generate` e `normalize` leem dele. Num componente que **já existe**, o `normalize` completa só o que é útil como esqueleto:
+
+| Arquivo                     | Criado pelo `normalize` |
+| --------------------------- | ----------------------- |
+| `index.ts`                  | ✅                      |
+| `ComponentName.types.ts`    | ✅                      |
+| `ComponentName.spec.ts`     | ✅                      |
+| `ComponentName.stories.ts`  | —                       |
+| `ComponentName.mock.ts`     | —                       |
+
+Story e mock precisam das props reais do componente para valerem algo, então ficam para uma pessoa escrever — o `analyze` aponta a falta. Grafias alternativas já existentes são respeitadas: um `.test.ts` conta como teste, um `index.js` conta como barrel.
+
+**O `index.ts` gerado exporta só o que existe.** Se o componente não tem mock nem story, o barrel não aponta para eles:
 
 ```typescript
-// index.ts
+// index.ts — componente Vue com story, sem mock
 export * from './Botao.types';
-export * from './Botao.mock';
 export * as Stories from './Botao.stories';
 export { default } from './Botao.vue';
+```
 
-// Botao.types.ts
-export interface BotaoType {
-  models: BotaoModels;
-  props: BotaoProps;
-  emits: BotaoEmits;
-}
+**O `spec.ts` gerado sabe se o componente é Vue ou não.** Um `.vue` é montado com `@vue/test-utils`; um componente `.ts` só é verificado como definido:
 
-export interface BotaoModels {
-  //TODO: Add models here
-}
-
-export interface BotaoProps {
-  //TODO: Add props here
-}
-
-export interface BotaoEmits {
-  //TODO: Add emits here
-}
-
-// Botao.spec.ts
-import { describe, it, expect } from 'vitest';
+```typescript
+// Botao.spec.ts — componente .vue
+import { describe, expect, it } from 'vitest';
+import { mount } from '@vue/test-utils';
 import Botao from './Botao.vue';
 
 describe('Botao', () => {
-  it('should render', () => {
-    expect(Botao).toBeDefined();
+  it('renderiza', () => {
+    const wrapper = mount(Botao);
+
+    expect(wrapper.exists()).toBe(true);
   });
+
+  //TODO: Add tests here
 });
 ```
+
+### 5. 🔗 Reescreve os Imports que as Mudanças Quebrariam
+
+Renomear ou mover um arquivo invalida quem o importa por caminho relativo. O `normalize` resolve cada import para o arquivo que ele aponta **hoje** e recalcula o caminho entre as duas posições **finais** — porque os dois lados podem se mover.
+
+- Um componente promovido desce um nível, então até os imports dele para arquivos que **não** se moveram ganham um `../`: `'../../types'` vira `'../../../types'`.
+- Dois componentes soltos que se importam mutuamente terminam em pastas irmãs: `'./Badge.vue'` vira `'../badge/Badge.vue'`.
+- Um `export * from './components/organisms/taskin/Taskin.types'` no entry point do pacote, longe de tudo, é reescrito também — a varredura cobre a árvore inteira a partir do caminho analisado.
+
+A forma escrita é preservada: extensão omitida continua omitida, import de diretório continua apontando para o diretório, e um sufixo de bundler como `?raw` sobrevive.
+
+### Como o `normalize` decide o que é componente
+
+- `.vue` e `.tsx` são componentes em qualquer lugar.
+- Um `.ts` só conta quando a pasta tem o nome dele (`taskin-effect-hearts/TaskinEffectHearts.ts`) ou quando é PascalCase dentro da árvore Atomic Design. Assim `vite.config.ts`, `helpers.ts` e `Taskin.controller.ts` ficam de fora.
+- `.d.ts`, testes, stories, tipos, mocks, controllers e barrels nunca são o componente — são arquivos **dele**.
+- `node_modules`, `dist`, `coverage`, `storybook-static`, `build`, `out` e diretórios com ponto não são varridos.
+
+Os níveis Atomic Design são reconhecidos em inglês e em português: `atoms` ou `atomos`, `molecules` ou `moleculas`, `organisms` ou `organismos`, `templates`, `pages` ou `paginas`.
 
 ## Exemplos de Uso
 
 ### 🔍 Modo Dry-Run (Recomendado Primeiro)
-
-Simula as mudanças sem executar:
 
 ```bash
 storytype normalize src/components --dry-run
@@ -126,18 +182,53 @@ storytype normalize src/components --dry-run
 **Saída:**
 
 ```
-Analyzing component structure...
+Analisando estrutura de componentes...
 
-✓ Analysis complete!
+✓ Análise completa!
 
-Components found: 78
-Directories to rename: 45
-Files to rename: 156
-Files to create: 23
+Componentes encontrados: 2
+Diretórios a renomear: 1
+Componentes a mover para pasta própria: 1
+Arquivos a renomear: 3
+Arquivos a criar: 6
+Imports a atualizar: 1
 
-⚠ Dry-run mode: no changes were made
-Run without --dry-run to apply changes
+📋 Mudanças detalhadas:
+
+  Componente: Botao
+    📁 Renomear diretório:
+       src/components/atoms/Botao
+       → src/components/atoms/botao
+    📄 Renomear arquivo:
+       src/components/atoms/Botao/botao.vue
+       → src/components/atoms/botao/Botao.vue
+    ✨ Criar arquivos:
+       src/components/atoms/botao/index.ts
+       src/components/atoms/botao/Botao.types.ts
+       src/components/atoms/botao/Botao.spec.ts
+
+  Componente: CardUsuario
+    📦 Mover para pasta própria:
+       src/components/molecules/
+       → src/components/molecules/card-usuario/
+    📄 Mover arquivos:
+       src/components/molecules/CardUsuario.stories.ts
+       → src/components/molecules/card-usuario/CardUsuario.stories.ts
+       src/components/molecules/CardUsuario.vue
+       → src/components/molecules/card-usuario/CardUsuario.vue
+    ✨ Criar arquivos:
+       src/components/molecules/card-usuario/index.ts
+       src/components/molecules/card-usuario/CardUsuario.types.ts
+       src/components/molecules/card-usuario/CardUsuario.spec.ts
+    🔗 Atualizar import:
+       src/components/molecules/index.ts
+       from './CardUsuario.vue' → from './card-usuario/CardUsuario.vue'
+
+⚠️  Modo dry-run: nenhuma mudança foi feita
+Execute sem --dry-run para aplicar as mudanças
 ```
+
+`Arquivos a renomear` conta arquivos cujo caminho muda — inclusive os que só se movem com a pasta.
 
 ### ✅ Executar Normalização Completa
 
@@ -145,163 +236,93 @@ Run without --dry-run to apply changes
 storytype normalize src/components
 ```
 
-**Saída:**
-
-```
-Analyzing component structure...
-✓ Analysis complete!
-
-Components found: 78
-Directories to rename: 45
-Files to rename: 156
-Files to create: 23
-
-✓ Normalization completed successfully!
-```
+Rodar de novo em seguida não propõe mudança nenhuma: o comando é idempotente.
 
 ### 📁 Normalizar Apenas Diretórios
-
-Útil para projetos grandes - faça em etapas:
 
 ```bash
 storytype normalize src/components --dirs-only
 ```
 
-### 📄 Normalizar Apenas Arquivos
+Move componentes soltos para pasta própria e renomeia diretórios, mantendo os nomes de arquivo como estão. Não cria arquivos.
 
-Depois de renomear diretórios:
+### 📄 Normalizar Apenas Arquivos
 
 ```bash
 storytype normalize src/components --files-only
 ```
 
-### 🔊 Modo Verbose
+Renomeia arquivos no lugar e cria os que faltam, sem mover nem renomear diretórios.
 
-Veja cada operação sendo executada:
+### 🔊 Modo Verbose
 
 ```bash
 storytype normalize src/components --verbose
 ```
 
-**Saída detalhada:**
-
-```
-Analyzing component structure...
-
-✓ Found component: Botao
-  → Directory needs rename: Botao → botao
-  → File needs rename: botao.vue → Botao.vue
-  → Missing file: Botao.types.ts
-  → Missing file: index.ts
-
-Renaming directory: Botao → botao
-Renaming file: botao.vue → Botao.vue
-Creating file: Botao.types.ts
-Creating file: index.ts
-
-✓ Normalization completed successfully!
-```
+Mostra o plano detalhado também fora do dry-run, e lista os `Diretórios ignorados` com o motivo de cada um.
 
 ## Casos de Uso Reais
 
 ### 🎯 Caso 1: Projeto Legacy
 
-Você tem um projeto Vue antigo com estrutura inconsistente:
-
 ```bash
 # 1. Fazer backup (commit atual)
 git add -A
-git commit -m "backup before normalization"
+git commit -m "backup antes da normalização"
 
-# 2. Analisar o que precisa corrigir
-storytype analyze src/components
+# 2. Ver o que o analyze aponta
+storytype analyze src/components --verbose
 
-# 3. Simular normalização
+# 3. Simular
 storytype normalize src/components --dry-run
 
-# 4. Executar normalização
+# 4. Executar
 storytype normalize src/components
 
-# 5. Verificar resultado
+# 5. Verificar: o score deve subir, e o dry-run não deve propor nada
 storytype analyze src/components
+storytype normalize src/components --dry-run
 
-# 6. Revisar mudanças
-git diff
-
-# 7. Commitar
-git add -A
-git commit -m "refactor: normalize components to Storytype standard"
+# 6. Revisar e commitar
+git status
+git commit -am "refactor: normaliza componentes para o padrão Storytype"
 ```
 
-### 🏢 Caso 2: Projeto com Múltiplos Desenvolvedores
+O `git status` mostra os movimentos como `R` (rename), não como arquivo apagado e criado — o histórico segue com `git log --follow`.
 
-Diferentes desenvolvedores usaram diferentes padrões:
+### 🚀 Caso 2: Migração Gradual
 
 ```bash
-# Normalizar por tipo de componente
-storytype normalize src/components/atomos
-storytype normalize src/components/moleculas
-storytype normalize src/components/organismos
+# Semana 1: só os átomos
+storytype normalize src/components/atoms
 
-# Ou tudo de uma vez
+# Semana 2: moléculas
+storytype normalize src/components/molecules
+
+# Semana 3: tudo, para pegar o que sobrou
 storytype normalize src/components
 ```
 
-### 🚀 Caso 3: Migração Gradual
-
-Você quer migrar aos poucos:
-
-```bash
-# Semana 1: Apenas átomos
-storytype normalize src/components/atomos
-
-# Semana 2: Átomos + Moléculas
-storytype normalize src/components/moleculas
-
-# Semana 3: Tudo
-storytype normalize src/components
-```
+Os imports de fora do diretório passado ainda são reescritos, porque a varredura de imports parte do caminho analisado e cobre a árvore abaixo dele.
 
 ## Suporte a Monorepo
 
-O comando `normalize` funciona com estruturas de monorepo como TurboRepo, Nx e pnpm workspaces.
+Funciona com TurboRepo, Nx e pnpm workspaces.
 
-**Como funciona:**
-
-1. Varre **recursivamente** a partir do caminho informado (ou diretório atual)
-2. Pastas container (`packages/`, `apps/`, `libs/`) são **preservadas**
-3. Apenas diretórios que contêm arquivos `.vue` são tratados como componentes
-4. Diretórios de componentes são normalizados para `kebab-case`
-5. Diretórios que não são componentes (como `srv/`, `services/`, `types/`) nunca são renomeados
-
-**Exemplo TurboRepo:**
+1. Varre **recursivamente** a partir do caminho dado
+2. Pastas de agrupamento (`packages/`, `apps/`, `libs/`) são **preservadas**
+3. Só o que passa na regra de detecção acima é componente
+4. Pastas de componente vão para `kebab-case`; pastas que não são de componente (`srv/`, `services/`, `types/`) nunca são renomeadas
 
 ```
 workspace/
 ├── packages/
 │   ├── ui/src/components/Button/     → packages/ui/src/components/button/
-│   └── shared/components/srv/        → preservado (srv/ mantido)
+│   └── shared/components/srv/        → preservado
 └── apps/
     └── web/src/components/Dashboard/ → apps/web/src/components/dashboard/
 ```
-
-**Exemplo Nx:**
-
-```
-monorepo/
-├── libs/ui/src/lib/Button/           → libs/ui/src/lib/button/
-└── apps/frontend/app/components/Header/ → apps/frontend/app/components/header/
-```
-
-**Estrutura app-based:**
-
-```
-project/app/components/
-├── srv/                              → preservado (diretório de convenção)
-└── Header/                           → header/
-```
-
-Para normalizar todos os componentes de uma vez:
 
 ```bash
 # A partir da raiz do monorepo
@@ -313,101 +334,65 @@ storytype normalize packages/ui --dry-run
 
 ## Integração com Git
 
-O normalize detecta automaticamente se os arquivos estão rastreados pelo Git:
-
 ### ✅ Arquivos Rastreados
 
-- Usa `git mv` para preservar histórico
-- Funciona com case-insensitive filesystems (macOS)
-- Two-step rename automático quando necessário
+- Move pelo sistema de arquivos e atualiza o índice do Git em seguida, preservando o histórico
+- Funciona em sistema de arquivos sem distinção de caixa (macOS): rename só de caixa passa por um nome temporário
+- Promoção para pasta própria também sai como `R`
 
 ### ➕ Arquivos Não Rastreados
 
-- Usa `fs.move` do Node.js
-- Mais rápido que git mv
-
-**Exemplo de commit após normalize:**
-
-```bash
-git status
-# On branch main
-# Changes not staged for commit:
-#   renamed:    components/Botao/botao.vue -> components/botao/Botao.vue
-#   new file:   components/botao/Botao.types.ts
-#   new file:   components/botao/index.ts
-
-git add -A
-git commit -m "refactor: normalize component structure"
-```
+- Move direto pelo sistema de arquivos
 
 ## Troubleshooting
 
 ### ⚠️ Warnings do Git
 
 ```
-Warning: Could not update Git index for /path/to/component
+Aviso: Não foi possível atualizar o índice Git para /caminho/do/componente
 ```
 
-**Causa:** Conflitos existentes no repositório Git
+**Causa:** o comando `git` falhou ao atualizar o índice — em geral um conflito preexistente.
 
-**Solução:** Os arquivos foram renomeados, mas você precisa adicionar manualmente:
+**Solução:** os arquivos foram movidos; adicione ao índice à mão:
 
 ```bash
 git add -A
 ```
 
+### 📦 Diretório Ignorado
+
+```
+⚠️  Diretórios ignorados:
+  • src/components/atoms
+    Motivo: "Button" está solto em atoms/ mas button/ já existe — mova os arquivos manualmente
+```
+
+**Causa:** a pasta de destino da promoção já existe, e a ferramenta não sobrescreve.
+
+**Solução:** decida à mão qual dos dois é o componente e junte os arquivos; rode o `normalize` de novo.
+
 ### 🔄 Case-Only Rename em macOS
 
-```
-Error: fatal: conflicted, source=Botao, destination=botao
-```
-
-**Causa:** macOS usa filesystem case-insensitive
-
-**Solução:** O CLI já resolve isso automaticamente com two-step rename. Se ainda ocorrer, atualize o CLI:
-
-```bash
-pnpm add -g storytype@latest
-```
-
-### 📦 Templates não Encontrados
-
-```
-Error: Template directory not found
-```
-
-**Causa:** CLI instalado incorretamente
-
-**Solução:**
-
-```bash
-# Reinstalar CLI
-pnpm add -g storytype --force
-
-# Ou usar build local
-cd packages/cli
-pnpm build
-pnpm link --global
-```
+`Botao/` → `botao/` num sistema de arquivos que não distingue caixa é feito em dois passos, por um nome temporário. Se um passo falhar no meio, pode sobrar `botao-temp-rename/`: renomeie à mão para o destino.
 
 ## Boas Práticas
 
 ### ✅ Faça Sempre
 
-1. **Backup antes** - Commit seu código
-2. **Dry-run primeiro** - Simule mudanças
-3. **Revise mudanças** - Use `git diff`
-4. **Teste após** - Rode seus testes
+1. **Commite antes** — o `normalize` move muita coisa de uma vez
+2. **Dry-run primeiro** — leia o plano, principalmente os `📦` e os `🔗`
+3. **Rode o `analyze` depois** — o score e o `Organização por pastas` devem subir
+4. **Rode os testes** — os imports foram reescritos; confirme
 
 ### ❌ Evite
 
-1. **Normalizar sem backup** - Pode perder mudanças
-2. **Ignorar dry-run** - Pode ter surpresas
-3. **Normalizar código não commitado** - Mistura mudanças
-4. **Executar em node_modules** - Só normalize seu código
+1. **Normalizar com mudanças não commitadas** — mistura o seu diff com o da ferramenta
+2. **Ignorar `Diretórios ignorados`** — cada um é um conflito que a ferramenta se recusou a resolver por você
+3. **Rodar em `node_modules` ou `dist`** — a ferramenta os pula, mas não os passe como caminho
 
 ## Próximos Passos
 
-- 🔍 [Analisar resultado com `analyze`](./analyze.md)
-- 🎨 [Criar novos componentes com `generate`](./generate.md)
-- 📚 [Voltar ao CLI](./index.md)
+- 🔍 [Ver o resultado com `analyze`](./analyze.md)
+- 🎨 [Criar componentes novos com `generate`](./generate.md)
+- 📚 [Voltar para a CLI](./index.md)
