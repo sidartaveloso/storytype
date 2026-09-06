@@ -216,8 +216,8 @@ importers:
   packages/storytype:
     dependencies:
       '@storytype/cli':
-        specifier: ^0.2.5
-        version: 0.2.5
+        specifier: ^0.3.0
+        version: 0.3.0
 
 packages:
 
@@ -1898,8 +1898,8 @@ packages:
       storybook: ^10.5.10
       vue: ^3.0.0
 
-  '@storytype/cli@0.2.5':
-    resolution: {integrity: sha512-BMg2WqtGQKHu9ODUJWTXSSnK3w0nyAsOy0ABft+V51G4gzBLI7qi1z23wiqoDYp5wXV+6tL/0jpiN1kGDZjc8g==}
+  '@storytype/cli@0.3.0':
+    resolution: {integrity: sha512-lpl+uNy/cP/HWkJH6W+QL0OQyA8F9cw5Oh971YpV6WGca/BQjc1Zv02Rrk3GbgesPG3rtVKwb583TNP7xGFEJA==}
     hasBin: true
 
   '@swc/core-darwin-arm64@1.15.47':
@@ -7379,7 +7379,7 @@ snapshots:
       vue: 3.5.39(typescript@6.0.3)
       vue-component-type-helpers: 3.3.9
 
-  '@storytype/cli@0.2.5':
+  '@storytype/cli@0.3.0':
     dependencies:
       chalk: 5.6.2
       commander: 12.1.0
