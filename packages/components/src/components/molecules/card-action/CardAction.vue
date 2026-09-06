@@ -26,7 +26,9 @@ withDefaults(defineProps<CardActionProps>(), {
   content: () => [],
   footerText: undefined,
   color: 'primary',
-  footerColor: 'grey-7',
+  // `grey-7` (#757575) da 4,23:1 sobre a superficie #f5f5f5 do cartao, abaixo
+  // dos 4,5:1 exigidos; `grey-8` (#616161) da 5,68:1
+  footerColor: 'grey-8',
 });
 </script>
 

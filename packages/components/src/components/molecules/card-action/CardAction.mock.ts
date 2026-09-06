@@ -15,7 +15,7 @@ export const generateMockData = (): CardActionType => {
     ],
     footerText: 'Atualizado em Jan/2025',
     color: 'primary',
-    footerColor: 'grey-7',
+    footerColor: 'grey-8',
   };
 
   const models: CardActionModels = {};
