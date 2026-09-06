@@ -17,21 +17,6 @@ const meta: Meta<typeof CardAction> = {
   component: CardAction,
   tags: ['autodocs'],
   parameters: {
-    /**
-     * Débito real de contraste, não falso positivo: a superfície é o cinza
-     * `#f5f5f5` do cartão, sem overlay envolvido.
-     *
-     *   `#757575` (grey-7 do Quasar) sobre `#f5f5f5` -> 4,23  (precisa 4,5)
-     *   `#26a69a` (secondary do tema) sobre `#f5f5f5` -> 2,75  (precisa 4,5)
-     *
-     * Corrigir exige escolher outras cores, que é decisão de design e não de
-     * ferramenta. Fica `todo` para a violação aparecer no painel sem reprovar
-     * o build, e para a pendência estar escrita em vez de silenciosa. As
-     * outras sete stories do pacote seguem sob o portão.
-     */
-    a11y: {
-      test: 'todo',
-    },
     docs: {
       description: {
         component:
@@ -72,12 +57,25 @@ export const SemRodape: Story = {
 
 export const CoresPersonalizadas: Story = {
   name: 'Cores personalizadas',
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'O `color` e o `footerColor` aceitam qualquer token do Quasar, mas o ' +
+          'texto fica sobre a superficie `#f5f5f5` do cartao — entao o token ' +
+          'escolhido precisa alcancar 4,5:1 contra ela. `teal-9` (#00695c) da ' +
+          '6,07:1 e `grey-9` (#424242) da 9,22:1. O `secondary` do tema ' +
+          '(#26a69a) da 2,75:1 e ' +
+          'nao serve como cor de texto aqui, ainda que sirva como fundo.',
+      },
+    },
+  },
   args: {
     headerText: 'Plano Enterprise',
     content: ['Coworking ilimitado', 'Salas privativas sem limites'],
     footerText: 'Vigente até Dez/2025',
-    color: 'secondary',
-    footerColor: 'grey-7',
+    color: 'teal-9',
+    footerColor: 'grey-9',
   },
 };
 
