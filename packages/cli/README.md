@@ -78,12 +78,14 @@ Normalize existing component structure to follow Storytype conventions:
 
 **What it does:**
 
-1. Scans for Vue components in the directory
+1. Scans for Vue components recursively in the directory
 2. Checks directory names (should be kebab-case)
 3. Checks file names (components should be PascalCase)
 4. Detects missing files (`index.ts`, `.types.ts`, `.spec.ts`)
 5. Uses `git mv` for tracked files (preserves history)
 6. Creates missing files with templates
+
+**Monorepo support:** Works recursively across all subdirectories. Container folders like `packages/`, `apps/`, `libs/` are preserved — only component directories (those with `.vue` files) are normalized.
 
 **Examples:**
 
@@ -102,6 +104,9 @@ storytype normalize --files-only
 
 # Show detailed changes
 storytype normalize -v --dry-run
+
+# Normalize a monorepo (scans packages/, apps/, libs/)
+storytype normalize .
 ```
 
 ### `storytype init`
@@ -130,6 +135,7 @@ Analyze and score your project based on Storytype best practices.
    - ✓ Components directory structure
    - ✓ Atomic Design levels (atoms, molecules, organisms, templates, pages)
    - ✓ Component organization
+   - ✓ Monorepo structures supported (scans `packages/`, `apps/`, `libs/`)
 
 2. **TypeScript (30 pts)**
    - ✓ TypeScript configuration (tsconfig.json)
@@ -200,6 +206,46 @@ Estrutura Atomic Design: 40/50 (80%)
 - ⚠️ **40-59%** - Projeto precisa de melhorias significativas.
 - 🔧 **0-39%** - Projeto precisa de reestruturação.
 
+## Monorepo Support
+
+The `normalize` and `analyze` commands fully support monorepo structures:
+
+**TurboRepo / pnpm workspace:**
+
+```
+workspace/
+├── packages/
+│   ├── ui/src/components/Button/     ← normalized to button/
+│   └── shared/components/srv/        ← preserved (already correct)
+└── apps/
+    └── web/src/components/Dashboard/ ← normalized to dashboard/
+```
+
+**Nx monorepo:**
+
+```
+monorepo/
+├── libs/ui/src/lib/Button/           ← normalized to button/
+└── apps/frontend/app/components/Header/ ← normalized to header/
+```
+
+**App-based structure:**
+
+```
+project/
+└── app/components/
+    ├── srv/                           ← preserved (service convention)
+    └── Header/                        ← normalized to header/
+```
+
+**Rules:**
+
+- Directories containing `.vue` files are treated as components
+- Container folders (`packages/`, `apps/`, `libs/`, `src/`) are never renamed
+- Directories are normalized to **kebab-case**
+- Files within are normalized to **PascalCase**
+- `srv/`, `api/`, `utils/` and other convention directories are preserved
+
 ## Programmatic API
 
 You can also use the CLI programmatically:
@@ -237,8 +283,7 @@ displayResults(analysis);
 
 Follow the Atomic Design methodology:
 
-```
-src/kebab-case** for component directories: `user-profile/`, `data-table/`
+- Use **kebab-case** for component directories: `user-profile/`, `data-table/`
 - Use **PascalCase** for component files: `UserProfile.vue`, `DataTable.tsx`
 - Include TypeScript types: `UserProfile.types.ts`
 - Include tests: `UserProfile.spec.ts` or `UserProfile.test.ts`
@@ -248,7 +293,17 @@ src/kebab-case** for component directories: `user-profile/`, `data-table/`
 **Example structure:**
 
 ```
+src/components/
+├── atomos/       # Basic UI atoms (Button, Input, Icon)
+├── moleculas/    # Composed molecules (SearchField, Card)
+├── organismos/   # Complex UI components (Header, Form, Modal)
+├── templates/    # Page-level layouts
+└── pages/        # Specific page instances
+```
 
+**Component folder example:**
+
+```
 src/components/atomos/user-button/
 ├── UserButton.vue
 ├── UserButton.types.ts
@@ -256,11 +311,6 @@ src/components/atomos/user-button/
 ├── UserButton.stories.ts
 ├── UserButton.mock.ts
 └── index.ts
-``ps of atoms (SearchField, Card)
-├── organisms/ # Complex UI components (Header, Form, Modal)
-├── templates/ # Page-level layouts
-└── pages/ # Specific page instances
-
 ```
 
 ### Component Naming
@@ -279,4 +329,7 @@ src/components/atomos/user-button/
 ## License
 
 MIT
+
+```
+
 ```

@@ -1,8 +1,8 @@
-export * from './NormalizeComponents.types';
 export {
-  normalizeComponents,
   analyzeComponentStructure,
+  isGitTracked,
+  normalizeComponents,
   toKebabCase,
   toPascalCase,
-  isGitTracked,
 } from './NormalizeComponents';
+export * from './NormalizeComponents.types';

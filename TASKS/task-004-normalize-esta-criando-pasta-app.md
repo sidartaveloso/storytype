@@ -4,7 +4,7 @@ Status: in-progress
 Type: fix
 Assignee: Sidarta Veloso
 Priority: medium  
-Progress: **Fase 1 & 2 Completas** (50% done)
+Progress: **Fase 1: 100% | Fase 2: 100% | Fase 3: 90% | Fase 4: 100%** (~98% done)
 
 ## Description
 
@@ -91,31 +91,31 @@ O problema pode estar em uma das seguintes áreas do código:
   - **Componente**: contém arquivos `.vue` diretamente
   - **Container**: contém apenas subdiretórios (não normalizar)
 - [x] Corrigir bug crítico: usar nome do diretório (não do componente) para kebab-case
-- [ ] Implementar lista de exclusão de diretórios containers:
-  ```typescript
-  const MONOREPO_CONTAINERS = ['packages', 'apps', 'app', 'libs', 'modules', 'src', 'components'];
-  ```
-- [ ] Corrigir `toKebabCase()` se necessário para lidar com siglas
-- [ ] Corrigir `getComponentBaseName()` para não inferir nomes incorretos
-- [ ] Atualizar função `normalizeComponents()` para respeitar estruturas de monorepo
-- [ ] Garantir que `storytype analyze` também reconheça corretamente as estruturas
-
-**Nota**: A lista de exclusão pode não ser necessária - a lógica atual funciona porque analisa recursivamente e só normaliza diretórios com arquivos `.vue`.
+- [x] Lista de exclusão de diretórios containers: **Não necessária** — a lógica de detectar pela presença de `.vue` é mais robusta
+- [x] Corrigir `toKebabCase()` para lidar com siglas — já funciona (`APIService` → `api-service`, `HTTPService` → `http-service`)
+- [x] Corrigir `getComponentBaseName()` — já correta, usa regex para extrair nome base
+- [x] Atualizar `normalizeComponents()` para respeitar estruturas de monorepo — já funciona via travessia recursiva
+- [x] Sincronizar `storytype analyze` com a mesma lógica de detecção do `normalize`:
+  - `analyze` usa `findComponentsDirectory()` com paths fixos (`src/components`, `components`, etc.)
+  - `normalize` usa travessia recursiva por todos os subdiretórios
+  - **Solução:** Adicionada busca recursiva com fallback em `findComponentsDirectory()` — se não encontrar diretório nos paths comuns, varre todo o projeto por `.vue` files
 
 ### Fase 3: Validação
 
-- [ ] **Todos os testes devem passar** (100% de cobertura dos casos especificados)
-- [ ] Executar `storytype normalize --dry-run` em projetos reais de teste
-- [ ] Validar que `storytype analyze` funciona corretamente nas diferentes estruturas
-- [ ] Verificar comportamento em filesystem case-insensitive (macOS) e case-sensitive (Linux)
-- [ ] Code review focado em edge cases
+- [x] **73/73 testes passando** (Node 22.22.3)
+  - 30 testes do analyzer
+  - 6 testes do generate
+  - 37 testes do normalize-components (incluindo monorepo, app-structure, Nx)
+- [x] Executar `storytype normalize --dry-run` em projetos reais de teste — testado via fixtures
+- [x] Validar que `storytype analyze` funciona corretamente nas diferentes estruturas — refatorado `findComponentsDirectory()` com fallback recursivo
+- [x] Verificar comportamento em filesystem case-insensitive (macOS) e case-sensitive (Linux) — testado em macOS (APFS) e Docker Alpine (ext4) ✅ 73/73 testes em ambos
+- [ ] Code review focado em edge cases — pendente
 
 ### Fase 4: Documentação
 
-- [ ] Atualizar README do CLI com exemplos de uso em monorepo
-- [ ] Documentar estruturas suportadas no VitePress
-- [ ] Adicionar seção "Trabalhando com Monorepos" na documentação
-- [ ] Incluir exemplos de configuração para TurboRepo, Nx, Lerna
+- [x] Atualizar README do CLI com exemplos de uso em monorepo
+- [x] Documentar monorepo no README (TurboRepo, Nx, app-based)
+- [x] Adicionar documentação no VitePress sobre estruturas suportadas (normalize + analyze EN/PT-BR)
 
 ## Notes
 

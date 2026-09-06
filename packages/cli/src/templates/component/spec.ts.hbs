@@ -1,0 +1,19 @@
+import { describe, expect, it } from 'vitest';
+{{#if isVue}}import { mount } from '@vue/test-utils';
+{{/if}}import {{pascalCase name}} from '{{entry}}';
+{{#if hasMock}}import { generateMockData } from './{{pascalCase name}}.mock';
+{{/if}}
+
+describe('{{pascalCase name}}', () => {
+{{#if isVue}}  it('renderiza', () => {
+    const wrapper = mount({{pascalCase name}}{{#if hasMock}}, { props: generateMockData().props }{{/if}});
+
+    expect(wrapper.exists()).toBe(true);
+  });
+{{else}}  it('e definido', () => {
+    expect({{pascalCase name}}).toBeDefined();
+  });
+{{/if}}
+
+  //TODO: Add tests here
+});

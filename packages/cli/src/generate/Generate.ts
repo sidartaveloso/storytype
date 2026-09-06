@@ -1,122 +1,76 @@
 /**
- * Component and structure generators
- * Uses Handlebars templates to generate Storytype-compliant components
+ * Component generator: decides where a component goes and writes its canonical
+ * file set. The files themselves are rendered by the shared scaffold.
  */
 import fs from 'fs-extra';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import Handlebars from 'handlebars';
-import type { GenerateComponentOptions, GenerateResult } from './Generate.types.js';
+import {
+  type AtomicLevel,
+  ATOMIC_LEVELS,
+  atomicLevelDir,
+  detectProjectLanguage,
+  findComponentsDirectory,
+  type ComponentFileType,
+  componentFileSet,
+  type ProjectLanguage,
+  toKebabCase,
+  toPascalCase,
+} from '../component-detector.js';
+import { renderComponentFile, type ScaffoldContext } from '../component-scaffold.js';
+import type {
+  ComponentTarget,
+  GenerateComponentOptions,
+  GenerateResult,
+} from './Generate.types.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+/** `generate` scaffolds Vue components */
+const ENTRY_EXTENSION = '.vue';
 
 /**
- * Convert string to kebab-case
+ * Decide where a component is written.
+ *
+ * `--path` wins. Otherwise the project's own components directory is located
+ * and its level folder named in the project's language, so a component
+ * generated into `src/components/atomos/` is one `analyze` recognizes — the
+ * two commands read the same convention.
  */
-function toKebabCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
-    .replace(/[\s_]+/g, '-')
-    .toLowerCase();
+function resolveTarget(options: GenerateComponentOptions): ComponentTarget {
+  const componentsDir =
+    options.path ??
+    findComponentsDirectory(process.cwd()) ??
+    path.join(process.cwd(), 'src', 'components');
+
+  const language = detectProjectLanguage(componentsDir);
+  const levelDir = path.join(componentsDir, atomicLevelDir(options.type, language));
+
+  return {
+    componentsDir,
+    levelDir,
+    componentDir: path.join(levelDir, toKebabCase(options.name)),
+    language,
+  };
 }
 
 /**
- * Convert string to PascalCase
+ * Name of the Storybook section a level occupies, in the project's language.
+ * Keyed by level so a level added to ATOMIC_LEVELS cannot be forgotten here.
  */
-function toPascalCase(str: string): string {
-  if (/^[A-Z][a-zA-Z0-9]*$/.test(str)) {
-    return str;
-  }
-
-  const withHyphens = str.replace(/([a-z])([A-Z])/g, '$1-$2');
-
-  return withHyphens
-    .split(/[-_\s]+/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
-}
-
-// Register Handlebars helpers
-Handlebars.registerHelper('kebabCase', (str: string) => toKebabCase(str));
-Handlebars.registerHelper('pascalCase', (str: string) => toPascalCase(str));
-Handlebars.registerHelper('eq', (a: any, b: any) => a === b);
+const STORYBOOK_SECTIONS: Record<AtomicLevel, Record<ProjectLanguage, string>> = {
+  atoms: { en: 'Atoms', pt: 'Átomos' },
+  molecules: { en: 'Molecules', pt: 'Moléculas' },
+  organisms: { en: 'Organisms', pt: 'Organismos' },
+  templates: { en: 'Templates', pt: 'Templates' },
+  pages: { en: 'Pages', pt: 'Páginas' },
+};
 
 /**
- * Get template directory path
+ * `01 - Atoms`: the numeric prefix is what orders the sections in Storybook's
+ * sidebar, and it comes from the level's own order.
  */
-function getTemplateDir(): string {
-  // Possible template locations (in order of preference):
-  // 1. Development: packages/cli/src/templates/component
-  // 2. Production build: packages/cli/dist/templates/component
-  // 3. Global install: node_modules/storytype/dist/templates/component
-  // 4. Linked development: follow symlink to src/templates/component
+function storybookSection(level: AtomicLevel, language: ProjectLanguage): string {
+  const order = String(ATOMIC_LEVELS[level].order).padStart(2, '0');
 
-  const possiblePaths = [
-    // Development (from dist/generate to src/templates)
-    path.join(__dirname, '..', 'templates', 'component'),
-    // Production build (dist/templates adjacent to dist/)
-    path.join(__dirname, '..', '..', 'templates', 'component'),
-    // From src/generate to src/templates
-    path.join(__dirname, '..', '..', 'src', 'templates', 'component'),
-    // Global install
-    path.join(__dirname, 'templates', 'component'),
-  ];
-
-  for (const templatePath of possiblePaths) {
-    if (fs.existsSync(templatePath)) {
-      return templatePath;
-    }
-  }
-
-  throw new Error(`Template directory not found. Searched paths: ${possiblePaths.join(', ')}`);
-}
-
-/**
- * Load and compile a Handlebars template
- */
-async function compileTemplate(templateName: string, data: any): Promise<string> {
-  const templateDir = getTemplateDir();
-  const templatePath = path.join(templateDir, templateName);
-  const templateContent = await fs.readFile(templatePath, 'utf-8');
-  const template = Handlebars.compile(templateContent);
-  return template(data);
-}
-
-/**
- * Generate Vue component template
- */
-async function generateVueTemplate(componentName: string, type: string): Promise<string> {
-  return compileTemplate('component.vue.hbs', { name: componentName, type });
-}
-
-/**
- * Generate TypeScript types file
- */
-async function generateTypesFile(componentName: string): Promise<string> {
-  return compileTemplate('types.ts.hbs', { name: componentName });
-}
-
-/**
- * Generate Storybook stories file
- */
-async function generateStoriesFile(componentName: string, type: string): Promise<string> {
-  return compileTemplate('stories.ts.hbs', { name: componentName, type });
-}
-
-/**
- * Generate mock data file
- */
-async function generateMockFile(componentName: string): Promise<string> {
-  return compileTemplate('mock.ts.hbs', { name: componentName });
-}
-
-/**
- * Generate index.ts file
- */
-async function generateIndexFile(componentName: string): Promise<string> {
-  return compileTemplate('index.ts.hbs', { name: componentName });
+  return `${order} - ${STORYBOOK_SECTIONS[level][language]}`;
 }
 
 /**
@@ -127,44 +81,37 @@ export async function generateComponent(
 ): Promise<GenerateResult> {
   try {
     const componentName = toPascalCase(options.name);
-    const dirName = toKebabCase(options.name);
-    const basePath = options.path || process.cwd();
+    const target = resolveTarget(options);
 
-    // Create component directory structure
-    const componentDir = path.join(basePath, options.type, dirName);
-    await fs.ensureDir(componentDir);
+    await fs.ensureDir(target.componentDir);
+
+    // A generated component gets the whole canonical set, so every role is
+    // present and the barrel and the story can rely on each other
+    const fileSet = componentFileSet(componentName);
+    const context: ScaffoldContext = {
+      componentName,
+      entryExtension: ENTRY_EXTENSION,
+      section: storybookSection(options.type, target.language),
+      presentRoles: ['component', ...fileSet.map(spec => spec.role)],
+    };
+
+    const entryFileName = `${componentName}${ENTRY_EXTENSION}`;
+    const written: { role: ComponentFileType; fileName: string }[] = [
+      { role: 'component', fileName: entryFileName },
+      ...fileSet.map(spec => ({ role: spec.role, fileName: spec.fileName })),
+    ];
 
     const files: string[] = [];
+    for (const { role, fileName } of written) {
+      const content = await renderComponentFile(role, context);
+      if (content === null) continue;
 
-    // Generate component file
-    const vueFile = path.join(componentDir, `${componentName}.vue`);
-    await fs.writeFile(vueFile, await generateVueTemplate(componentName, options.type));
-    files.push(vueFile);
+      const filePath = path.join(target.componentDir, fileName);
+      await fs.writeFile(filePath, content);
+      files.push(filePath);
+    }
 
-    // Generate types file
-    const typesFile = path.join(componentDir, `${componentName}.types.ts`);
-    await fs.writeFile(typesFile, await generateTypesFile(componentName));
-    files.push(typesFile);
-
-    // Generate stories file
-    const storiesFile = path.join(componentDir, `${componentName}.stories.ts`);
-    await fs.writeFile(storiesFile, await generateStoriesFile(componentName, options.type));
-    files.push(storiesFile);
-
-    // Generate mock file
-    const mockFile = path.join(componentDir, `${componentName}.mock.ts`);
-    await fs.writeFile(mockFile, await generateMockFile(componentName));
-    files.push(mockFile);
-
-    // Generate index file
-    const indexFile = path.join(componentDir, 'index.ts');
-    await fs.writeFile(indexFile, await generateIndexFile(componentName));
-    files.push(indexFile);
-
-    return {
-      success: true,
-      files,
-    };
+    return { success: true, files };
   } catch (error) {
     return {
       success: false,

@@ -6,21 +6,17 @@ import path from 'path';
 import fs from 'fs-extra';
 import os from 'os';
 import { analyzeProject } from './analyzer.js';
+import {
+  getComponentBaseName,
+  isInOwnFolder,
+  isPascalCase,
+  toExpectedFileName,
+} from './component-detector.js';
 
 describe('Analyzer - Naming Validation', () => {
   /**
-   * Helper to extract base component name (matches analyzer.ts logic exactly)
-   */
-  function getComponentBaseName(file: string): string {
-    const fileName = path.basename(file);
-    // Remove .types.ts, .stories.ts, .spec.ts, .test.ts, etc.
-    return fileName
-      .replace(/\.(types|stories|story|spec|test)\.(ts|tsx|js|jsx)$/, '')
-      .replace(/\.(ts|tsx|js|jsx|vue)$/, '');
-  }
-
-  /**
-   * Helper to check if component name needs fixing (matches analyzer.ts logic exactly)
+   * Mirror of what the analyzer reports for a file name, built from the shared
+   * detector so the test can never drift from the production rule.
    */
   function checkComponentName(filePath: string): {
     needsFix: boolean;
@@ -31,49 +27,14 @@ describe('Analyzer - Naming Validation', () => {
   } {
     const oldName = path.basename(filePath);
     const baseName = getComponentBaseName(filePath);
-
-    // index.ts é uma convenção legítima para arquivos de exportação
-    if (baseName === 'index') {
-      return {
-        needsFix: false,
-        oldName,
-        newName: oldName,
-        baseName,
-        isPascalCase: true,
-      };
-    }
-
-    // Check if PascalCase
-    const isPascalCase = /^[A-Z][a-zA-Z0-9]*$/.test(baseName);
-
-    if (isPascalCase) {
-      return {
-        needsFix: false,
-        oldName,
-        newName: oldName,
-        baseName,
-        isPascalCase: true,
-      };
-    }
-
-    // Convert to PascalCase
-    const pascalName = baseName
-      .replace(/[-_](.)/g, (_, c: string) => c.toUpperCase())
-      .replace(/^(.)/, (_, c: string) => c.toUpperCase());
-
-    // Reconstruct the full filename with same suffixes
-    const suffix = oldName.replace(
-      new RegExp(`^${baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
-      ''
-    );
-    const newName = `${pascalName}${suffix}`;
+    const newName = toExpectedFileName(oldName);
 
     return {
       needsFix: oldName !== newName,
       oldName,
       newName,
       baseName,
-      isPascalCase: false,
+      isPascalCase: baseName === 'index' || isPascalCase(baseName),
     };
   }
 

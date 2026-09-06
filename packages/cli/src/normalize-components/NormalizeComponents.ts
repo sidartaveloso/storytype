@@ -2,16 +2,35 @@
  * Component normalization utility
  * Normalizes component structure to follow Storytype conventions
  */
+
+import { exec } from 'child_process';
 import fs from 'fs-extra';
 import path from 'path';
-import { exec } from 'child_process';
 import { promisify } from 'util';
+import {
+  BARREL_FILES,
+  componentFileSet,
+  type DetectedComponent,
+  detectComponents,
+  isIgnoredDirectory,
+  toKebabCase,
+  toPascalCase,
+} from '../component-detector.js';
+import { renderComponentFileByName, type ScaffoldContext } from '../component-scaffold.js';
 import type {
+  ComponentAction,
   ComponentDirectory,
   ComponentFile,
+  ImportReference,
   NormalizeOptions,
   NormalizeReport,
+  SkippedDirectory,
 } from './NormalizeComponents.types.js';
+import { assertNever } from '../assert-never.js';
+
+// Re-exported so consumers keep importing the case helpers from here, while the
+// single implementation lives in the shared detector.
+export { toKebabCase, toPascalCase };
 
 const execAsync = promisify(exec);
 
@@ -20,35 +39,6 @@ const execAsync = promisify(exec);
  */
 function isCaseOnlyChange(from: string, to: string): boolean {
   return from.toLowerCase() === to.toLowerCase() && from !== to;
-}
-
-/**
- * Convert string to kebab-case
- */
-export function toKebabCase(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2') // lowercase followed by uppercase
-    .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2') // uppercase followed by uppercase+lowercase
-    .replace(/[\s_]+/g, '-')
-    .toLowerCase();
-}
-
-/**
- * Convert string to PascalCase
- */
-export function toPascalCase(str: string): string {
-  // If already PascalCase, return as is
-  if (/^[A-Z][a-zA-Z0-9]*$/.test(str)) {
-    return str;
-  }
-
-  // Handle camelCase by inserting hyphens before capitals
-  const withHyphens = str.replace(/([a-z])([A-Z])/g, '$1-$2');
-
-  return withHyphens
-    .split(/[-_\s]+/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
 }
 
 /**
@@ -84,13 +74,23 @@ async function gitMoveManual(fromPath: string, toPath: string, isCaseOnly: boole
 
   // Update Git index
   try {
-    // Get relative paths for git commands
+    // Get relative paths for git commands.
+    // `git rev-parse` always reports the resolved path, so the paths we compare
+    // it against must be resolved too — otherwise a repo reached through a
+    // symlink (macOS `/tmp` and `/var` are symlinks to `/private/...`) yields a
+    // relative path full of `../..` that Git rejects. The basename is rejoined
+    // because `fromPath` no longer exists at this point: it has just been moved.
     const repoRoot = (await execAsync('git rev-parse --show-toplevel', { cwd })).stdout.trim();
-    const relativeFrom = path.relative(repoRoot, fromPath);
-    const relativeTo = path.relative(repoRoot, toPath);
+    const resolve = async (target: string): Promise<string> =>
+      path.join(await fs.realpath(path.dirname(target)), path.basename(target));
+    const relativeFrom = path.relative(repoRoot, await resolve(fromPath));
+    const relativeTo = path.relative(repoRoot, await resolve(toPath));
 
-    // Remove old path from Git
-    await execAsync(`git rm --cached "${relativeFrom}"`, { cwd: repoRoot });
+    // Remove old path from Git. `-r` is required when the path is a directory
+    // ("fatal: not removing X recursively without -r") and is harmless for a
+    // single file. Without it the index is never updated, and on a
+    // case-insensitive filesystem a case-only rename becomes invisible to Git.
+    await execAsync(`git rm --cached -r "${relativeFrom}"`, { cwd: repoRoot });
 
     // Add new path to Git
     await execAsync(`git add "${relativeTo}"`, { cwd: repoRoot });
@@ -101,27 +101,190 @@ async function gitMoveManual(fromPath: string, toPath: string, isCaseOnly: boole
   }
 }
 
+/** Extensions that can carry a relative import */
+const IMPORT_BEARING_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.vue'];
+
+/** Extensions tried when a specifier omits one */
+const RESOLVABLE_EXTENSIONS = ['.vue', '.ts', '.tsx', '.js', '.jsx'];
+
+/** `from './x'` / `import './x'` / `export * from '../x'` */
+const RELATIVE_IMPORT_PATTERN = /(from|import)(\s+)(['"])(\.[^'"]*)\3/g;
+
 /**
- * Get component base name from file path
+ * Find every relative import invalidated by the plan.
+ *
+ * Either end of an import can move. Promoting a component pushes it one level
+ * deeper, so even its imports of files that do not move — a stylesheet, a
+ * shared type, a sibling level's barrel — need another `../`. So each specifier
+ * is resolved to the file it points at today and recomputed between the two
+ * final locations, and kept only when it actually changed.
  */
-function getComponentBaseName(filePath: string): string {
-  const fileName = path.basename(filePath);
-  return fileName
-    .replace(/\.(types|stories|story|spec|test|mock)\.(ts|tsx|js|jsx)$/, '')
-    .replace(/\.(ts|tsx|js|jsx|vue)$/, '');
+async function findImportReferences(
+  components: ComponentDirectory[],
+  rootDir: string
+): Promise<Map<ComponentDirectory, ImportReference[]>> {
+  const grouped = new Map<ComponentDirectory, ImportReference[]>();
+  for (const component of components) {
+    grouped.set(component, []);
+  }
+
+  const moveIndex = new Map<string, { targetPath: string; component: ComponentDirectory }>();
+  for (const component of components) {
+    for (const file of component.files) {
+      if (file.currentPath !== file.targetPath) {
+        moveIndex.set(file.currentPath, { targetPath: file.targetPath, component });
+      }
+    }
+  }
+
+  if (moveIndex.size === 0) return grouped;
+
+  for (const filePath of await collectScannableFiles(rootDir)) {
+    let content: string;
+    try {
+      content = await fs.readFile(filePath, 'utf-8');
+    } catch {
+      // Skip files that can't be read
+      continue;
+    }
+
+    const importerMove = moveIndex.get(filePath);
+    // Where this file itself ends up, which is what its imports are relative to
+    const importerTarget = importerMove?.targetPath ?? filePath;
+
+    for (const match of content.matchAll(RELATIVE_IMPORT_PATTERN)) {
+      const [statement, keyword, spacing, quote, specifier] = match;
+
+      const resolved = resolveSpecifier(filePath, specifier);
+      if (!resolved) continue;
+
+      const targetMove = moveIndex.get(resolved);
+      if (!importerMove && !targetMove) continue;
+
+      const newSpecifier = buildSpecifier(
+        importerTarget,
+        targetMove?.targetPath ?? resolved,
+        specifier,
+        resolved
+      );
+      if (newSpecifier === specifier) continue;
+
+      // Attributed to whichever component's move invalidated the import
+      const owner = targetMove?.component ?? importerMove?.component;
+      if (!owner) continue;
+
+      grouped.get(owner)?.push({
+        filePath,
+        line: content.substring(0, match.index).split('\n').length,
+        currentImport: statement,
+        newImport: `${keyword}${spacing}${quote}${newSpecifier}${quote}`,
+      });
+    }
+  }
+
+  return grouped;
 }
 
 /**
- * Determine file type based on name pattern
+ * Every file under the analyzed root that could carry a relative import.
+ *
+ * The whole tree is scanned, not just the component folders: a package entry
+ * point reaching deep into the component tree — `export * from
+ * './components/organisms/taskin/Taskin.types'` — is exactly the kind of import
+ * a move breaks, and it lives nowhere near the component.
  */
-function getFileType(fileName: string): ComponentFile['type'] {
-  if (fileName === 'index.ts' || fileName === 'index.js') return 'index';
-  if (fileName.includes('.types.')) return 'types';
-  if (fileName.includes('.spec.') || fileName.includes('.test.')) return 'test';
-  if (fileName.includes('.stories.') || fileName.includes('.story.')) return 'stories';
-  if (fileName.includes('.mock.')) return 'mock';
-  if (fileName.endsWith('.vue')) return 'component';
-  return 'other';
+async function collectScannableFiles(rootDir: string): Promise<string[]> {
+  const files: string[] = [];
+
+  async function walk(dirPath: string): Promise<void> {
+    let entries: fs.Dirent[];
+    try {
+      entries = await fs.readdir(dirPath, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      const entryPath = path.join(dirPath, entry.name);
+
+      if (entry.isDirectory()) {
+        if (!isIgnoredDirectory(entry.name)) await walk(entryPath);
+      } else if (entry.isFile() && IMPORT_BEARING_EXTENSIONS.includes(path.extname(entry.name))) {
+        files.push(entryPath);
+      }
+    }
+  }
+
+  await walk(rootDir);
+
+  return files;
+}
+
+/**
+ * Split a specifier from the `?query` / `#hash` a bundler may carry on it
+ * (`./taskin.svg?raw`), which is not part of the path
+ */
+function splitSpecifier(specifier: string): { specifierPath: string; suffix: string } {
+  const suffixStart = specifier.search(/[?#]/);
+
+  return suffixStart === -1
+    ? { specifierPath: specifier, suffix: '' }
+    : { specifierPath: specifier.slice(0, suffixStart), suffix: specifier.slice(suffixStart) };
+}
+
+/**
+ * Resolve a relative specifier to the file it points at today
+ */
+function resolveSpecifier(importerPath: string, specifier: string): string | null {
+  const { specifierPath } = splitSpecifier(specifier);
+  const base = path.resolve(path.dirname(importerPath), specifierPath);
+
+  const candidates = [
+    base,
+    ...RESOLVABLE_EXTENSIONS.map(ext => `${base}${ext}`),
+    ...BARREL_FILES.map(barrel => path.join(base, barrel)),
+  ];
+
+  return candidates.find(candidate => isFile(candidate)) ?? null;
+}
+
+function isFile(candidate: string): boolean {
+  try {
+    return fs.statSync(candidate).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Recompute a specifier for the post-normalization layout, keeping the shape
+ * the author wrote: an omitted extension stays omitted, a directory import
+ * stays pointed at the directory.
+ */
+function buildSpecifier(
+  importerTarget: string,
+  target: string,
+  specifier: string,
+  resolvedOld: string
+): string {
+  const { specifierPath, suffix } = splitSpecifier(specifier);
+
+  const extension = path.extname(resolvedOld);
+  const wroteExtension = extension.length > 0 && specifierPath.endsWith(extension);
+  const wroteDirectory =
+    (BARREL_FILES as readonly string[]).includes(path.basename(resolvedOld)) && !wroteExtension;
+
+  let destination = target;
+  if (wroteDirectory) {
+    destination = path.dirname(target);
+  } else if (!wroteExtension) {
+    destination = target.slice(0, -extension.length);
+  }
+
+  const relative = path.relative(path.dirname(importerTarget), destination);
+  const posix = relative.split(path.sep).join('/');
+
+  return `${posix.startsWith('.') ? posix : `./${posix}`}${suffix}`;
 }
 
 /**
@@ -130,30 +293,63 @@ function getFileType(fileName: string): ComponentFile['type'] {
 export async function analyzeComponentStructure(
   options: NormalizeOptions
 ): Promise<NormalizeReport> {
-  const components: ComponentDirectory[] = [];
-  const targetPath = path.resolve(options.path);
+  const skippedDirectories: SkippedDirectory[] = [];
+
+  const rootDir = path.resolve(options.path);
 
   try {
-    await analyzeDirectory(targetPath, components, options);
+    const detected = detectComponents(rootDir);
+
+    const planned = await Promise.all(
+      detected.map(async component => {
+        const conflict = promotionConflict(component);
+        if (conflict) {
+          if (options.verbose) {
+            console.warn(`[storytype] Ignorado: ${conflict.reason}`);
+          }
+          skippedDirectories.push(conflict);
+          return null;
+        }
+
+        return planComponent(component, options);
+      })
+    );
+
+    const components = planned.filter((c): c is ComponentDirectory => c !== null);
+
+    // Imports are resolved against the whole plan: an import breaks when
+    // either end of it moves, which no single component can see on its own.
+    const referencesByComponent = await findImportReferences(components, rootDir);
+    for (const component of components) {
+      component.importReferences = referencesByComponent.get(component) ?? [];
+    }
+
+    const allImportReferences = components.flatMap(c => c.importReferences);
 
     return {
       components,
-      directoriesToRename: components.filter(c => c.needsRename).length,
+      directoriesToRename: components.filter(c => c.action === 'rename').length,
+      componentsToPromote: components.filter(c => c.action === 'promote').length,
       filesToRename: components.reduce(
         (sum, c) => sum + c.files.filter(f => f.currentPath !== f.targetPath).length,
         0
       ),
       filesToCreate: components.reduce((sum, c) => sum + c.missingFiles.length, 0),
-      importsToUpdate: 0, // TODO: Implement import detection
+      importsToUpdate: allImportReferences.length,
+      importReferences: allImportReferences,
+      skippedDirectories,
       success: true,
     };
   } catch (error) {
     return {
       components: [],
       directoriesToRename: 0,
+      componentsToPromote: 0,
       filesToRename: 0,
       filesToCreate: 0,
       importsToUpdate: 0,
+      importReferences: [],
+      skippedDirectories: [],
       success: false,
       error: error instanceof Error ? error.message : String(error),
     };
@@ -161,145 +357,104 @@ export async function analyzeComponentStructure(
 }
 
 /**
- * Recursively analyze directory for components
+ * Refuse to promote onto a directory that already exists — the folder is
+ * either another component or a half-done move, and overwriting it would
+ * destroy files.
  */
-async function analyzeDirectory(
-  dirPath: string,
-  components: ComponentDirectory[],
-  options: NormalizeOptions
-): Promise<void> {
-  const entries = await fs.readdir(dirPath, { withFileTypes: true });
+function promotionConflict(component: DetectedComponent): SkippedDirectory | null {
+  if (component.action !== 'promote') return null;
+  if (!fs.existsSync(component.targetDir)) return null;
 
-  // Check if this directory is a component directory
-  const vueFiles = entries.filter(e => e.isFile() && e.name.endsWith('.vue'));
-
-  if (vueFiles.length > 0) {
-    // This is a component directory
-    const componentFile = vueFiles[0];
-    const componentName = getComponentBaseName(componentFile.name);
-    const pascalComponentName = toPascalCase(componentName);
-    const dirName = path.basename(dirPath);
-
-    // CRITICAL FIX: Use directory name for kebab-case conversion, not component name
-    // This ensures dirs like 'srv/' stay 'srv/', not forced to 'server/' by file name
-    const expectedDirName = toKebabCase(dirName);
-    const needsRename = dirName !== expectedDirName;
-
-    const files: ComponentFile[] = [];
-    const existingFileNames = new Set<string>();
-
-    for (const entry of entries) {
-      if (entry.isFile()) {
-        const currentPath = path.join(dirPath, entry.name);
-        const fileType = getFileType(entry.name);
-        const baseName = getComponentBaseName(entry.name);
-        const pascalName = toPascalCase(baseName);
-
-        let targetName = entry.name;
-        if (
-          fileType === 'component' ||
-          fileType === 'types' ||
-          fileType === 'test' ||
-          fileType === 'stories' ||
-          fileType === 'mock'
-        ) {
-          targetName = entry.name.replace(baseName, pascalName);
-        }
-
-        const targetPath = needsRename
-          ? path.join(path.dirname(dirPath), expectedDirName, targetName)
-          : path.join(dirPath, targetName);
-
-        files.push({
-          currentPath,
-          targetPath,
-          isGitTracked: await isGitTracked(currentPath),
-          type: fileType,
-        });
-
-        existingFileNames.add(entry.name);
-      }
-    }
-
-    // Check for missing files
-    const missingFiles: string[] = [];
-
-    if (!existingFileNames.has('index.ts') && !existingFileNames.has('index.js')) {
-      missingFiles.push('index.ts');
-    }
-    if (!existingFileNames.has(`${pascalComponentName}.types.ts`)) {
-      missingFiles.push(`${pascalComponentName}.types.ts`);
-    }
-    if (
-      !existingFileNames.has(`${pascalComponentName}.spec.ts`) &&
-      !existingFileNames.has(`${pascalComponentName}.test.ts`)
-    ) {
-      missingFiles.push(`${pascalComponentName}.spec.ts`);
-    }
-
-    components.push({
-      currentPath: dirPath,
-      targetPath: needsRename ? path.join(path.dirname(dirPath), expectedDirName) : dirPath,
-      componentName: pascalComponentName,
-      files,
-      missingFiles,
-      needsRename,
-    });
-  }
-
-  // Recursively analyze subdirectories
-  for (const entry of entries) {
-    if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
-      await analyzeDirectory(path.join(dirPath, entry.name), components, options);
-    }
-  }
+  return {
+    path: component.currentDir,
+    reason:
+      `"${component.name}" está solto em ${path.basename(component.currentDir)}/ mas ` +
+      `${path.basename(component.targetDir)}/ já existe — mova os arquivos manualmente`,
+  };
 }
 
 /**
- * Generate template content for missing files
+ * Turn a detected component into an executable normalization plan.
+ *
+ * `--dirs-only` / `--files-only` are folded in here rather than at execution
+ * time, so every path in the report — and every import computed from it — is
+ * what this particular run will actually produce.
  */
-function generateFileContent(fileName: string, componentName: string): string {
-  if (fileName === 'index.ts') {
-    return `export * from './${componentName}.types';
-export { default } from './${componentName}.vue';
-`;
+async function planComponent(
+  component: DetectedComponent,
+  options: NormalizeOptions
+): Promise<ComponentDirectory> {
+  const scope = options.scope ?? 'all';
+  const movesDirectories = scope !== 'files';
+  const renamesFiles = scope !== 'dirs';
+
+  const targetDir = movesDirectories ? component.targetDir : component.currentDir;
+
+  const files: ComponentFile[] = await Promise.all(
+    component.files.map(async file => ({
+      currentPath: file.path,
+      targetPath: path.join(targetDir, renamesFiles ? file.targetName : file.name),
+      isGitTracked: await isGitTracked(file.path),
+      type: file.type,
+    }))
+  );
+
+  return {
+    currentPath: component.currentDir,
+    targetPath: targetDir,
+    componentName: component.name,
+    files,
+    missingFiles: renamesFiles ? findMissingFiles(component) : [],
+    action: plannedAction(component, movesDirectories),
+    // Filled in once every component's plan is known
+    importReferences: [],
+  };
+}
+
+/**
+ * What the run will do to a component's directory
+ */
+function plannedAction(component: DetectedComponent, movesDirectories: boolean): ComponentAction {
+  return movesDirectories ? component.action : 'none';
+}
+
+/**
+ * Files the canonical set says are missing from a component.
+ *
+ * Existence is checked against the *target* names, so a component whose files
+ * are about to be PascalCased is not told to create a file it already has.
+ */
+function findMissingFiles(component: DetectedComponent): string[] {
+  const targetNames = new Set(component.files.map(file => file.targetName));
+
+  return componentFileSet(component.name)
+    .filter(spec => spec.completesFolder)
+    .filter(spec => !spec.accepted.some(accepted => targetNames.has(accepted)))
+    .map(spec => spec.fileName);
+}
+
+/**
+ * Render the files a component is missing, from the shared templates — the
+ * same ones `generate` uses, so a role always produces the same file.
+ */
+async function writeMissingFiles(component: ComponentDirectory): Promise<void> {
+  if (component.missingFiles.length === 0) return;
+
+  const entryFile = component.files.find(file => file.type === 'component');
+  const presentRoles = component.files.map(file => file.type);
+
+  const context: ScaffoldContext = {
+    componentName: component.componentName,
+    entryExtension: entryFile ? path.extname(entryFile.targetPath) : '.vue',
+    presentRoles,
+  };
+
+  for (const missingFile of component.missingFiles) {
+    const content = await renderComponentFileByName(missingFile, context);
+    if (content === null) continue;
+
+    await fs.writeFile(path.join(component.targetPath, missingFile), content, 'utf-8');
   }
-
-  if (fileName.endsWith('.types.ts')) {
-    return `export interface ${componentName}Type {
-  models: ${componentName}Models;
-  props: ${componentName}Props;
-  emits: ${componentName}Emits;
-}
-
-export interface ${componentName}Models {
-  //TODO: Add models here
-}
-
-export interface ${componentName}Props {
-  //TODO: Add props here
-}
-
-export interface ${componentName}Emits {
-  //TODO: Add emits here
-}
-`;
-  }
-
-  if (fileName.endsWith('.spec.ts')) {
-    return `import { describe, it, expect } from 'vitest';
-import ${componentName} from './${componentName}.vue';
-
-describe('${componentName}', () => {
-  it('should render', () => {
-    // TODO: Add tests
-    expect(${componentName}).toBeDefined();
-  });
-});
-`;
-  }
-
-  return '';
 }
 
 /**
@@ -313,102 +468,44 @@ export async function normalizeComponents(options: NormalizeOptions): Promise<No
   }
 
   try {
-    // Step 1: Create missing files (before renaming)
-    if (!options.dirsOnly) {
-      for (const component of analysis.components) {
-        for (const missingFile of component.missingFiles) {
-          const targetPath = component.needsRename
-            ? path.join(component.targetPath, missingFile)
-            : path.join(component.currentPath, missingFile);
-
-          const content = generateFileContent(missingFile, component.componentName);
-
-          if (component.needsRename) {
-            // Will be created after directory rename
-            continue;
-          }
-
-          await fs.writeFile(targetPath, content, 'utf-8');
-        }
+    // Directory work first: a loose component gains a folder, a misnamed one is
+    // renamed. Both carry their files along, so file renames come after.
+    for (const component of analysis.components) {
+      switch (component.action) {
+        case 'promote':
+          await promoteComponent(component);
+          break;
+        case 'rename':
+          await moveDirectory(component);
+          break;
+        case 'none':
+          break;
+        default:
+          assertNever(component.action, 'component action');
       }
     }
 
-    // Step 2: Rename directories (if needed)
-    if (!options.filesOnly) {
-      for (const component of analysis.components) {
-        if (component.needsRename) {
-          const hasGitFiles = component.files.some(f => f.isGitTracked);
-          const isCaseOnly = isCaseOnlyChange(component.currentPath, component.targetPath);
+    // File names, at whatever location the component now sits
+    for (const component of analysis.components) {
+      // A promoted component was moved file by file, already under its target name
+      if (component.action === 'promote') continue;
 
-          if (hasGitFiles) {
-            // Use manual Git move to avoid conflicts on case-insensitive filesystems
-            await gitMoveManual(component.currentPath, component.targetPath, isCaseOnly);
-          } else {
-            if (isCaseOnly) {
-              // Two-step rename for case-only changes
-              const tempPath = `${component.targetPath}-temp-rename`;
-              await fs.move(component.currentPath, tempPath);
-              await fs.move(tempPath, component.targetPath);
-            } else {
-              // Direct rename for other changes
-              await fs.move(component.currentPath, component.targetPath);
-            }
-          }
+      for (const file of component.files) {
+        const currentPath = path.join(component.targetPath, path.basename(file.currentPath));
 
-          // Create missing files in new location
-          for (const missingFile of component.missingFiles) {
-            const targetPath = path.join(component.targetPath, missingFile);
-            const content = generateFileContent(missingFile, component.componentName);
-            await fs.writeFile(targetPath, content, 'utf-8');
-          }
-        }
+        if (path.basename(currentPath) === path.basename(file.targetPath)) continue;
+
+        await moveFile(currentPath, file.targetPath, file.isGitTracked);
       }
     }
 
-    // Step 3: Rename files (if needed)
-    if (!options.dirsOnly) {
-      for (const component of analysis.components) {
-        // Update current path if directory was renamed
-        const currentDir =
-          component.needsRename && !options.filesOnly
-            ? component.targetPath
-            : component.currentPath;
-
-        for (const file of component.files) {
-          // Determine current file path (may have moved with directory)
-          const currentFilePath =
-            component.needsRename && !options.filesOnly
-              ? path.join(currentDir, path.basename(file.currentPath))
-              : file.currentPath;
-
-          const targetFilePath =
-            component.needsRename && !options.filesOnly
-              ? file.targetPath
-              : path.join(currentDir, path.basename(file.targetPath));
-
-          // Skip if file doesn't need renaming
-          if (path.basename(currentFilePath) === path.basename(targetFilePath)) {
-            continue;
-          }
-
-          const isCaseOnly = isCaseOnlyChange(currentFilePath, targetFilePath);
-
-          if (file.isGitTracked) {
-            // Use manual Git move to avoid conflicts
-            await gitMoveManual(currentFilePath, targetFilePath, isCaseOnly);
-          } else {
-            if (isCaseOnly) {
-              // Two-step rename for case-only changes
-              const tempPath = `${targetFilePath}-temp-rename`;
-              await fs.move(currentFilePath, tempPath);
-              await fs.move(tempPath, targetFilePath);
-            } else {
-              await fs.move(currentFilePath, targetFilePath);
-            }
-          }
-        }
-      }
+    // Missing conventional files, created where the component now lives
+    for (const component of analysis.components) {
+      await writeMissingFiles(component);
     }
+
+    // Imports last, once every file is at its final path
+    await applyImportReferences(analysis.components);
 
     return {
       ...analysis,
@@ -420,5 +517,94 @@ export async function normalizeComponents(options: NormalizeOptions): Promise<No
       success: false,
       error: error instanceof Error ? error.message : String(error),
     };
+  }
+}
+
+/**
+ * Move a loose component into a folder of its own inside its Atomic Design level
+ */
+async function promoteComponent(component: ComponentDirectory): Promise<void> {
+  await fs.ensureDir(component.targetPath);
+
+  for (const file of component.files) {
+    await moveFile(file.currentPath, file.targetPath, file.isGitTracked);
+  }
+}
+
+/**
+ * Rename a component directory, preserving Git history when it is tracked
+ */
+async function moveDirectory(component: ComponentDirectory): Promise<void> {
+  const isCaseOnly = isCaseOnlyChange(component.currentPath, component.targetPath);
+
+  if (component.files.some(f => f.isGitTracked)) {
+    // Manual Git move avoids conflicts on case-insensitive filesystems
+    await gitMoveManual(component.currentPath, component.targetPath, isCaseOnly);
+    return;
+  }
+
+  await moveOnDisk(component.currentPath, component.targetPath, isCaseOnly);
+}
+
+/**
+ * Move a single file, preserving Git history when it is tracked
+ */
+async function moveFile(fromPath: string, toPath: string, isGitTracked: boolean): Promise<void> {
+  if (fromPath === toPath) return;
+
+  const isCaseOnly = isCaseOnlyChange(fromPath, toPath);
+
+  if (isGitTracked) {
+    await gitMoveManual(fromPath, toPath, isCaseOnly);
+    return;
+  }
+
+  await moveOnDisk(fromPath, toPath, isCaseOnly);
+}
+
+/**
+ * Filesystem move. Case-only renames go through a temporary path, which a
+ * case-insensitive filesystem would otherwise reject as a no-op.
+ */
+async function moveOnDisk(fromPath: string, toPath: string, isCaseOnly: boolean): Promise<void> {
+  if (!isCaseOnly) {
+    await fs.move(fromPath, toPath);
+    return;
+  }
+
+  const tempPath = `${toPath}-temp-rename`;
+  await fs.move(fromPath, tempPath);
+  await fs.move(tempPath, toPath);
+}
+
+/**
+ * Rewrite the imports the plan invalidated.
+ *
+ * A reference was found at the importing file's *old* path, and that file may
+ * itself have moved by now, so it is followed to where the plan put it.
+ */
+async function applyImportReferences(components: ComponentDirectory[]): Promise<void> {
+  const finalPaths = new Map<string, string>();
+  for (const component of components) {
+    for (const file of component.files) {
+      finalPaths.set(file.currentPath, file.targetPath);
+    }
+  }
+
+  for (const component of components) {
+    for (const reference of component.importReferences) {
+      const referencePath = finalPaths.get(reference.filePath) ?? reference.filePath;
+
+      try {
+        const content = await fs.readFile(referencePath, 'utf-8');
+        const updated = content.replace(reference.currentImport, reference.newImport);
+
+        if (updated !== content) {
+          await fs.writeFile(referencePath, updated, 'utf-8');
+        }
+      } catch {
+        // Skip files that can't be read/written
+      }
+    }
   }
 }

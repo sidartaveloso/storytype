@@ -22,6 +22,8 @@ storytype analyze [caminho] [opções]
 | `--verbose` | Saída detalhada com todos os componentes | `false` |
 | `--json`    | Saída em formato JSON                    | `false` |
 
+> **Suporte a monorepo:** O `analyze` suporta estruturas de monorepo. Ele primeiro verifica diretórios comuns (`src/components`, `components`, `src/views`, `app/components`) e, se nenhum for encontrado, varre recursivamente o projeto por arquivos `.vue` — funciona com TurboRepo, Nx, pnpm workspaces e qualquer estrutura personalizada.
+
 ## O Que o Analyze Detecta?
 
 ### 📊 Análise Estrutural
@@ -277,18 +279,21 @@ Ações recomendadas:
 
 ## Integração com Outras Ferramentas
 
-### ESLint
+### Biome
 
-Após normalizar, configure ESLint para manter padrão:
+Após normalizar, configure Biome para manter o padrão:
 
-```javascript
-// .eslintrc.js
-module.exports = {
-  rules: {
-    'vue/component-name-in-template-casing': ['error', 'PascalCase'],
-    'vue/multi-word-component-names': 'error',
-  },
-};
+```json
+// biome.json
+{
+  "linter": {
+    "rules": {
+      "style": {
+        "useNamingConvention": "info"
+      }
+    }
+  }
+}
 ```
 
 ### TypeScript
