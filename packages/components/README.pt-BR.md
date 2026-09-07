@@ -28,6 +28,33 @@ pnpm add @storytype/components quasar
 import { Button } from '@storytype/components';
 ```
 
+Imports por camada (uma entrada por pasta de componente, em kebab-case):
+
+```ts
+import Avatar from '@storytype/components/atoms/avatar';
+import PrintSheet from '@storytype/components/templates/print-sheet';
+import '@storytype/components/styles';
+```
+
+## Utilitários
+
+TypeScript puro, sem Vue — serve tanto a um servidor que renderiza HTML
+estático quanto a uma página Vue.
+
+### `utils/print-geometry`
+
+A aritmética de colocar N itens físicos numa folha para a gráfica: `PAPERS`
+(`a4`, `a3`) e `resolvePaper('100x150')`, `computeSheetGrid(paper, cell,
+maxColumns?)` (quantas células de arte + sangria + moldura cabem — lança quando
+nenhuma cabe), `paginate(items, perPage)`, `pageRuleCss(paper)` (a regra
+`@page` literal), `cropMarksCss(cell)` / `cropMarksHtml()` (marcas na linha de
+corte, fora da sangria), `sheetPageCss(paper)` e `sheetGridCss(paper, cell,
+grid)`.
+
+O template `PrintSheet` (`templates/print-sheet`) é a face Vue da mesma
+geometria: uma folha em mm com margem, sangria e marcas de corte `'inside'` ou
+`'outside'` da sangria.
+
 Import com escopo por camada:
 
 ```ts
