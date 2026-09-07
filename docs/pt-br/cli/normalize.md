@@ -27,7 +27,7 @@ storytype normalize [caminho] [opções]
 `--dirs-only` e `--files-only` são opostos. Passar os dois juntos é recusado com erro, em vez de produzir uma rodada que não faz nada:
 
 ```
-✗ --dirs-only e --files-only sao opostos: escolha um.
+error: option '--dirs-only' cannot be used with option '--files-only'
 ```
 
 ## O Que o Normalize Faz?

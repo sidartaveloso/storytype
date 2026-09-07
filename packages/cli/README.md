@@ -206,6 +206,23 @@ Estrutura Atomic Design: 40/50 (80%)
 - ⚠️ **40-59%** - Projeto precisa de melhorias significativas.
 - 🔧 **0-39%** - Projeto precisa de reestruturação.
 
+### `storytype completion <shell>`
+
+Print the shell completion script for `bash`, `zsh` or `fish`. Activate it with one line in your shell profile; the script is generated from the CLI's own command definitions, so new flags and commands are completed without any edit.
+
+```bash
+# bash (~/.bashrc)
+eval "$(storytype completion bash)"
+
+# zsh (~/.zshrc, after compinit)
+eval "$(storytype completion zsh)"
+
+# fish
+storytype completion fish > ~/.config/fish/completions/storytype.fish
+```
+
+Completes commands and aliases, the flags of each command, the level names accepted by `generate`, and directories for `[path]`. `--dirs-only` and `--files-only` are opposites, so one is no longer offered once the other is on the line.
+
 ## Monorepo Support
 
 The `normalize` and `analyze` commands fully support monorepo structures:
