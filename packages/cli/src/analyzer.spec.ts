@@ -6,12 +6,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import os from 'os';
 import { analyzeProject } from './analyzer.js';
-import {
-  getComponentBaseName,
-  isInOwnFolder,
-  isPascalCase,
-  toExpectedFileName,
-} from './component-detector.js';
+import { getComponentBaseName, isPascalCase, toExpectedFileName } from './component-detector.js';
 
 describe('Analyzer - Naming Validation', () => {
   /**

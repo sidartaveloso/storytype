@@ -37,6 +37,29 @@ npm install --save-dev storytype
 npx storytype --version
 ```
 
+## Shell Autocomplete
+
+The CLI prints the completion script for your shell with `storytype completion <shell>`. Once it is active, Tab after `storytype` offers the commands and their aliases, Tab after a command offers its flags, `generate` completes the 18 level names (`atom`, `atomos`, `molecule`, `paginas`, ...), and the `[path]` of `normalize` and `analyze` completes directories only. `--dirs-only` and `--files-only` are opposites, so one stops being offered once the other is on the line.
+
+Activation is per shell profile, not per installation: reinstalling or upgrading the package does not touch it, and one line in the profile is enough.
+
+```bash
+# bash - in ~/.bashrc
+eval "$(storytype completion bash)"
+
+# zsh - in ~/.zshrc, after the line that calls compinit
+eval "$(storytype completion zsh)"
+
+# fish - once; fish loads the file by itself
+storytype completion fish > ~/.config/fish/completions/storytype.fish
+```
+
+The script is generated from the command definitions inside the CLI itself, so a new version with a new flag or command completes them the next time the shell opens, with nothing to edit.
+
+::: tip Two packages, one script
+Both `storytype` and `@storytype/cli` install an executable named `storytype`. Completion registers by executable name, so the same script covers both.
+:::
+
 ## Available Commands
 
 ### 🎨 [`generate`](./generate.md) - Create New Component
@@ -202,6 +225,7 @@ storytype --help
 storytype generate --help
 storytype normalize --help
 storytype analyze --help
+storytype completion --help
 ```
 
 ## Next Steps
