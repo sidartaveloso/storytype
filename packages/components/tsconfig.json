@@ -12,5 +12,5 @@
     "types": ["vite/client", "node"]
   },
   "include": ["src/**/*", "test/**/*"],
-  "exclude": ["src/**/*.spec.ts", "node_modules", "dist", "dist-storybook"]
+  "exclude": ["src/**/*.spec.ts", "src/**/*.stories.ts", "node_modules", "dist", "dist-storybook"]
 }
