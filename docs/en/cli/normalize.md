@@ -20,7 +20,7 @@ storytype normalize [path] [options]
 `--dirs-only` and `--files-only` are opposites. Passing both is refused with an error instead of producing a run that does nothing:
 
 ```
-✗ --dirs-only e --files-only sao opostos: escolha um.
+error: option '--dirs-only' cannot be used with option '--files-only'
 ```
 
 ## What Normalize Does
