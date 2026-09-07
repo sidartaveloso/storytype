@@ -1,6 +1,6 @@
 # Task 010 - autocomplete de shell para o CLI
 
-Status: pending
+Status: done
 Type: feat
 Assignee: sidartaveloso
 
@@ -21,12 +21,12 @@ Levantado em 2026-09-06, sobre `packages/cli`.
 
 ### O que existe para completar
 
-| comando | argumentos | flags |
-| --- | --- | --- |
-| `generate` (alias `g`) | `<type> <name>` | `-p, --path <path>` |
-| `normalize` | `[path]` | `-d, --dry-run`, `--dirs-only`, `--files-only`, `-v, --verbose` |
-| `analyze` | `[path]` | `-v, --verbose` |
-| raiz | — | `-V, --version`, `-h, --help` |
+| comando                | argumentos      | flags                                                           |
+| ---------------------- | --------------- | --------------------------------------------------------------- |
+| `generate` (alias `g`) | `<type> <name>` | `-p, --path <path>`                                             |
+| `normalize`            | `[path]`        | `-d, --dry-run`, `--dirs-only`, `--files-only`, `-v, --verbose` |
+| `analyze`              | `[path]`        | `-v, --verbose`                                                 |
+| raiz                   | —               | `-V, --version`, `-h, --help`                                   |
 
 ### O que só o CLI sabe, e valeria completar
 
@@ -92,17 +92,17 @@ Nenhuma. Não introduz dependência de runtime.
 
 ## Critérios de Aceitação
 
-- [ ] `storytype completion bash|zsh|fish` imprime script válido para o shell
+- [x] `storytype completion bash|zsh|fish` imprime script válido para o shell
       (`bash -n`, `zsh -n`, `fish -n` sem erro)
-- [ ] Tab depois de `storytype ` oferece `generate`, `g`, `normalize`, `analyze`,
+- [x] Tab depois de `storytype ` oferece `generate`, `g`, `normalize`, `analyze`,
       `completion`
-- [ ] Tab depois de `storytype normalize --` oferece `--dry-run`, `--dirs-only`,
+- [x] Tab depois de `storytype normalize --` oferece `--dry-run`, `--dirs-only`,
       `--files-only`, `--verbose`; com `--dirs-only` já na linha, não oferece
       `--files-only`
-- [ ] Tab depois de `storytype generate ` oferece os 18 aliases de nível
-- [ ] Adicionar uma flag a um comando no `cli.ts` faz ela aparecer no completion
+- [x] Tab depois de `storytype generate ` oferece os 18 aliases de nível
+- [x] Adicionar uma flag a um comando no `cli.ts` faz ela aparecer no completion
       sem outra edição — teste que gera o script e procura a flag nova
-- [ ] `pnpm test`, `pnpm lint`, `pnpm typecheck` e `pnpm build` limpos
+- [x] `pnpm test`, `pnpm lint`, `pnpm typecheck` e `pnpm build` limpos
 
 ## Observações
 
@@ -114,3 +114,44 @@ separado, pulado quando o shell não existe na máquina.
 A saída do `completion` deve ir só para stdout, sem o spinner do `ora` nem cor
 do `chalk` — é texto para o `eval`, e qualquer byte a mais quebra o shell do
 usuário no login.
+
+## Data de Conclusão
+
+2026-09-07
+
+## Resultado
+
+`storytype completion <bash|zsh|fish>` imprime o script do shell pedido, só em
+stdout e sem cor. O script é renderizado em `packages/cli/src/completion/` a
+partir do `program` do commander: comandos e aliases via `visibleCommands` (o
+`help` implícito entra junto), flags via `visibleOptions`, argumentos via
+`registeredArguments`, e a exclusão mútua via `Option.conflicts()` — que passou
+a ser a forma de declarar `--dirs-only`/`--files-only` como opostos, no lugar da
+checagem manual dentro da action. Com isso o próprio commander recusa o par
+antes de rodar, com a mensagem dele (`error: option '--dirs-only' cannot be used
+with option '--files-only'`), e as páginas de docs do normalize mostram essa
+mensagem.
+
+O que o commander não sabe — como se parece o valor de um argumento — fica em
+uma regra por nome do valor: `<type>` completa com `ATOMIC_LEVEL_ALIASES`,
+`<path>`/`[path]` com diretórios, `[command]` com os nomes de comando, e um
+argumento com `.choices()` (o `<shell>` do próprio completion) com as choices.
+
+Para isso a montagem do `program` saiu de `cli.ts` para `program.ts`
+(`createProgram()`), e `cli.ts` ficou só com o `parse()`. Os testes importam
+`createProgram()` sem executar nada.
+
+Cobertura: `Completion.spec.ts` percorre o programa real e afirma que cada
+comando, alias, flag (longa e curta) e os 18 aliases de nível estão nos três
+scripts; adiciona uma flag a um programa novo e afirma que ela aparece;
+valida `bash -n`, `zsh -n`, `fish -n` (pulado quando o shell não existe) e
+exercita a função bash com `COMP_WORDS` simulado — inclusive que `--files-only`
+some com `--dirs-only` na linha e que `[path]` oferece só diretórios.
+`program.spec.ts` afirma que `completion` escreve uma única vez em stdout e nada
+em `console.log`, que shell desconhecido é recusado e que o par de flags opostas
+é recusado antes da action.
+
+Docs: seção de autocomplete em `docs/*/cli/index.md` (pt-br e en) e no README do
+pacote, com a ativação por perfil em cada shell. fish não foi exercitado nesta
+máquina (não instalado); o script segue `complete -c` com `-n` por comando e
+funções auxiliares para posição do argumento.
