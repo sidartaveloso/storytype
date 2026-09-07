@@ -30,3 +30,10 @@ export { default as NewPassword } from './components/molecules/new-password/NewP
 export * from './components/molecules/new-password/NewPassword.types';
 export { default as RadioList } from './components/molecules/radio-list/RadioList.vue';
 export * from './components/molecules/radio-list/RadioList.types';
+
+// --- Templates ---
+export { default as PrintSheet } from './components/templates/print-sheet/PrintSheet.vue';
+export * from './components/templates/print-sheet/PrintSheet.types';
+
+// --- Utils ---
+export * from './utils/print-geometry';

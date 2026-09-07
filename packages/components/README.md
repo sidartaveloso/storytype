@@ -29,11 +29,39 @@ Way of the figures:
 import { Button } from '@storytype/components';
 ```
 
-Layer-scoped imports:
+Layer-scoped imports (one entry per component folder, kebab-case):
 
 ```ts
-import Avatar from '@storytype/components/atoms/Avatar';
+import Avatar from '@storytype/components/atoms/avatar';
+import PrintSheet from '@storytype/components/templates/print-sheet';
+import '@storytype/components/styles';
 ```
+
+## Utilities
+
+Pure TypeScript, no Vue — usable from a server rendering static HTML as well
+as from a Vue page.
+
+### `utils/print-geometry`
+
+The arithmetic of putting N physical items on a sheet for a print shop:
+`PAPERS` (`a4`, `a3`) and `resolvePaper('100x150')`, `computeSheetGrid(paper,
+cell, maxColumns?)` (how many cells of art + bleed + frame fit — throws when
+none does), `paginate(items, perPage)`, `pageRuleCss(paper)` (the literal
+`@page` rule), `cropMarksCss(cell)` / `cropMarksHtml()` (marks on the cut line,
+outside the bleed), `sheetPageCss(paper)` and `sheetGridCss(paper, cell, grid)`.
+
+```ts
+import { PAPERS, computeSheetGrid, paginate } from '@storytype/components/utils/print-geometry';
+
+const sticker = { widthMm: 70, heightMm: 100, bleedMm: 3, frameMm: 4 };
+const grid = computeSheetGrid(PAPERS.a4, sticker); // 2×2, 84×114mm cells
+const pages = paginate(items, grid.perPage);
+```
+
+The `PrintSheet` template (`templates/print-sheet`) is the Vue face of the same
+geometry: a sheet in mm with margin, bleed and crop marks `'inside'` or
+`'outside'` the bleed.
 
 ## Standard
 

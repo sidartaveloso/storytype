@@ -15,7 +15,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@storytype/components': resolve(__dirname, 'src/index.ts'),
+      '@storytype/components': resolve(import.meta.dirname, 'src/index.ts'),
       quasar: 'quasar/dist/quasar.client.js',
     },
   },
