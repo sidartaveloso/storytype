@@ -38,23 +38,32 @@
       "import": "./dist/index.js"
     },
     "./atoms/*": {
-      "types": "./dist/atoms/*/index.d.ts",
-      "import": "./dist/atoms/*/index.js"
+      "types": "./dist/components/atoms/*/index.d.ts",
+      "import": "./dist/components/atoms/*/index.js"
     },
     "./molecules/*": {
-      "types": "./dist/molecules/*/index.d.ts",
-      "import": "./dist/molecules/*/index.js"
+      "types": "./dist/components/molecules/*/index.d.ts",
+      "import": "./dist/components/molecules/*/index.js"
     },
     "./organisms/*": {
-      "types": "./dist/organisms/*/index.d.ts",
-      "import": "./dist/organisms/*/index.js"
+      "types": "./dist/components/organisms/*/index.d.ts",
+      "import": "./dist/components/organisms/*/index.js"
     },
     "./templates/*": {
-      "types": "./dist/templates/*/index.d.ts",
-      "import": "./dist/templates/*/index.js"
+      "types": "./dist/components/templates/*/index.d.ts",
+      "import": "./dist/components/templates/*/index.js"
+    },
+    "./pages/*": {
+      "types": "./dist/components/pages/*/index.d.ts",
+      "import": "./dist/components/pages/*/index.js"
+    },
+    "./utils/*": {
+      "types": "./dist/utils/*/index.d.ts",
+      "import": "./dist/utils/*/index.js"
     },
     "./styles": {
-      "import": "./dist/styles.css"
+      "import": "./dist/styles.css",
+      "default": "./dist/styles.css"
     }
   },
   "files": [
@@ -106,5 +115,8 @@
     "vitest": "^4.1.11",
     "vue": "^3.5.39",
     "vue-tsc": "^3.3.9"
-  }
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
 }

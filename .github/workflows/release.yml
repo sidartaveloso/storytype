@@ -7,6 +7,7 @@ on:
     paths:
       - 'packages/cli/**'
       - 'packages/storytype/**'
+      - 'packages/components/**'
       - '.github/workflows/release.yml'
       - '.releaserc.json'
   workflow_dispatch:
@@ -67,6 +68,15 @@ jobs:
 
       - name: Run tests
         run: pnpm --filter @storytype/cli test
+
+      - name: Build components package
+        run: pnpm --filter @storytype/components build
+
+      # Unit specs only. The story gate (`test:stories`) drives a real browser
+      # through Playwright; it stays a local/PR gate until the workflow installs
+      # a browser.
+      - name: Run components unit tests
+        run: pnpm --filter @storytype/components exec vitest run
 
       - name: Semantic Release
         env:
