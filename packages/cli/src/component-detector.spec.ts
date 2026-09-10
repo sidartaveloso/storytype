@@ -80,9 +80,39 @@ describe('component-detector - isComponentEntry', () => {
     expect(isComponentEntry('/project/src/Utils.ts')).toBe(false);
   });
 
-  it('accepts a .ts in a folder named after it', () => {
+  it('accepts a PascalCase .ts in the folder named after it', () => {
     expect(isComponentEntry('/src/taskin-effect-hearts/TaskinEffectHearts.ts')).toBe(true);
-    expect(isComponentEntry('/src/my-component/my-component.ts')).toBe(true);
+  });
+
+  it('accepts a kebab-case .ts named after its folder inside the component tree', () => {
+    // The shape task-008 exists for: a component written as a render function,
+    // named kebab-case, which `normalize` has to see in order to fix
+    expect(
+      isComponentEntry('/src/components/molecules/taskin-effect-hearts/taskin-effect-hearts.ts')
+    ).toBe(true);
+    expect(isComponentEntry('/src/molecules/taskin-effect-hearts/taskin-effect-hearts.ts')).toBe(
+      true
+    );
+    expect(isComponentEntry('/src/views/user-card/user-card.ts')).toBe(true);
+  });
+
+  it('rejects a kebab-case .ts named after its folder outside the component tree', () => {
+    // A util, service, composable or store has exactly this shape, and the
+    // standard keeps it kebab-case in folder *and* file
+    expect(isComponentEntry('/src/utils/sheet-css/sheet-css.ts')).toBe(false);
+    expect(isComponentEntry('/src/services/print-queue/print-queue.ts')).toBe(false);
+    expect(isComponentEntry('/src/stores/user-session/user-session.ts')).toBe(false);
+  });
+
+  it('rejects a module inside a package that is itself named components', () => {
+    // The package name is not the component tree: only the folder the module
+    // sits directly in decides
+    expect(
+      isComponentEntry('/packages/components/src/utils/print-geometry/print-geometry.ts')
+    ).toBe(false);
+    expect(
+      isComponentEntry('/packages/components/src/components/molecules/card-action/card-action.ts')
+    ).toBe(true);
   });
 
   it('rejects a loose .ts that only happens to sit in a directory', () => {
@@ -101,6 +131,67 @@ describe('component-detector - isComponentEntry', () => {
   it('rejects a helper .ts living beside a component', () => {
     expect(isComponentEntry('/src/atoms/taskin-arms/TaskinArms.ts')).toBe(true);
     expect(isComponentEntry('/src/atoms/taskin-arms/helpers.ts')).toBe(false);
+  });
+});
+
+describe('component-detector - isComponentEntry, UI evidence on disk', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storytype-entry-'));
+  });
+
+  afterEach(async () => {
+    await fs.remove(tempDir);
+  });
+
+  it('accepts a kebab-case .ts outside the component tree when a story sits beside it', async () => {
+    // A flat design system with no `components/` directory: the story is the
+    // evidence, since no util has one
+    const dir = path.join(tempDir, 'progress-bar');
+    await fs.ensureDir(dir);
+    await fs.writeFile(path.join(dir, 'progress-bar.ts'), 'export default {};');
+    await fs.writeFile(path.join(dir, 'progress-bar.stories.ts'), 'export default {};');
+
+    expect(isComponentEntry(path.join(dir, 'progress-bar.ts'))).toBe(true);
+  });
+
+  it('accepts a kebab-case .ts outside the component tree when a .vue sits beside it', async () => {
+    const dir = path.join(tempDir, 'user-card');
+    await fs.ensureDir(dir);
+    await fs.writeFile(path.join(dir, 'user-card.ts'), 'export default {};');
+    await fs.writeFile(path.join(dir, 'user-card.vue'), '<template />');
+
+    expect(isComponentEntry(path.join(dir, 'user-card.ts'))).toBe(true);
+  });
+
+  it('rejects a module whose only companions are a barrel, types and a test', async () => {
+    // The full module set of the standard — none of it is UI
+    const dir = path.join(tempDir, 'sheet-css');
+    await fs.ensureDir(dir);
+    await fs.writeFile(path.join(dir, 'sheet-css.ts'), 'export const css = "";');
+    await fs.writeFile(path.join(dir, 'sheet-css.types.ts'), 'export interface Css {}');
+    await fs.writeFile(path.join(dir, 'sheet-css.spec.ts'), 'it("works", () => {});');
+    await fs.writeFile(path.join(dir, 'index.ts'), "export * from './sheet-css';");
+
+    expect(isComponentEntry(path.join(dir, 'sheet-css.ts'))).toBe(false);
+    expect(detectComponents(tempDir)).toEqual([]);
+  });
+
+  it('leaves a module folder untouched while normalizing the component beside it', async () => {
+    const util = path.join(tempDir, 'src', 'utils', 'sheet-css');
+    await fs.ensureDir(util);
+    await fs.writeFile(path.join(util, 'sheet-css.ts'), 'export const css = "";');
+    await fs.writeFile(path.join(util, 'index.ts'), "export * from './sheet-css';");
+
+    const component = path.join(tempDir, 'src', 'components', 'atoms', 'print-sheet');
+    await fs.ensureDir(component);
+    await fs.writeFile(path.join(component, 'print-sheet.ts'), 'export default {};');
+
+    const components = detectComponents(tempDir);
+
+    expect(components.map(c => c.name)).toEqual(['PrintSheet']);
+    expect(components[0].files.map(f => f.targetName)).toEqual(['PrintSheet.ts']);
   });
 });
 
