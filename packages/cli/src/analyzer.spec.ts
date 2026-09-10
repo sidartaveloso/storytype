@@ -650,6 +650,63 @@ const count = ref<number>(0);
       expect(storiesItem!.fileIssues ?? []).toHaveLength(0);
     });
 
+    it('should NOT count a plain module folder as a component', async () => {
+      // Um util segue o mesmo formato de um componente — pasta kebab-case com
+      // o arquivo de mesmo nome — mas fora da árvore de UI. Contá-lo penaliza
+      // o projeto por não ter story, teste e PascalCase que ele não deve ter.
+      const projectPath = path.join(tempDir, 'project-with-plain-modules');
+      const componentDir = path.join(projectPath, 'src', 'components', 'atoms', 'Button');
+      const utilDir = path.join(projectPath, 'src', 'utils', 'sheet-css');
+      await fs.ensureDir(componentDir);
+      await fs.ensureDir(utilDir);
+
+      await fs.writeFile(
+        path.join(projectPath, 'tsconfig.json'),
+        JSON.stringify({ compilerOptions: { strict: true } }, null, 2)
+      );
+
+      await fs.writeFile(
+        path.join(componentDir, 'Button.vue'),
+        `<template>
+  <button>Click me</button>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+const count = ref<number>(0);
+</script>`
+      );
+      await fs.writeFile(
+        path.join(componentDir, 'Button.spec.ts'),
+        `import { describe, it } from 'vitest'; describe('Button', () => { it('works', () => {}); });`
+      );
+      await fs.writeFile(
+        path.join(componentDir, 'Button.stories.ts'),
+        `export default { title: 'Button' };`
+      );
+
+      // Módulo comum, no formato do padrão de módulos
+      await fs.writeFile(path.join(utilDir, 'sheet-css.ts'), `export const css = '';`);
+      await fs.writeFile(path.join(utilDir, 'sheet-css.types.ts'), `export interface Css {}`);
+      await fs.writeFile(path.join(utilDir, 'index.ts'), `export * from './sheet-css';`);
+
+      const result = await analyzeProject(projectPath);
+
+      const testsCategory = result.categories.find(c => c.name === 'Testes e Stories');
+      const testsItem = testsCategory!.items.find(i => i.name === 'Cobertura de testes');
+      expect(testsItem!.message).toContain('1/1');
+      expect(testsItem!.fileIssues ?? []).toHaveLength(0);
+
+      const storiesItem = testsCategory!.items.find(i => i.name === 'Cobertura de stories');
+      expect(storiesItem!.message).toContain('1/1');
+
+      // E o util não é apontado como fora do padrão de nomes
+      const namingCategory = result.categories.find(c => c.name === 'Nomenclatura');
+      const pascalItem = namingCategory!.items.find(i => i.name === 'Convenção PascalCase');
+      expect(pascalItem!.message).toContain('1/1');
+      expect(pascalItem!.fileIssues ?? []).toHaveLength(0);
+    });
+
     it('should score medium when only some .vue files use lang="ts"', async () => {
       // Setup: Create project with mixed TypeScript usage
       const projectPath = path.join(tempDir, 'project-mixed-ts');

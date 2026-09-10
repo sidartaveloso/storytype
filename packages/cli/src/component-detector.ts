@@ -16,6 +16,14 @@ export const BARREL_FILES = ['index.ts', 'index.tsx', 'index.js', 'index.jsx'] a
 export const DECLARATION_PATTERNS = ['.d.ts', '.d.tsx', '.d.mts', '.d.cts'] as const;
 
 /**
+ * Directory names a project keeps its components directly under. Together with
+ * the Atomic Design levels they mark the UI part of a tree, which is what tells
+ * a kebab-case component apart from a kebab-case util. Kept in step with the
+ * conventional locations `findComponentsDirectory` looks for.
+ */
+export const COMPONENT_DIRECTORIES = ['components', 'views'] as const;
+
+/**
  * Directories that never hold source components: dependency trees and build
  * output. Walking them yields false positives — a built `dist` looks like a
  * component tree. Dotted directories are skipped by the rule itself, so
@@ -57,6 +65,12 @@ export const COMPONENT_FILE_ROLE_KEYS: readonly ComponentFileRole[] = Object.key
 export const TEST_PATTERNS = COMPONENT_FILE_ROLES.test;
 
 export const STORY_PATTERNS = COMPONENT_FILE_ROLES.stories;
+
+/**
+ * Suffixes a file carries only when it belongs to a UI component. A util has
+ * types, a test and a mock; it never has a story or an SFC.
+ */
+const UI_SIBLING_SUFFIXES: readonly string[] = [...COMPONENT_FILE_ROLES.stories, '.vue'];
 
 /**
  * Suffixes of files that belong to a component without being the component:
@@ -167,11 +181,19 @@ export function isComponentFile(fileName: string): boolean {
 /**
  * Check if a file is a component entry, taking its location into account.
  *
- * `.vue` and `.tsx` speak for themselves. A plain `.ts` is ambiguous: it is a
- * component when the folder is named after it, or when it is PascalCase inside
- * an Atomic Design tree — the naming convention for components. Anything else
- * is a script, so `vite.config.ts` and `helpers.ts` are left alone instead of
- * being normalized into components.
+ * `.vue` and `.tsx` speak for themselves. A plain `.ts` is ambiguous, and the
+ * two halves of the convention disambiguate it differently:
+ *
+ * - **PascalCase** is the component naming convention and nothing else uses
+ *   it — a class, service, composable, util or store is kebab-case in folder
+ *   *and* file. So the name alone settles it, as long as the file is the entry
+ *   of its own folder or sits loose in an Atomic Design level.
+ * - **kebab-case named after its folder** is the shape of *every* module of the
+ *   standard, UI or not, so the name says nothing. Only the location does:
+ *   inside the component tree, or beside a `.vue`/story of the same module.
+ *
+ * Anything else is a script, so `vite.config.ts` and `helpers.ts` are left
+ * alone instead of being normalized into components.
  */
 export function isComponentEntry(filePath: string): boolean {
   const fileName = path.basename(filePath);
@@ -181,10 +203,52 @@ export function isComponentEntry(filePath: string): boolean {
 
   const dirPath = path.dirname(filePath);
   const baseName = getComponentBaseName(fileName);
+  const namesItsFolder = toKebabCase(baseName) === toKebabCase(path.basename(dirPath));
 
-  if (toKebabCase(baseName) === toKebabCase(path.basename(dirPath))) return true;
+  if (isPascalCase(baseName)) return namesItsFolder || findAtomicLevel(dirPath) !== null;
 
-  return isPascalCase(baseName) && findAtomicLevel(dirPath) !== null;
+  return namesItsFolder && (isInComponentTree(dirPath) || hasUiSibling(dirPath, baseName));
+}
+
+/**
+ * Whether a component's own folder sits in the UI part of the tree — directly
+ * inside an Atomic Design level, or directly inside a components directory.
+ *
+ * Directly is what makes the test useful: the component tree is levels and
+ * component folders and nothing else, so a `src/utils/` inside a package that
+ * happens to be *named* `components` stays outside it. Testing any ancestor
+ * instead would swallow that whole package.
+ */
+function isInComponentTree(dirPath: string): boolean {
+  const parent = path.basename(path.dirname(dirPath));
+
+  return (
+    isAtomicLevel(parent) ||
+    (COMPONENT_DIRECTORIES as readonly string[]).includes(parent.toLowerCase())
+  );
+}
+
+/**
+ * Whether the directory holds a file only a UI component has — a `.vue` or a
+ * story — for the module named `baseName`.
+ *
+ * This is what keeps a flat design system working: a package with no
+ * `components/` directory and no Atomic Design levels still says which of its
+ * kebab-case modules are components, by the stories next to them.
+ */
+function hasUiSibling(dirPath: string, baseName: string): boolean {
+  try {
+    return fs
+      .readdirSync(dirPath)
+      .some(
+        name =>
+          getComponentBaseName(name) === baseName &&
+          UI_SIBLING_SUFFIXES.some(suffix => name.endsWith(suffix))
+      );
+  } catch {
+    // The path need not exist: callers classify names as well as files
+    return false;
+  }
 }
 
 /**

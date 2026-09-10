@@ -17,8 +17,8 @@ storytype analyze [path] [options]
 
 ### Options
 
-| Option          | Description                                        | Default |
-| --------------- | -------------------------------------------------- | ------- |
+| Option          | Description                                         | Default |
+| --------------- | --------------------------------------------------- | ------- |
 | `-v, --verbose` | Lists the problems per file and how to fix each one | `false` |
 
 > **Monorepo support:** `analyze` first looks for the conventional directories (`src/components`, `components`, `src/views`, `app/components`). If none exists, it scans the project for components and uses the root — works with TurboRepo, Nx, pnpm workspaces and any layout.
@@ -27,23 +27,26 @@ storytype analyze [path] [options]
 
 The result is a **score from 0 to 135**, across five categories:
 
-| Category                 | Points | What it checks                                                                  |
-| ------------------------ | ------ | ------------------------------------------------------------------------------- |
-| Atomic Design structure  | 50     | components directory, levels present (5 × 5 pts), overall organisation          |
-| TypeScript               | 30     | `tsconfig.json`, components in TypeScript, `.types.ts` files                    |
-| Tests and Stories        | 30     | `.spec.ts`/`.test.ts` and `.stories.ts` coverage (target: 70%+)                 |
-| Naming                   | 15     | files in `PascalCase` and **components in a folder of their own**               |
-| Documentation            | 10     | `README.md` and a documentation directory                                       |
+| Category                | Points | What it checks                                                         |
+| ----------------------- | ------ | ---------------------------------------------------------------------- |
+| Atomic Design structure | 50     | components directory, levels present (5 × 5 pts), overall organisation |
+| TypeScript              | 30     | `tsconfig.json`, components in TypeScript, `.types.ts` files           |
+| Tests and Stories       | 30     | `.spec.ts`/`.test.ts` and `.stories.ts` coverage (target: 70%+)        |
+| Naming                  | 15     | files in `PascalCase` and **components in a folder of their own**      |
+| Documentation           | 10     | `README.md` and a documentation directory                              |
 
 Atomic Design levels are recognised in English and in Portuguese — `atoms` or `atomos`, `molecules` or `moleculas`, `organisms` or `organismos`, `templates`, `pages` or `paginas`. A project holding both spellings of the same level counts it once, not twice.
 
 ### What counts as a component
 
 - `.vue` and `.tsx` anywhere
-- a `.ts` only when the folder is named after it (`taskin-effect-hearts/TaskinEffectHearts.ts`) or when it is PascalCase inside the Atomic Design tree
+- a **PascalCase** `.ts` when the folder is named after it (`taskin-effect-hearts/TaskinEffectHearts.ts`) or when it sits loose in an Atomic Design level (`atoms/Badge.ts`)
+- a **kebab-case** `.ts` named after its folder (`taskin-effect-hearts/taskin-effect-hearts.ts`) only when its folder sits directly inside an Atomic Design level or a components directory (`components`, `views`), or when a `.vue`/`.stories.ts` of the same name sits beside it
 - never: `.d.ts`, tests, stories, `.types.ts`, `.mock.ts`, `.controller.ts` and `index.ts` — those are files **of** a component
 
 That is why `vite.config.ts` and `helpers.ts` are not counted, and `index.ts` is not reported as a "component without tests".
+
+And that is why a plain module is not penalised for not being a component: `src/utils/sheet-css/sheet-css.ts` has the same shape as a component — kebab-case folder, file of the same name — but sits outside the UI tree, so it is not counted and never shows up as "without tests", "without stories" or "not PascalCase". A class, service, composable, util or store is kebab-case in the folder **and** the file.
 
 ### "Organização por pastas" (folder organisation)
 
