@@ -1,3 +1,18 @@
+# [0.4.0](https://github.com/sidartaveloso/storytype/compare/v0.3.1...v0.4.0) (2026-09-10)
+
+
+### Bug Fixes
+
+* **ci:** deploy do site le as versoes do .tool-versions ([9d6be01](https://github.com/sidartaveloso/storytype/commit/9d6be016f7f2e16a7ada8862a708aac26d941b2a))
+* **cli:** so trata como componente o que a arvore de UI confirma ([9d2fd17](https://github.com/sidartaveloso/storytype/commit/9d2fd17a3628c2f250f92cfa83d7ca8600e52a5a))
+* **deps:** close the audit — overrides for transitive advisories, and old targets pinned to their major ([575af27](https://github.com/sidartaveloso/storytype/commit/575af278ca5d5c8a7dd7deda5f063fda32f5cacd))
+
+
+### Features
+
+* **cli:** autocomplete de shell derivado do proprio commander ([f83df68](https://github.com/sidartaveloso/storytype/commit/f83df68b2f55408fc281df24aeb9460e13da7223))
+* **components:** print geometry utils and PrintSheet template (task-011) ([c79a6f8](https://github.com/sidartaveloso/storytype/commit/c79a6f81adfed3cb8af0b235d49161b9610ccd71))
+
 ## [0.3.1](https://github.com/sidartaveloso/storytype/compare/v0.3.0...v0.3.1) (2026-09-06)
 
 
