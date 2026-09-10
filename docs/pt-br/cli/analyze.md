@@ -17,8 +17,8 @@ storytype analyze [caminho] [opções]
 
 ### Opções
 
-| Opção           | Descrição                                          | Padrão  |
-| --------------- | -------------------------------------------------- | ------- |
+| Opção           | Descrição                                              | Padrão  |
+| --------------- | ------------------------------------------------------ | ------- |
 | `-v, --verbose` | Lista os problemas por arquivo e como corrigir cada um | `false` |
 
 > **Suporte a monorepo:** o `analyze` procura primeiro os diretórios convencionais (`src/components`, `components`, `src/views`, `app/components`). Se nenhum existir, varre o projeto por componentes e usa a raiz — funciona com TurboRepo, Nx, pnpm workspaces e qualquer estrutura.
@@ -27,23 +27,26 @@ storytype analyze [caminho] [opções]
 
 O resultado é um **score de 0 a 135**, em cinco categorias:
 
-| Categoria                  | Pontos | O que verifica                                                                    |
-| -------------------------- | ------ | --------------------------------------------------------------------------------- |
-| Estrutura Atomic Design    | 50     | diretório de componentes, níveis presentes (5 × 5 pts), organização geral         |
-| TypeScript                 | 30     | `tsconfig.json`, componentes em TypeScript, arquivos `.types.ts`                  |
-| Testes e Stories           | 30     | cobertura de `.spec.ts`/`.test.ts` e de `.stories.ts` (meta: 70%+)                |
-| Nomenclatura               | 15     | arquivos em `PascalCase` e **componentes em pasta própria**                       |
-| Documentação               | 10     | `README.md` e diretório de documentação                                           |
+| Categoria               | Pontos | O que verifica                                                            |
+| ----------------------- | ------ | ------------------------------------------------------------------------- |
+| Estrutura Atomic Design | 50     | diretório de componentes, níveis presentes (5 × 5 pts), organização geral |
+| TypeScript              | 30     | `tsconfig.json`, componentes em TypeScript, arquivos `.types.ts`          |
+| Testes e Stories        | 30     | cobertura de `.spec.ts`/`.test.ts` e de `.stories.ts` (meta: 70%+)        |
+| Nomenclatura            | 15     | arquivos em `PascalCase` e **componentes em pasta própria**               |
+| Documentação            | 10     | `README.md` e diretório de documentação                                   |
 
 Os níveis Atomic Design são reconhecidos em inglês e em português — `atoms` ou `atomos`, `molecules` ou `moleculas`, `organisms` ou `organismos`, `templates`, `pages` ou `paginas`. Um projeto que tem os dois nomes para o mesmo nível conta um, não dois.
 
 ### O que conta como componente
 
 - `.vue` e `.tsx` em qualquer lugar
-- um `.ts` só quando a pasta tem o nome dele (`taskin-effect-hearts/TaskinEffectHearts.ts`) ou quando é PascalCase dentro da árvore Atomic Design
+- um `.ts` **PascalCase** quando a pasta tem o nome dele (`taskin-effect-hearts/TaskinEffectHearts.ts`) ou quando está solto num nível Atomic Design (`atoms/Badge.ts`)
+- um `.ts` **kebab-case** com o nome da pasta (`taskin-effect-hearts/taskin-effect-hearts.ts`) só quando a pasta dele está direto dentro de um nível Atomic Design ou de um diretório de componentes (`components`, `views`), ou quando há um `.vue`/`.stories.ts` de mesmo nome ao lado
 - nunca: `.d.ts`, testes, stories, `.types.ts`, `.mock.ts`, `.controller.ts` e `index.ts` — esses são arquivos **de** um componente
 
 Por isso `vite.config.ts` e `helpers.ts` não entram na conta, e `index.ts` não é apontado como "componente sem teste".
+
+E por isso um módulo comum não é penalizado por não ser componente: `src/utils/sheet-css/sheet-css.ts` tem a mesma forma de um componente — pasta kebab-case, arquivo de mesmo nome — mas está fora da árvore de UI, então não conta e não aparece como "sem teste", "sem story" ou "fora do PascalCase". Classe, serviço, composable, util e store são kebab-case na pasta **e** no arquivo.
 
 ### "Organização por pastas"
 

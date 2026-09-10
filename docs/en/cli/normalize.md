@@ -10,12 +10,12 @@ storytype normalize [path] [options]
 
 ## Options
 
-| Option            | Description                                     | Default |
-| ----------------- | ----------------------------------------------- | ------- |
-| `-d, --dry-run`   | Shows the changes without executing them        | `false` |
-| `--dirs-only`     | Only moves and renames directories              | `false` |
-| `--files-only`    | Only renames files and creates the missing ones | `false` |
-| `-v, --verbose`   | Detailed output                                 | `false` |
+| Option          | Description                                     | Default |
+| --------------- | ----------------------------------------------- | ------- |
+| `-d, --dry-run` | Shows the changes without executing them        | `false` |
+| `--dirs-only`   | Only moves and renames directories              | `false` |
+| `--files-only`  | Only renames files and creates the missing ones | `false` |
+| `-v, --verbose` | Detailed output                                 | `false` |
 
 `--dirs-only` and `--files-only` are opposites. Passing both is refused with an error instead of producing a run that does nothing:
 
@@ -107,13 +107,13 @@ If the target folder **already exists**, the component is not moved. It is repor
 
 A component's canonical file set is defined in one place in the CLI, and both `generate` and `normalize` read it. On a component that **already exists**, `normalize` completes only what is useful as a stub:
 
-| File                        | Created by `normalize` |
-| --------------------------- | ---------------------- |
-| `index.ts`                  | ✅                     |
-| `ComponentName.types.ts`    | ✅                     |
-| `ComponentName.spec.ts`     | ✅                     |
-| `ComponentName.stories.ts`  | —                      |
-| `ComponentName.mock.ts`     | —                      |
+| File                       | Created by `normalize` |
+| -------------------------- | ---------------------- |
+| `index.ts`                 | ✅                     |
+| `ComponentName.types.ts`   | ✅                     |
+| `ComponentName.spec.ts`    | ✅                     |
+| `ComponentName.stories.ts` | —                      |
+| `ComponentName.mock.ts`    | —                      |
 
 A story and a mock need the component's real props to be worth anything, so they are left for a person — `analyze` reports them. Existing alternative spellings are honoured: a `.test.ts` counts as the test, an `index.js` counts as the barrel.
 
@@ -158,7 +158,10 @@ The written form is preserved: an omitted extension stays omitted, a directory i
 ### How `normalize` decides what is a component
 
 - `.vue` and `.tsx` are components anywhere.
-- A `.ts` counts only when the folder is named after it (`taskin-effect-hearts/TaskinEffectHearts.ts`) or when it is PascalCase inside the Atomic Design tree. So `vite.config.ts`, `helpers.ts` and `Taskin.controller.ts` are left alone.
+- A **PascalCase** `.ts` counts when the folder is named after it (`taskin-effect-hearts/TaskinEffectHearts.ts`) or when it sits loose in an Atomic Design level (`atoms/Badge.ts`). PascalCase is the component convention and nothing else uses it: a class, service, composable, util or store is kebab-case in the folder **and** the file.
+- A **kebab-case** `.ts` named after its folder (`taskin-effect-hearts/taskin-effect-hearts.ts`) has the shape of any module, UI or not, so the name does not decide — the location does. It counts only when its folder sits directly inside an Atomic Design level or a components directory (`components`, `views`), or when a `.vue`/`.stories.ts` of the same name sits beside it.
+- So `src/utils/sheet-css/sheet-css.ts` is left alone, and stays left alone inside a package that is itself named `components/` — only the folder the module sits directly in counts, not the whole path.
+- `vite.config.ts`, `helpers.ts` and `Taskin.controller.ts` are left alone too.
 - `.d.ts`, tests, stories, types, mocks, controllers and barrels are never the component — they are files **of** one.
 - `node_modules`, `dist`, `coverage`, `storybook-static`, `build`, `out` and dotted directories are not scanned.
 
