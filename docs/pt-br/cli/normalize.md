@@ -17,12 +17,12 @@ storytype normalize [caminho] [opções]
 
 ### Opções
 
-| Opção             | Descrição                                        | Padrão  |
-| ----------------- | ------------------------------------------------ | ------- |
-| `-d, --dry-run`   | Mostra as mudanças sem executá-las               | `false` |
-| `--dirs-only`     | Só move e renomeia diretórios                    | `false` |
-| `--files-only`    | Só renomeia arquivos e cria os que faltam        | `false` |
-| `-v, --verbose`   | Saída detalhada                                  | `false` |
+| Opção           | Descrição                                 | Padrão  |
+| --------------- | ----------------------------------------- | ------- |
+| `-d, --dry-run` | Mostra as mudanças sem executá-las        | `false` |
+| `--dirs-only`   | Só move e renomeia diretórios             | `false` |
+| `--files-only`  | Só renomeia arquivos e cria os que faltam | `false` |
+| `-v, --verbose` | Saída detalhada                           | `false` |
 
 `--dirs-only` e `--files-only` são opostos. Passar os dois juntos é recusado com erro, em vez de produzir uma rodada que não faz nada:
 
@@ -114,13 +114,13 @@ Se a pasta de destino **já existe**, o componente não é movido. Isso aparece 
 
 O conjunto canônico de um componente é definido em um só lugar no CLI, e `generate` e `normalize` leem dele. Num componente que **já existe**, o `normalize` completa só o que é útil como esqueleto:
 
-| Arquivo                     | Criado pelo `normalize` |
-| --------------------------- | ----------------------- |
-| `index.ts`                  | ✅                      |
-| `ComponentName.types.ts`    | ✅                      |
-| `ComponentName.spec.ts`     | ✅                      |
-| `ComponentName.stories.ts`  | —                       |
-| `ComponentName.mock.ts`     | —                       |
+| Arquivo                    | Criado pelo `normalize` |
+| -------------------------- | ----------------------- |
+| `index.ts`                 | ✅                      |
+| `ComponentName.types.ts`   | ✅                      |
+| `ComponentName.spec.ts`    | ✅                      |
+| `ComponentName.stories.ts` | —                       |
+| `ComponentName.mock.ts`    | —                       |
 
 Story e mock precisam das props reais do componente para valerem algo, então ficam para uma pessoa escrever — o `analyze` aponta a falta. Grafias alternativas já existentes são respeitadas: um `.test.ts` conta como teste, um `index.js` conta como barrel.
 
@@ -165,7 +165,10 @@ A forma escrita é preservada: extensão omitida continua omitida, import de dir
 ### Como o `normalize` decide o que é componente
 
 - `.vue` e `.tsx` são componentes em qualquer lugar.
-- Um `.ts` só conta quando a pasta tem o nome dele (`taskin-effect-hearts/TaskinEffectHearts.ts`) ou quando é PascalCase dentro da árvore Atomic Design. Assim `vite.config.ts`, `helpers.ts` e `Taskin.controller.ts` ficam de fora.
+- Um `.ts` **PascalCase** conta quando a pasta tem o nome dele (`taskin-effect-hearts/TaskinEffectHearts.ts`) ou quando está solto num nível Atomic Design (`atoms/Badge.ts`). PascalCase é convenção de componente e de mais nada: classe, serviço, composable, util e store são kebab-case na pasta **e** no arquivo.
+- Um `.ts` **kebab-case** com o nome da pasta (`taskin-effect-hearts/taskin-effect-hearts.ts`) tem a forma de qualquer módulo, de UI ou não, então o nome não decide — a localização decide. Ele só conta quando a pasta dele está direto dentro de um nível Atomic Design ou de um diretório de componentes (`components`, `views`), ou quando existe um `.vue`/`.stories.ts` de mesmo nome ao lado.
+- Por isso `src/utils/sheet-css/sheet-css.ts` fica de fora, e continua fora mesmo dentro de um pacote chamado `components/` — só a pasta em que o módulo está diretamente conta, não o caminho inteiro.
+- Assim `vite.config.ts`, `helpers.ts` e `Taskin.controller.ts` também ficam de fora.
 - `.d.ts`, testes, stories, tipos, mocks, controllers e barrels nunca são o componente — são arquivos **dele**.
 - `node_modules`, `dist`, `coverage`, `storybook-static`, `build`, `out` e diretórios com ponto não são varridos.
 

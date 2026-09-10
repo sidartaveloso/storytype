@@ -886,7 +886,14 @@ describe('NormalizeComponents - Monorepo Support', () => {
     });
 
     it('should handle full pipeline in monorepo: rename + imports + .ts', async () => {
-      const componentDir = path.join(tempDir, 'packages', 'design-system', 'src', 'my-component');
+      const componentDir = path.join(
+        tempDir,
+        'packages',
+        'design-system',
+        'src',
+        'components',
+        'my-component'
+      );
       await fs.ensureDir(componentDir);
       await fs.writeFile(
         path.join(componentDir, 'my-component.ts'),
@@ -1136,7 +1143,7 @@ describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
   });
 
   it('should detect .ts component without .vue file', async () => {
-    const componentDir = path.join(tempDir, 'taskin-effect-hearts');
+    const componentDir = path.join(tempDir, 'components', 'molecules', 'taskin-effect-hearts');
     await fs.ensureDir(componentDir);
     await fs.writeFile(
       path.join(componentDir, 'taskin-effect-hearts.ts'),
@@ -1185,7 +1192,7 @@ describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
       '<template><div>Vue</div></template>'
     );
 
-    const tsDir = path.join(tempDir, 'ts-component');
+    const tsDir = path.join(tempDir, 'components', 'ts-component');
     await fs.ensureDir(tsDir);
     await fs.writeFile(path.join(tsDir, 'ts-component.ts'), 'export const comp = () => {};');
 
@@ -1201,7 +1208,7 @@ describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
   });
 
   it('should rename .ts file from kebab-case to PascalCase and adjust barrel', async () => {
-    const componentDir = path.join(tempDir, 'my-component');
+    const componentDir = path.join(tempDir, 'components', 'my-component');
     await fs.ensureDir(componentDir);
     await fs.writeFile(path.join(componentDir, 'my-component.ts'), 'export const comp = () => {};');
     await fs.writeFile(path.join(componentDir, 'index.ts'), "export * from './my-component';\n");
@@ -1224,6 +1231,34 @@ describe('NormalizeComponents - TS Component Detection (Phase 2)', () => {
     const indexContent = await fs.readFile(path.join(componentDir, 'index.ts'), 'utf-8');
     expect(indexContent).toContain("'./MyComponent'");
     expect(indexContent).not.toContain("'./my-component'");
+  });
+
+  it('should leave a plain module folder alone while normalizing a component', async () => {
+    // Um util no formato do padrão de módulos: pasta kebab-case, arquivo de
+    // mesmo nome, barrel. Igual a um componente na forma, mas fora da UI.
+    const utilDir = path.join(tempDir, 'src', 'utils', 'sheet-css');
+    await fs.ensureDir(utilDir);
+    await fs.writeFile(path.join(utilDir, 'sheet-css.ts'), "export const css = '';");
+    await fs.writeFile(path.join(utilDir, 'index.ts'), "export * from './sheet-css';\n");
+
+    const componentDir = path.join(tempDir, 'src', 'components', 'atoms', 'print-sheet');
+    await fs.ensureDir(componentDir);
+    await fs.writeFile(path.join(componentDir, 'print-sheet.ts'), 'export default {};');
+    await fs.writeFile(path.join(componentDir, 'index.ts'), "export * from './print-sheet';\n");
+
+    const result = await normalizeComponents({ path: tempDir, dryRun: false });
+
+    expect(result.success).toBe(true);
+    expect(result.components.map(c => c.componentName)).toEqual(['PrintSheet']);
+
+    // O componente foi normalizado
+    expect(await fs.pathExists(path.join(componentDir, 'PrintSheet.ts'))).toBe(true);
+
+    // O util ficou exatamente como estava
+    expect(await fs.pathExists(path.join(utilDir, 'sheet-css.ts'))).toBe(true);
+    expect(await fs.pathExists(path.join(utilDir, 'SheetCss.ts'))).toBe(false);
+    expect(await fs.readdir(utilDir)).toEqual(['index.ts', 'sheet-css.ts']);
+    expect(await fs.readFile(path.join(utilDir, 'index.ts'), 'utf-8')).toContain("'./sheet-css'");
   });
 
   it('should not treat Atomic Design level as component directory', async () => {
