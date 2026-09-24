@@ -662,14 +662,22 @@ function ownedComponent(
   // The directory name drives the kebab-case target, never the file name, so a
   // directory like `srv/` stays `srv/` instead of being widened to `server/`.
   const expectedDirName = toKebabCase(dirName);
+  const name = toPascalCase(getComponentBaseName(entryFile));
+
+  // Owning the folder is not owning every file in it: a `main.ts` beside
+  // `App.vue` in `src/` moves with the folder but is not the component's
+  const isOwnFile = (fileName: string) =>
+    getFileType(fileName) === 'index' || toPascalCase(getComponentBaseName(fileName)) === name;
 
   return {
-    name: toPascalCase(getComponentBaseName(entryFile)),
+    name,
     currentDir: dirPath,
     targetDir:
       dirName === expectedDirName ? dirPath : path.join(path.dirname(dirPath), expectedDirName),
     entryPath: path.join(dirPath, entryFile),
-    files: fileNames.map(fileName => describeFile(dirPath, fileName)),
+    files: fileNames.map(fileName =>
+      isOwnFile(fileName) ? describeFile(dirPath, fileName) : foreignFile(dirPath, fileName)
+    ),
     atomicLevel: findAtomicLevel(dirPath),
     action: dirName === expectedDirName ? 'none' : 'rename',
   };
@@ -681,6 +689,16 @@ function describeFile(dirPath: string, fileName: string): DetectedComponentFile 
     name: fileName,
     targetName: toExpectedFileName(fileName),
     type: getFileType(fileName),
+  };
+}
+
+/** A file that shares a component's folder without belonging to it: kept as is */
+function foreignFile(dirPath: string, fileName: string): DetectedComponentFile {
+  return {
+    path: path.join(dirPath, fileName),
+    name: fileName,
+    targetName: fileName,
+    type: 'other',
   };
 }
 

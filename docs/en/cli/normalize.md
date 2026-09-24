@@ -71,6 +71,8 @@ button/
 
 Suffixes are kept: `.types.ts`, `.spec.ts`, `.stories.ts`, `.mock.ts` and `.controller.ts` follow the component name. `index.ts` is never renamed.
 
+Only the component's own files are renamed — the ones named after it. Anything else in its folder keeps its name: a `main.ts` beside `App.vue` in `src/` is the app's entry point, loaded by name from `index.html`, not a file of `App`.
+
 ### 3. 📦 Moves a Loose Component Into Its Own Folder
 
 A component sitting directly in an Atomic Design level (`atoms/`, `molecules/`, …), or in a folder that holds **several** components, has no folder of its own. `normalize` creates one and moves **all** of its files there — and only its files.
