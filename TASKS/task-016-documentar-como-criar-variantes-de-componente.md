@@ -53,8 +53,38 @@ Tomadas em 2026-09-25, a partir do uso no site `sidartaveloso`.
 1. **Mock único + override.** `meta.args` vem de `generateMockData().props`, e
    cada story sobrescreve só o que difere. É o que o CLI já gera. Mock nomeado
    extra só quando a variante muda a _forma_ dos dados (um por `type` numa
-   união discriminada). A story `Variantes` e o `allXxxMocks` deixam de ser
-   obrigatórios — o autodocs já mostra todas as stories juntas.
+   união discriminada). O `allXxxMocks` sai. A story de comparação lado a lado
+   (`Variants`) fica opcional — recomendada a partir de três variantes — e é
+   gerada percorrendo o array de valores da variante
+   (`export const BOTAO_VARIANTS = [...] as const`, com o tipo derivado dele),
+   não uma lista de mocks: variante nova aparece sozinha. O autodocs empilha as
+   stories, não as compara.
+
+   **União discriminada.** O loop sobre valores não serve: cada variante tem
+   props próprias e precisa de um objeto completo. Os mocks por variante ficam
+   num registro indexado pelo discriminante, com tipo mapeado:
+
+   ```ts
+   type TransitionMocks = {
+     [K in ScrollScrubTransition['type']]: Extract<ScrollScrubTransition, { type: K }>;
+   };
+   export const mockTransitions: TransitionMocks = { fade: {…}, slide: {…}, … };
+   ```
+
+   O compilador exige uma entrada por membro da união, cada uma com as props do
+   próprio tipo. Stories individuais e a comparação (`Object.values(...)`) saem
+   do registro; os args de base continuam do `generateMockData()`.
+
+   | Caso                   | Fonte da comparação                    | O que impede esquecer uma variante |
+   | ---------------------- | -------------------------------------- | ---------------------------------- |
+   | Só aparência           | array de valores (`BOTAO_VARIANTS`)    | o tipo é derivado do array         |
+   | União discriminada     | registro `mock*` indexado pelo `type`  | o tipo mapeado exige todas as chaves |
+
+   Stories individuais continuam escritas à mão — a comparação é a vitrine que
+   não esquece, as individuais ficam para variantes que merecem link próprio.
+   Evidência do problema: no `ScrollScrubImage` do site, a união tem seis
+   transições e só `slide` e `zoom` têm story; `fade`, `blur` e `none` não
+   aparecem no Storybook.
 2. **Obrigatória × default.** Obrigatória quando quem escolhe é o contexto
    (página, container): esquecer vira erro de compilação. Default quando há uma
    aparência natural para a maioria dos usos (botão `primary`). Critério: se
@@ -88,6 +118,8 @@ Tomadas em 2026-09-25, a partir do uso no site `sidartaveloso`.
 - [ ] **Docs**: regra de decisão (Decisão 5) no topo da seção, incluindo a troca
       de subcomponente
 - [ ] **Docs**: variante obrigatória × com default (Decisão 2)
+- [ ] **Docs**: story de comparação nos dois casos — array de valores e
+      registro de mocks por discriminante (Decisão 1)
 - [ ] **Docs**: mover `InputText`/`InputNumber`/`InputDate` para "Expandir
       Sistema Existente" e revisar os "Bons Nomes" (`BotaoPrimario`)
 - [ ] **Docs**: corrigir o passo "3️⃣ Criar Stories" em pt-br e en para mock
