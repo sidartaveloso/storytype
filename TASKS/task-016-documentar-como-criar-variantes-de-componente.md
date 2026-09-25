@@ -1,6 +1,6 @@
 # Task 016 — documentar como criar variantes de componente
 
-Status: pending
+Status: in-progress
 Type: docs
 Assignee: sidartaveloso
 
