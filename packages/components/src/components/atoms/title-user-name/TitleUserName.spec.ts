@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { Quasar, QBanner } from 'quasar';
-import TitleUserName from './TitleUserName.vue';
-import type { TitleUserNameProps } from './TitleUserName.types';
+import { QBanner, Quasar } from 'quasar';
+import { describe, expect, it } from 'vitest';
 import { generateMockData } from './TitleUserName.mock';
+import type { TitleUserNameProps } from './TitleUserName.types';
+import TitleUserName from './TitleUserName.vue';
 
 const mountWithQuasar = (props: TitleUserNameProps, slot?: string) =>
   mount(TitleUserName, {

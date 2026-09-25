@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { Quasar, QRadio } from 'quasar';
-import RadioList from './RadioList.vue';
-import type { RadioListProps } from './RadioList.types';
+import { QRadio, Quasar } from 'quasar';
+import { describe, expect, it } from 'vitest';
 import { generateMockData } from './RadioList.mock';
+import type { RadioListProps } from './RadioList.types';
+import RadioList from './RadioList.vue';
 
 const mountWithQuasar = (props: RadioListProps) =>
   mount(RadioList, {

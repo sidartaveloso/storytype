@@ -1,9 +1,9 @@
 import type {
-  RadioListType,
-  RadioListProps,
-  RadioListModels,
   RadioListEmits,
+  RadioListModels,
   RadioListOption,
+  RadioListProps,
+  RadioListType,
 } from './RadioList.types';
 
 export const generateMockData = (): RadioListType => {

@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar } from 'quasar';
-import GroupCards from './GroupCards.vue';
-import type { GroupCardsProps } from './GroupCards.types';
+import { describe, expect, it } from 'vitest';
 import { generateMockData } from './GroupCards.mock';
+import type { GroupCardsProps } from './GroupCards.types';
+import GroupCards from './GroupCards.vue';
 
 const mountWithQuasar = (props: GroupCardsProps, slot?: string) =>
   mount(GroupCards, {

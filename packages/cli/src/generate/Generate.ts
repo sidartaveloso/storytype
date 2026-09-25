@@ -5,13 +5,13 @@
 import fs from 'fs-extra';
 import path from 'path';
 import {
-  type AtomicLevel,
   ATOMIC_LEVELS,
+  type AtomicLevel,
   atomicLevelDir,
-  detectProjectLanguage,
-  findComponentsDirectory,
   type ComponentFileType,
   componentFileSet,
+  detectProjectLanguage,
+  findComponentsDirectory,
   type ProjectLanguage,
   toKebabCase,
   toPascalCase,

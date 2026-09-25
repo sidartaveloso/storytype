@@ -1,19 +1,19 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import {
-  Quasar,
-  QDialog,
+  ClosePopup,
+  QBanner,
+  QBtn,
   QCard,
   QCardActions,
   QCardSection,
-  QBtn,
+  QDialog,
   QIcon,
-  QBanner,
-  ClosePopup,
+  Quasar,
 } from 'quasar';
-import AlertDialog from './AlertDialog.vue';
-import type { AlertDialogProps } from './AlertDialog.types';
+import { describe, expect, it } from 'vitest';
 import { generateMockData } from './AlertDialog.mock';
+import type { AlertDialogProps } from './AlertDialog.types';
+import AlertDialog from './AlertDialog.vue';
 
 const mountWithQuasar = (props: AlertDialogProps, slots?: Record<string, string>) =>
   mount(AlertDialog, {

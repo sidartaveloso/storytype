@@ -1,10 +1,11 @@
 /**
  * Tests for Plop-based generators
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import path from 'path';
+
 import fs from 'fs-extra';
 import os from 'os';
+import path from 'path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { generateComponent } from './Generate';
 import type { GenerateComponentOptions } from './Generate.types';
 

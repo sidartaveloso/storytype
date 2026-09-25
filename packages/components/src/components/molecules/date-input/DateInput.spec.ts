@@ -1,10 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { Quasar, QInput, QDate, QPopupProxy, QIcon, QBtn, ClosePopup } from 'quasar';
-import { date } from 'quasar';
-import DateInput from './DateInput.vue';
-import type { DateInputProps } from './DateInput.types';
+import { ClosePopup, date, QBtn, QDate, QIcon, QInput, QPopupProxy, Quasar } from 'quasar';
+import { describe, expect, it, vi } from 'vitest';
 import { generateMockData } from './DateInput.mock';
+import type { DateInputProps } from './DateInput.types';
+import DateInput from './DateInput.vue';
 
 const mountWithQuasar = (props: DateInputProps) =>
   mount(DateInput, {

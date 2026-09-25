@@ -1,8 +1,8 @@
 import type {
-  DateInputType,
-  DateInputProps,
-  DateInputModels,
   DateInputEmits,
+  DateInputModels,
+  DateInputProps,
+  DateInputType,
 } from './DateInput.types';
 
 export const generateMockData = (): DateInputType => {

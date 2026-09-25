@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import { expect } from 'storybook/test';
-import CardAction from './CardAction.vue';
 import { generateMockData } from './CardAction.mock';
+import CardAction from './CardAction.vue';
 
 /**
  * CardAction — cartão de plano/serviço com título, lista de itens e rodapé.

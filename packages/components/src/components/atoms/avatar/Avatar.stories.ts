@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import { expect } from 'storybook/test';
-import Avatar from './Avatar.vue';
 import { generateMockData } from './Avatar.mock';
+import Avatar from './Avatar.vue';
 
 /**
  * Avatar — exibe uma imagem do usuário junto de um título/subtítulo.

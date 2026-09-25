@@ -7,6 +7,7 @@ import { exec } from 'child_process';
 import fs from 'fs-extra';
 import path from 'path';
 import { promisify } from 'util';
+import { assertNever } from '../assert-never.js';
 import {
   BARREL_FILES,
   componentFileSet,
@@ -26,7 +27,6 @@ import type {
   NormalizeReport,
   SkippedDirectory,
 } from './NormalizeComponents.types.js';
-import { assertNever } from '../assert-never.js';
 
 // Re-exported so consumers keep importing the case helpers from here, while the
 // single implementation lives in the shared detector.

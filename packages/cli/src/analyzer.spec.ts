@@ -1,10 +1,11 @@
 /**
  * Tests for analyzer naming validation and TypeScript detection
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import path from 'path';
+
 import fs from 'fs-extra';
 import os from 'os';
+import path from 'path';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { analyzeProject } from './analyzer.js';
 import { getComponentBaseName, isPascalCase, toExpectedFileName } from './component-detector.js';
 

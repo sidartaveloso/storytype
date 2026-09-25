@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import { expect } from 'storybook/test';
-import DateInput from './DateInput.vue';
 import { generateMockData } from './DateInput.mock';
+import DateInput from './DateInput.vue';
 
 /**
  * DateInput — campo de data com calendário popup (Quasar).

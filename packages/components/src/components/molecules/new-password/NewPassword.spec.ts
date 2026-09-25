@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { Quasar, QInput, QIcon } from 'quasar';
-import NewPassword from './NewPassword.vue';
-import type { NewPasswordProps } from './NewPassword.types';
+import { QIcon, QInput, Quasar } from 'quasar';
+import { describe, expect, it } from 'vitest';
 import { generateMockData } from './NewPassword.mock';
+import type { NewPasswordProps } from './NewPassword.types';
+import NewPassword from './NewPassword.vue';
 
 const mountWithQuasar = (props: NewPasswordProps) =>
   mount(NewPassword, {

@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { AlertDialogProps, AlertDialogEmits } from './AlertDialog.types';
+import type { AlertDialogEmits, AlertDialogProps } from './AlertDialog.types';
 
 const props = withDefaults(defineProps<AlertDialogProps>(), {
   titulo: '',

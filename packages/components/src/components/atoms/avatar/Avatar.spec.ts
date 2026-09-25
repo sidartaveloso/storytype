@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { Quasar, QAvatar } from 'quasar';
-import Avatar from './Avatar.vue';
-import type { AvatarProps } from './Avatar.types';
+import { QAvatar, Quasar } from 'quasar';
+import { describe, expect, it } from 'vitest';
 import { generateMockData } from './Avatar.mock';
+import type { AvatarProps } from './Avatar.types';
+import Avatar from './Avatar.vue';
 
 const mountWithQuasar = (props: AvatarProps) =>
   mount(Avatar, {
