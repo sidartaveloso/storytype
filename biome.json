@@ -5,6 +5,22 @@
     "clientKind": "git",
     "useIgnoreFile": true
   },
+  "files": {
+    "includes": ["**", "!**/*.svg"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -13,24 +29,29 @@
   },
   "overrides": [
     {
-      "includes": [
-        "**/*.vue"
-      ],
+      "includes": ["**/*.vue"],
       "linter": {
         "rules": {
           "correctness": {
-            "noUnusedVariables": "off"
+            "noUnusedVariables": "off",
+            "noUnknownPseudoClass": {
+              "level": "error",
+              "options": {
+                "ignore": ["deep"]
+              }
+            }
           },
           "style": {
             "useVueMultiWordComponentNames": "off"
+          },
+          "a11y": {
+            "noStaticElementInteractions": "off"
           }
         }
       }
     },
     {
-      "includes": [
-        "**/*.types.ts"
-      ],
+      "includes": ["**/*.types.ts"],
       "linter": {
         "rules": {
           "suspicious": {
@@ -40,12 +61,7 @@
       }
     },
     {
-      "includes": [
-        "**/*.mock.ts",
-        "**/*.mock.tsx",
-        "**/*.stories.ts",
-        "**/*.stories.tsx"
-      ],
+      "includes": ["**/*.mock.ts", "**/*.mock.tsx", "**/*.stories.ts", "**/*.stories.tsx"],
       "linter": {
         "rules": {
           "style": {
@@ -60,11 +76,32 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/cli/src/__fixtures__/**"],
+      "linter": {
+        "enabled": false
+      }
     }
   ],
   "javascript": {
     "formatter": {
-      "quoteStyle": "double"
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "es5",
+      "arrowParentheses": "asNeeded"
+    }
+  },
+  "css": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "html": {
+    "experimentalFullSupportEnabled": true,
+    "formatter": {
+      "enabled": true,
+      "selfCloseVoidElements": "always"
     }
   }
 }
