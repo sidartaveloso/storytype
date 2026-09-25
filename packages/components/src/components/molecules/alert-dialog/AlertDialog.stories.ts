@@ -106,3 +106,16 @@ export const Interacao: Story = {
     await userEvent.click(confirm);
   },
 };
+
+/**
+ * Estilos — as regras aninhadas do `<style>` chegam aos elementos. O diálogo
+ * é teleportado para fora do canvas, por isso a busca é no documento.
+ */
+export const Estilos: Story = {
+  play: async () => {
+    await new Promise(r => setTimeout(r, 0));
+    const titulo = document.querySelector('.storytype-alert-dialog__titulo');
+    expect(titulo).not.toBeNull();
+    expect(getComputedStyle(titulo as Element).fontSize).toBe('20px');
+  },
+};

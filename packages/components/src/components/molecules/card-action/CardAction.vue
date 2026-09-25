@@ -32,7 +32,7 @@ withDefaults(defineProps<CardActionProps>(), {
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .storytype-card-action {
   display: flex;
   flex-direction: column;
@@ -50,13 +50,13 @@ withDefaults(defineProps<CardActionProps>(), {
   &__list {
     margin: 0 0 16px;
     padding-left: 20px;
+  }
 
-    &__item {
-      margin-bottom: 8px;
+  &__item {
+    margin-bottom: 8px;
 
-      &:last-of-type {
-        margin-bottom: 0;
-      }
+    &:last-of-type {
+      margin-bottom: 0;
     }
   }
 

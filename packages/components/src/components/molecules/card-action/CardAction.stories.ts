@@ -95,3 +95,15 @@ export const Smoke: Story = {
     expect(text).toContain('Atualizado em Jan/2025');
   },
 };
+
+/**
+ * Estilos — as regras aninhadas do `<style>` chegam aos elementos.
+ */
+export const Estilos: Story = {
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector('.storytype-card-action__header');
+    const [firstItem] = canvasElement.querySelectorAll('.storytype-card-action__item');
+    expect(getComputedStyle(header as Element).fontSize).toBe('18px');
+    expect(getComputedStyle(firstItem).marginBottom).toBe('8px');
+  },
+};
