@@ -38,7 +38,7 @@ const selected = computed<number | null>({
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .storytype-radio-list {
   &__titulo {
     margin: 0;

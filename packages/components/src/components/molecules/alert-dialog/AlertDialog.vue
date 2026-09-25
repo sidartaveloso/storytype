@@ -56,7 +56,7 @@ const cardClass = computed(() => `bg-${props.color} text-white`);
 const dialogAriaLabel = computed(() => props.titulo || 'Alerta');
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .storytype-alert-dialog {
   .q-card__section {
     :deep(.q-banner) {

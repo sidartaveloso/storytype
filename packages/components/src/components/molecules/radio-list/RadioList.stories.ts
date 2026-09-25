@@ -88,3 +88,14 @@ export const Interacao: Story = {
     expect(radios[1]).toBeChecked();
   },
 };
+
+/**
+ * Estilos — as regras aninhadas do `<style>` chegam aos elementos.
+ */
+export const Estilos: Story = {
+  play: async ({ canvasElement }) => {
+    const item = canvasElement.querySelector('.storytype-radio-list__item');
+    expect(item).not.toBeNull();
+    expect(getComputedStyle(item as Element).fontSize).toBe('18px');
+  },
+};
