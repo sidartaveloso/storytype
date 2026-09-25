@@ -1,4 +1,4 @@
-import type { AvatarType, AvatarProps, AvatarModels, AvatarEmits } from './Avatar.types';
+import type { AvatarEmits, AvatarModels, AvatarProps, AvatarType } from './Avatar.types';
 
 export const generateMockData = (): AvatarType => {
   const props: AvatarProps = {

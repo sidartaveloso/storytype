@@ -1,8 +1,8 @@
 import type {
-  AlertDialogType,
-  AlertDialogProps,
-  AlertDialogModels,
   AlertDialogEmits,
+  AlertDialogModels,
+  AlertDialogProps,
+  AlertDialogType,
 } from './AlertDialog.types';
 
 export const generateMockData = (): AlertDialogType => {

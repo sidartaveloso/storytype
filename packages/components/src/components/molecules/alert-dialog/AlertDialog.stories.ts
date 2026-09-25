@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import { expect, screen, userEvent } from 'storybook/test';
 import { ref } from 'vue';
-import AlertDialog from './AlertDialog.vue';
 import { generateMockData } from './AlertDialog.mock';
+import AlertDialog from './AlertDialog.vue';
 
 /**
  * AlertDialog — diálogo modal de alerta genérico.

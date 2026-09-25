@@ -1,5 +1,4 @@
 export { describeProgram, renderCompletion } from './Completion.js';
-export { COMPLETION_SHELLS } from './Completion.types.js';
 export type {
   ArgumentSpec,
   CommandSpec,
@@ -8,3 +7,4 @@ export type {
   ProgramSpec,
   ValueCompletion,
 } from './Completion.types.js';
+export { COMPLETION_SHELLS } from './Completion.types.js';

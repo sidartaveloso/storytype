@@ -10,12 +10,12 @@ import { Argument, Command, Option } from 'commander';
 import path from 'path';
 import { version } from '../package.json';
 import { analyzeProject, displayResults } from './analyzer.js';
-import { ATOMIC_LEVEL_KEYS, toAtomicLevelFromAlias } from './component-detector.js';
-import { COMPLETION_SHELLS, renderCompletion } from './completion/index.js';
 import type { CompletionShell } from './completion/index.js';
+import { COMPLETION_SHELLS, renderCompletion } from './completion/index.js';
+import { ATOMIC_LEVEL_KEYS, toAtomicLevelFromAlias } from './component-detector.js';
 import { generateComponent } from './generate/index.js';
-import { normalizeComponents } from './normalize-components/index.js';
 import type { NormalizeReport, NormalizeScope } from './normalize-components/index.js';
+import { normalizeComponents } from './normalize-components/index.js';
 
 /**
  * Every change a normalize run would make

@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import { expect, userEvent, within } from 'storybook/test';
 import { ref } from 'vue';
-import NewPassword from './NewPassword.vue';
 import { generateMockData } from './NewPassword.mock';
+import NewPassword from './NewPassword.vue';
 
 /**
  * NewPassword — par de inputs de senha (nova + confirmação) validados.

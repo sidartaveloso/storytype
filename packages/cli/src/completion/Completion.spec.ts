@@ -12,8 +12,8 @@ import path from 'path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { ATOMIC_LEVEL_ALIASES } from '../component-detector.js';
 import { createProgram } from '../program.js';
-import { COMPLETION_SHELLS, describeProgram, renderCompletion } from './index.js';
 import type { CompletionShell } from './index.js';
+import { COMPLETION_SHELLS, describeProgram, renderCompletion } from './index.js';
 
 const ESCAPE = '';
 

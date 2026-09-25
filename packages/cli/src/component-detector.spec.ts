@@ -10,13 +10,13 @@ import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   atomicLevelDir,
+  componentFileSet,
   detectComponents,
   detectProjectLanguage,
   findAtomicLevelDirs,
   findComponentDirectories,
   findComponentFiles,
   findComponentsDirectory,
-  componentFileSet,
   getComponentBaseName,
   getFileType,
   isAtomicLevel,

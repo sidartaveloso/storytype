@@ -1,2 +1,2 @@
-export * from './Generate.types';
 export { generateComponent } from './Generate';
+export * from './Generate.types';

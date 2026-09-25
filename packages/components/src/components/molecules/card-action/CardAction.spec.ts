@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { Quasar } from 'quasar';
-import CardAction from './CardAction.vue';
-import type { CardActionProps } from './CardAction.types';
+import { describe, expect, it } from 'vitest';
 import { generateMockData } from './CardAction.mock';
+import type { CardActionProps } from './CardAction.types';
+import CardAction from './CardAction.vue';
 
 const mountWithQuasar = (props: CardActionProps) =>
   mount(CardAction, {

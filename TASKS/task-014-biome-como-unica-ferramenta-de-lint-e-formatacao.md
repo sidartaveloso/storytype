@@ -44,9 +44,9 @@ sai do projeto.
   formatava os 49 arquivos de `docs/` e `TASKS/`. Decisão tomada: sem
   formatador para Markdown. Na prática a regra já não era cobrada: 10 desses
   arquivos estavam fora do padrão do Prettier.
-- **`organizeImports` desligado.** O `biome check` ordena imports por padrão, o
-  que o Prettier nunca fez; ligar mexeria em 54 arquivos. Fica como decisão
-  separada.
+- **`organizeImports`** entrou desligado aqui: o `biome check` ordena imports
+  por padrão, o que o Prettier nunca fez, e ligar mexeria em 54 arquivos. Foi
+  ligado logo depois, num commit só de reordenação.
 - O lint de `.vue` encontrou um bug real, corrigido antes desta task na
   task-015: estilos BEM aninhados (`&__titulo`) em CSS puro nunca eram
   aplicados.
@@ -68,7 +68,7 @@ sai do projeto.
 - `html`: `experimentalFullSupportEnabled` e `selfCloseVoidElements: always`,
   que mantém o `<img ... />` como o Prettier deixava.
 - `files.includes` exclui `*.svg`, que o Prettier também não tocava.
-- `assist.actions.source.organizeImports: off`.
+- `assist.actions.source.organizeImports: off` (ligado no commit seguinte).
 - Overrides para falsos positivos em `.vue`: `noUnknownPseudoClass` ignora
   `:deep` (pseudo-seletor do Vue) e `noStaticElementInteractions` sai (o Biome
   trata componentes do Quasar como elementos estáticos). As fixtures de teste do

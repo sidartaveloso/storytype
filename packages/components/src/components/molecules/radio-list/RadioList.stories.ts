@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, within, userEvent } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { ref } from 'vue';
-import RadioList from './RadioList.vue';
 import { generateMockData } from './RadioList.mock';
+import RadioList from './RadioList.vue';
 
 /**
  * RadioList — lista de opções selecionáveis via rádio.
