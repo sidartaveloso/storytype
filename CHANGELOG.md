@@ -12,6 +12,20 @@
 
 * **components:** painel de bandeja no @storytype/components (task-018) ([367afcf](https://github.com/sidartaveloso/storytype/commit/367afcfd0b484f86a3c046557003bdb3327114fe))
 
+# [0.5.0](https://github.com/sidartaveloso/storytype/compare/release-v0.4.0...release-v0.5.0) (2026-11-01)
+
+
+### Bug Fixes
+
+* **cli:** na pasta do componente, so renomeia os arquivos dele ([a53c2ca](https://github.com/sidartaveloso/storytype/commit/a53c2ca6fcd5b2320d04d30b5148042d1166a1d0))
+* **components:** AlarmAudio so vibra depois de um gesto real (task-018) ([1acb576](https://github.com/sidartaveloso/storytype/commit/1acb5766419c9724a5f646d3cd81508af6e3b5c2))
+* **components:** estilos BEM aninhados passam a ser aplicados ([79bd085](https://github.com/sidartaveloso/storytype/commit/79bd085c7ac6742a79a8666f42ea9063bb1bfb4d))
+
+
+### Features
+
+* **components:** painel de bandeja no @storytype/components (task-018) ([367afcf](https://github.com/sidartaveloso/storytype/commit/367afcfd0b484f86a3c046557003bdb3327114fe))
+
 # [0.4.0](https://github.com/sidartaveloso/storytype/compare/v0.3.1...v0.4.0) (2026-09-10)
 
 
