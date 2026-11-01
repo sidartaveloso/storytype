@@ -96,6 +96,10 @@ depender de tokens de um design system de fora.
   `settings`) e o `lang` do painel; na origem ele ficava com os padrões.
 - `AlarmAudio` cria o MP3 de reserva pelo script (`new Audio`), sem elemento
   `<audio>` na página.
+- `utils/user-interaction` passa a ter o navegador como referência onde ele
+  informa a ativação (`navigator.userActivation`): o clique sintético do `play`
+  de uma story marcava a interação, o Chrome não, e o `navigator.vibrate` do
+  `AlarmAudio` saía bloqueado com aviso no console.
 - Mocks no padrão do pacote (`generateMockData()` + mocks nomeados), com dados
   genéricos de uma fila de trabalho, e uma story `Custom labels (pt-BR)` em
   `ErrorMessage`, `CounterPanel` e `TrayBoardScreen`.

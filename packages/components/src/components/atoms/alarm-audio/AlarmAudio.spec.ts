@@ -12,6 +12,7 @@ const isPlaying = (wrapper: ReturnType<typeof mountAlarm>) =>
 describe('AlarmAudio', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it('plays while active and not muted', () => {
@@ -67,6 +68,30 @@ describe('AlarmAudio', () => {
     const wrapper = mountAlarm({ active: false, fallbackSrc: '/alarm.mp3' });
     expect(wrapper.attributes('hidden')).toBeDefined();
     expect(wrapper.element.childElementCount).toBe(0);
+  });
+
+  it('does not vibrate before a real gesture, neither playing nor stopping', () => {
+    vi.useFakeTimers();
+    const vibrate = vi.fn();
+    vi.stubGlobal('navigator', { vibrate, userActivation: { hasBeenActive: false } });
+    const wrapper = mountAlarm({ active: true, intervalMs: 1_000 });
+
+    // A play function's synthetic click: the browser counts no gesture
+    document.dispatchEvent(new MouseEvent('click'));
+    vi.advanceTimersByTime(1_000);
+    wrapper.unmount();
+
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it('vibrates while playing and stops the vibration after a real gesture', () => {
+    const vibrate = vi.fn();
+    vi.stubGlobal('navigator', { vibrate, userActivation: { hasBeenActive: true } });
+
+    mountAlarm(alarmActiveMock).unmount();
+
+    expect(vibrate).toHaveBeenNthCalledWith(1, 150);
+    expect(vibrate).toHaveBeenLastCalledWith(0);
   });
 
   it('mounts with the mock data, switched off', () => {

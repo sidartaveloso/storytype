@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /* The module keeps page-wide state, so every test loads a fresh copy. */
 const load = () => import('./user-interaction');
@@ -6,6 +6,10 @@ const load = () => import('./user-interaction');
 describe('user-interaction', () => {
   beforeEach(() => {
     vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('starts without interaction', async () => {
@@ -56,5 +60,45 @@ describe('user-interaction', () => {
     expect(after).toHaveBeenCalledTimes(1);
     expect(error).toHaveBeenCalled();
     error.mockRestore();
+  });
+
+  describe('where the browser tracks user activation', () => {
+    const stubActivation = (hasBeenActive: boolean) => {
+      const userActivation = { hasBeenActive, isActive: hasBeenActive };
+      vi.stubGlobal('navigator', { userActivation });
+      return userActivation;
+    };
+
+    it('ignores a synthetic click the browser does not count as a gesture', async () => {
+      stubActivation(false);
+      const { hasUserInteracted, onUserInteraction } = await load();
+      const callback = vi.fn();
+      onUserInteraction(callback);
+
+      document.dispatchEvent(new MouseEvent('click'));
+
+      expect(hasUserInteracted()).toBe(false);
+      expect(callback).not.toHaveBeenCalled();
+    });
+
+    it('counts the gesture once the browser does', async () => {
+      const activation = stubActivation(false);
+      const { hasUserInteracted, onUserInteraction } = await load();
+      const callback = vi.fn();
+      onUserInteraction(callback);
+
+      document.dispatchEvent(new MouseEvent('click'));
+      activation.hasBeenActive = true;
+      document.dispatchEvent(new MouseEvent('click'));
+
+      expect(hasUserInteracted()).toBe(true);
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+
+    it('trusts a gesture the browser saw before the listener existed', async () => {
+      stubActivation(true);
+      const { hasUserInteracted } = await load();
+      expect(hasUserInteracted()).toBe(true);
+    });
   });
 });
