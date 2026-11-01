@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { RadioListProps, RadioListEmits } from './RadioList.types';
+import type { RadioListEmits, RadioListProps } from './RadioList.types';
 
 const props = withDefaults(defineProps<RadioListProps>(), {
   titulo: '',
@@ -38,7 +38,7 @@ const selected = computed<number | null>({
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .storytype-radio-list {
   &__titulo {
     margin: 0;

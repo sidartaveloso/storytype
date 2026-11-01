@@ -1,8 +1,8 @@
 import type {
-  NewPasswordType,
-  NewPasswordProps,
-  NewPasswordModels,
   NewPasswordEmits,
+  NewPasswordModels,
+  NewPasswordProps,
+  NewPasswordType,
 } from './NewPassword.types';
 
 export const generateMockData = (): NewPasswordType => {

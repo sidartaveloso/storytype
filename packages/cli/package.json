@@ -52,7 +52,7 @@
     "build:templates": "mkdir -p dist/templates && cp -r src/templates/* dist/templates/",
     "dev": "tsup src/cli.ts src/index.ts --format esm --dts --watch",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit",
+    "lint": "biome lint src",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run --coverage",
     "test:watch": "vitest",

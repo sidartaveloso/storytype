@@ -1,8 +1,8 @@
 import type {
-  CardActionType,
-  CardActionProps,
-  CardActionModels,
   CardActionEmits,
+  CardActionModels,
+  CardActionProps,
+  CardActionType,
 } from './CardAction.types';
 
 export const generateMockData = (): CardActionType => {

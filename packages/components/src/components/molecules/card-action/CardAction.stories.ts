@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import { expect } from 'storybook/test';
-import CardAction from './CardAction.vue';
 import { generateMockData } from './CardAction.mock';
+import CardAction from './CardAction.vue';
 
 /**
  * CardAction — cartão de plano/serviço com título, lista de itens e rodapé.
@@ -93,5 +93,17 @@ export const Smoke: Story = {
     expect(text).toContain('Pacote Standard');
     expect(text).toContain('5 horas de coworking por mês');
     expect(text).toContain('Atualizado em Jan/2025');
+  },
+};
+
+/**
+ * Estilos — as regras aninhadas do `<style>` chegam aos elementos.
+ */
+export const Estilos: Story = {
+  play: async ({ canvasElement }) => {
+    const header = canvasElement.querySelector('.storytype-card-action__header');
+    const [firstItem] = canvasElement.querySelectorAll('.storytype-card-action__item');
+    expect(getComputedStyle(header as Element).fontSize).toBe('18px');
+    expect(getComputedStyle(firstItem).marginBottom).toBe('8px');
   },
 };

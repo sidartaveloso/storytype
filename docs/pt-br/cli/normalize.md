@@ -78,6 +78,8 @@ botao/
 
 Os sufixos são preservados: `.types.ts`, `.spec.ts`, `.stories.ts`, `.mock.ts` e `.controller.ts` acompanham o nome do componente. `index.ts` nunca é renomeado.
 
+Só os arquivos do componente são renomeados — os que têm o nome dele. O resto da pasta mantém o nome: um `main.ts` ao lado do `App.vue` em `src/` é o ponto de entrada do app, carregado pelo nome no `index.html`, e não um arquivo do `App`.
+
 ### 3. 📦 Move Componente Solto para Pasta Própria
 
 Um componente que vive direto num nível Atomic Design (`atoms/`, `molecules/`, …), ou numa pasta que abriga **vários** componentes, não tem pasta própria. O `normalize` cria uma e move para lá **todos** os arquivos dele — e só os dele.

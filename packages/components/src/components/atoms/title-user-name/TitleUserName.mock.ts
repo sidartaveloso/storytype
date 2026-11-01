@@ -1,8 +1,8 @@
 import type {
-  TitleUserNameType,
-  TitleUserNameProps,
-  TitleUserNameModels,
   TitleUserNameEmits,
+  TitleUserNameModels,
+  TitleUserNameProps,
+  TitleUserNameType,
 } from './TitleUserName.types';
 
 export const generateMockData = (): TitleUserNameType => {

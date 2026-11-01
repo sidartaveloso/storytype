@@ -10,13 +10,13 @@ import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   atomicLevelDir,
+  componentFileSet,
   detectComponents,
   detectProjectLanguage,
   findAtomicLevelDirs,
   findComponentDirectories,
   findComponentFiles,
   findComponentsDirectory,
-  componentFileSet,
   getComponentBaseName,
   getFileType,
   isAtomicLevel,
@@ -535,5 +535,25 @@ describe('component-detector - detectComponents', () => {
     expect(component.name).toBe('Taskin');
     expect(component.action).not.toBe('promote');
     expect(component.action).toBe('none');
+  });
+
+  it("renames only the component's own files in the folder it owns", async () => {
+    const srcDir = path.join(tempDir, 'src');
+    await fs.ensureDir(srcDir);
+    await fs.writeFile(path.join(srcDir, 'App.vue'), '<template />');
+    await fs.writeFile(path.join(srcDir, 'app.types.ts'), 'export type AppProps = {};');
+    await fs.writeFile(path.join(srcDir, 'main.ts'), "createApp(App).mount('#app');");
+
+    const [component] = detectComponents(tempDir);
+    const targetNames = Object.fromEntries(component.files.map(f => [f.name, f.targetName]));
+
+    expect(component.name).toBe('App');
+    expect(targetNames).toEqual({
+      'App.vue': 'App.vue',
+      'app.types.ts': 'App.types.ts',
+      'main.ts': 'main.ts',
+    });
+    // Not the entry either, or normalize could take it for one
+    expect(component.files.find(f => f.name === 'main.ts')?.type).toBe('other');
   });
 });

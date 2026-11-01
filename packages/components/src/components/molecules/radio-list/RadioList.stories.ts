@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
-import { expect, within, userEvent } from 'storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 import { ref } from 'vue';
-import RadioList from './RadioList.vue';
 import { generateMockData } from './RadioList.mock';
+import RadioList from './RadioList.vue';
 
 /**
  * RadioList — lista de opções selecionáveis via rádio.
@@ -86,5 +86,16 @@ export const Interacao: Story = {
     expect(radios).toHaveLength(3);
     await userEvent.click(radios[1]);
     expect(radios[1]).toBeChecked();
+  },
+};
+
+/**
+ * Estilos — as regras aninhadas do `<style>` chegam aos elementos.
+ */
+export const Estilos: Story = {
+  play: async ({ canvasElement }) => {
+    const item = canvasElement.querySelector('.storytype-radio-list__item');
+    expect(item).not.toBeNull();
+    expect(getComputedStyle(item as Element).fontSize).toBe('18px');
   },
 };

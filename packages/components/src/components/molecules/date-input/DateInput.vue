@@ -33,9 +33,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
 import { date } from 'quasar';
-import type { DateInputProps, DateInputEmits } from './DateInput.types';
+import { computed, ref } from 'vue';
+import type { DateInputEmits, DateInputProps } from './DateInput.types';
 
 const props = withDefaults(defineProps<DateInputProps>(), {
   modelValue: undefined,

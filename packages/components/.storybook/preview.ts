@@ -1,7 +1,7 @@
 import type { Preview } from '@storybook/vue3';
 import { setup } from '@storybook/vue3';
-import { Quasar } from 'quasar';
 import * as QuasarExports from 'quasar';
+import { Quasar } from 'quasar';
 import '@quasar/extras/material-icons/material-icons.css';
 // O CSS ja compilado, em vez de `quasar/src/css/index.sass`. O sass fonte do
 // Quasar usa `@import`, que o Dart Sass deprecou, e compila-lo enche o log de

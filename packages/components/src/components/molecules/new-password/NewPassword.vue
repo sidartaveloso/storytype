@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import type { NewPasswordProps, NewPasswordEmits } from './NewPassword.types';
+import type { NewPasswordEmits, NewPasswordProps } from './NewPassword.types';
 
 const props = withDefaults(defineProps<NewPasswordProps>(), {
   politicaRegex: undefined,

@@ -1,8 +1,8 @@
 import type {
-  GroupCardsType,
-  GroupCardsProps,
-  GroupCardsModels,
   GroupCardsEmits,
+  GroupCardsModels,
+  GroupCardsProps,
+  GroupCardsType,
 } from './GroupCards.types';
 
 export const generateMockData = (): GroupCardsType => {

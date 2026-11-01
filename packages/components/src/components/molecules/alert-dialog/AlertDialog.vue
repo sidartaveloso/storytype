@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { AlertDialogProps, AlertDialogEmits } from './AlertDialog.types';
+import type { AlertDialogEmits, AlertDialogProps } from './AlertDialog.types';
 
 const props = withDefaults(defineProps<AlertDialogProps>(), {
   titulo: '',
@@ -56,7 +56,7 @@ const cardClass = computed(() => `bg-${props.color} text-white`);
 const dialogAriaLabel = computed(() => props.titulo || 'Alerta');
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .storytype-alert-dialog {
   .q-card__section {
     :deep(.q-banner) {

@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 import { expect, screen, userEvent } from 'storybook/test';
 import { ref } from 'vue';
-import AlertDialog from './AlertDialog.vue';
 import { generateMockData } from './AlertDialog.mock';
+import AlertDialog from './AlertDialog.vue';
 
 /**
  * AlertDialog — diálogo modal de alerta genérico.
@@ -104,5 +104,18 @@ export const Interacao: Story = {
     const confirm = screen.getByRole('button', { name: 'Ir para a atividade' });
     expect(confirm).toBeDefined();
     await userEvent.click(confirm);
+  },
+};
+
+/**
+ * Estilos — as regras aninhadas do `<style>` chegam aos elementos. O diálogo
+ * é teleportado para fora do canvas, por isso a busca é no documento.
+ */
+export const Estilos: Story = {
+  play: async () => {
+    await new Promise(r => setTimeout(r, 0));
+    const titulo = document.querySelector('.storytype-alert-dialog__titulo');
+    expect(titulo).not.toBeNull();
+    expect(getComputedStyle(titulo as Element).fontSize).toBe('20px');
   },
 };
