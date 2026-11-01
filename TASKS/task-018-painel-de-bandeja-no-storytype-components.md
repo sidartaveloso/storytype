@@ -50,24 +50,24 @@ depender de tokens de um design system de fora.
 
 ## Tasks
 
-- [ ] `utils/earcon` e `utils/user-interaction`, com specs
-- [ ] `AlarmAudio`, `ErrorMessage`, `ConnectionStatus`, `CounterPanel` e
+- [x] `utils/earcon` e `utils/user-interaction`, com specs
+- [x] `AlarmAudio`, `ErrorMessage`, `ConnectionStatus`, `CounterPanel` e
       `TrayBoardScreen` no padrão do pacote
-- [ ] Exportar no `src/index.ts`; changeset `minor` do `@storytype/components`
-- [ ] Gates: biome, typecheck, specs, stories (navegador, com a11y), build e
+- [x] Exportar no `src/index.ts`; changeset `minor` do `@storytype/components`
+- [x] Gates: biome, typecheck, specs, stories (navegador, com a11y), build e
       `storytype analyze`
 - [ ] Revisão visual no Storybook: normal, alertando, silenciado, carregando,
       erro e sem permissão (Sidarta)
 
 ## Critérios de Aceitação
 
-- [ ] Os cinco componentes no `@storytype/components`, com API em inglês e
+- [x] Os cinco componentes no `@storytype/components`, com API em inglês e
       textos visíveis por props
-- [ ] Nenhum nome de empresa, produto ou domínio de origem em código, mocks,
+- [x] Nenhum nome de empresa, produto ou domínio de origem em código, mocks,
       stories ou docs: os exemplos usam termos genéricos
-- [ ] `pnpm lint`, `pnpm typecheck`, `pnpm test` (specs e stories) e
+- [x] `pnpm lint`, `pnpm typecheck`, `pnpm test` (specs e stories) e
       `pnpm build` limpos em `packages/components`
-- [ ] `storytype analyze` mantendo 100%
+- [x] `storytype analyze` mantendo 100%
 
 ## Notes
 
@@ -76,3 +76,32 @@ depender de tokens de um design system de fora.
   (`01 - Átomos`, `02 - Moléculas`), a barra lateral mostra as duas grafias.
 - Fora de escopo: trocar o `design-vue` do taskin para importar daqui, e
   publicar no npm.
+
+## Adaptações em relação à origem
+
+- Classes BEM com o prefixo `storytype-` e `<style scoped lang="scss">` (o
+  aninhamento `&__` só funciona com Sass, ver task-015). Os tokens de design
+  system de fora (`--spacing-*`, `--color-*`, `--font-family`) saíram: as cores
+  principais ficam em custom properties `--storytype-…` com padrão.
+- `ConnectionStatus` ganhou pasta própria (`molecules/connection-status`) e o
+  botão de tentar de novo passou para `#0b6fa4`: o azul de antes (`#169bd7`)
+  dava cerca de 3,1:1 com o texto branco, abaixo do AA (4,5:1) que o portão de
+  a11y das stories cobra. O vermelho do texto do `ErrorMessage` (`error`) foi de
+  `#ef4444` para `#b91c1c` pelo mesmo motivo.
+- `CounterPanel`: os filhos de um `role="button"` não são lidos pelo leitor de
+  tela, então os contadores entram no nome acessível do próprio painel
+  (`BOARD — ONLINE. In progress: 2, …`), em vez de um `aria-label` por contador.
+  O clique no contador com `link` é tratado por delegação no painel.
+- `ErrorMessage` dentro do `CounterPanel` recebe os rótulos (`copy`, `copied`,
+  `settings`) e o `lang` do painel; na origem ele ficava com os padrões.
+- `AlarmAudio` cria o MP3 de reserva pelo script (`new Audio`), sem elemento
+  `<audio>` na página.
+- Mocks no padrão do pacote (`generateMockData()` + mocks nomeados), com dados
+  genéricos de uma fila de trabalho, e uma story `Custom labels (pt-BR)` em
+  `ErrorMessage`, `CounterPanel` e `TrayBoardScreen`.
+
+## Pendente
+
+- Teclado nos contadores com `link`: o painel inteiro é um botão, então um
+  contador não pode ser outro elemento focável dentro dele sem quebrar o
+  `nested-interactive`. Hoje o link só abre com o mouse, como na origem.
