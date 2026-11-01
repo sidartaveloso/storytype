@@ -55,6 +55,21 @@ O template `PrintSheet` (`templates/print-sheet`) é a face Vue da mesma
 geometria: uma folha em mm com margem, sangria e marcas de corte `'inside'` ou
 `'outside'` da sangria.
 
+### `utils/earcon` e `utils/user-interaction`
+
+O som do alarme, sintetizado pela Web Audio, sem arquivo de áudio:
+`alarmPhase(elapsedMs)` (a fase pelo tempo sem reconhecimento: mais alto e mais
+frequente aos 20 s, sirene aos 60 s), `buildEarconSchedule` e `buildSiren` (as
+agendas, testáveis sem `AudioContext`), `playEarcon(ctx)` e `playSiren(ctx)`.
+`onUserInteraction(callback)` espera o primeiro clique, toque ou tecla, que é
+quando o navegador libera o áudio.
+
+São a base do painel de bandeja: `AlarmAudio` (`atoms/alarm-audio`),
+`ErrorMessage` (`atoms/error-message`), `ConnectionStatus`
+(`molecules/connection-status`), `CounterPanel` (`organisms/counter-panel`) e
+`TrayBoardScreen` (`templates/tray-board-screen`). Todo texto visível vem das
+props, com padrão em inglês.
+
 Import com escopo por camada:
 
 ```ts

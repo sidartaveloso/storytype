@@ -11,9 +11,13 @@
  * `.mock.ts` and `index.ts`. Components are Quasar-based.
  */
 
-export * from './components/atoms/avatar/Avatar.types';
+export * from './components/atoms/alarm-audio/AlarmAudio.types';
 // --- Atoms ---
+export { default as AlarmAudio } from './components/atoms/alarm-audio/AlarmAudio.vue';
+export * from './components/atoms/avatar/Avatar.types';
 export { default as Avatar } from './components/atoms/avatar/Avatar.vue';
+export * from './components/atoms/error-message/ErrorMessage.types';
+export { default as ErrorMessage } from './components/atoms/error-message/ErrorMessage.vue';
 export * from './components/atoms/title-user-name/TitleUserName.types';
 export { default as TitleUserName } from './components/atoms/title-user-name/TitleUserName.vue';
 export * from './components/molecules/alert-dialog/AlertDialog.types';
@@ -21,6 +25,8 @@ export * from './components/molecules/alert-dialog/AlertDialog.types';
 export { default as AlertDialog } from './components/molecules/alert-dialog/AlertDialog.vue';
 export * from './components/molecules/card-action/CardAction.types';
 export { default as CardAction } from './components/molecules/card-action/CardAction.vue';
+export * from './components/molecules/connection-status/ConnectionStatus.types';
+export { default as ConnectionStatus } from './components/molecules/connection-status/ConnectionStatus.vue';
 export * from './components/molecules/date-input/DateInput.types';
 export { default as DateInput } from './components/molecules/date-input/DateInput.vue';
 export * from './components/molecules/group-cards/GroupCards.types';
@@ -29,9 +35,16 @@ export * from './components/molecules/new-password/NewPassword.types';
 export { default as NewPassword } from './components/molecules/new-password/NewPassword.vue';
 export * from './components/molecules/radio-list/RadioList.types';
 export { default as RadioList } from './components/molecules/radio-list/RadioList.vue';
+export * from './components/organisms/counter-panel/CounterPanel.types';
+// --- Organisms ---
+export { default as CounterPanel } from './components/organisms/counter-panel/CounterPanel.vue';
 export * from './components/templates/print-sheet/PrintSheet.types';
 // --- Templates ---
 export { default as PrintSheet } from './components/templates/print-sheet/PrintSheet.vue';
+export * from './components/templates/tray-board-screen/TrayBoardScreen.types';
+export { default as TrayBoardScreen } from './components/templates/tray-board-screen/TrayBoardScreen.vue';
 
 // --- Utils ---
+export * from './utils/earcon';
 export * from './utils/print-geometry';
+export * from './utils/user-interaction';

@@ -63,6 +63,26 @@ The `PrintSheet` template (`templates/print-sheet`) is the Vue face of the same
 geometry: a sheet in mm with margin, bleed and crop marks `'inside'` or
 `'outside'` the bleed.
 
+### `utils/earcon` and `utils/user-interaction`
+
+The alarm sound, synthesized with the Web Audio API, no audio file:
+`alarmPhase(elapsedMs)` (the phase by the time without acknowledgement: louder
+and more frequent at 20 s, a siren at 60 s), `buildEarconSchedule` and
+`buildSiren` (the schedules, testable without an `AudioContext`),
+`playEarcon(ctx)` and `playSiren(ctx)`. `onUserInteraction(callback)` waits for
+the first click, touch or key press, which is when the browser allows audio.
+
+They back the tray panel: `AlarmAudio` (`atoms/alarm-audio`), `ErrorMessage`
+(`atoms/error-message`), `ConnectionStatus` (`molecules/connection-status`),
+`CounterPanel` (`organisms/counter-panel`) and `TrayBoardScreen`
+(`templates/tray-board-screen`). Every visible text comes from the props, with
+English defaults.
+
+```ts
+import TrayBoardScreen from '@storytype/components/templates/tray-board-screen';
+import '@storytype/components/styles';
+```
+
 ## Standard
 
 Every component ships 5 files in its folder:
