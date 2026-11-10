@@ -68,7 +68,11 @@ São a base do painel de bandeja: `AlarmAudio` (`atoms/alarm-audio`),
 `ErrorMessage` (`atoms/error-message`), `ConnectionStatus`
 (`molecules/connection-status`), `CounterPanel` (`organisms/counter-panel`) e
 `TrayBoardScreen` (`templates/tray-board-screen`). Todo texto visível vem das
-props, com padrão em inglês.
+props, com padrão em inglês. O logo vem de `logoUrl`. As cores são custom
+properties de CSS, definidas em qualquer ancestral: `--storytype-counter-panel-bg`,
+`-fg` e `-alert`, e `--storytype-connection-status-success`, `-warning`,
+`-danger` e `-info`. O painel é escuro: separadores, rótulos e botões são em
+branco translúcido.
 
 Import com escopo por camada:
 

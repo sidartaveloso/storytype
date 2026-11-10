@@ -150,10 +150,12 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped lang="scss">
-.storytype-error-message {
-  --storytype-error-message-danger: #b91c1c;
-  --storytype-error-message-success: #10b981;
+/* Overridable from any ancestor: declared on the root, these would win over
+   the ancestor's values. */
+$danger: var(--storytype-error-message-danger, #b91c1c);
+$success: var(--storytype-error-message-success, #10b981);
 
+.storytype-error-message {
   display: flex;
   gap: 12px;
   font-family: var(--storytype-font-family, system-ui, -apple-system, 'Segoe UI', sans-serif);
@@ -226,7 +228,7 @@ onBeforeUnmount(() => {
     background: rgba(239, 68, 68, 0.08);
     border: 1px solid rgba(239, 68, 68, 0.2);
     border-radius: 8px;
-    color: var(--storytype-error-message-danger);
+    color: $danger;
   }
 
   &--error &__title {
@@ -308,8 +310,8 @@ onBeforeUnmount(() => {
 
   /* Last, and as specific as the variants, so it wins over both. */
   & &__copy--copied {
-    border-color: var(--storytype-error-message-success);
-    color: var(--storytype-error-message-success);
+    border-color: $success;
+    color: $success;
     background: rgba(16, 185, 129, 0.1);
   }
 }

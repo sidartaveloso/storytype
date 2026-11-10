@@ -3,11 +3,14 @@ import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { ref } from 'vue';
 import { CONNECTION_STATUSES } from '../../molecules/connection-status/ConnectionStatus.types';
 import {
+  EXAMPLE_LOGO_URL,
   generateMockData,
   trayBoardAlertingMock,
+  trayBoardCustomColors,
   trayBoardErrorMock,
   trayBoardForbiddenMock,
   trayBoardLoadingMock,
+  trayBoardLogoMock,
   trayBoardMutedMock,
   trayBoardPortugueseMock,
 } from './TrayBoardScreen.mock';
@@ -100,6 +103,43 @@ export const CustomLabels: Story = {
     const canvas = within(canvasElement);
     expect(canvas.getByRole('button', { name: 'Ativar som' })).toBeDefined();
     expect(canvas.getByRole('button', { name: 'Configurações' })).toBeDefined();
+  },
+};
+
+/** With a logo (`logoUrl`), left of the title. If the image fails to load, it is hidden. */
+export const WithLogo: Story = {
+  name: 'With logo',
+  args: { ...trayBoardLogoMock },
+  play: async ({ canvasElement }) => {
+    const logo = canvasElement.querySelector('.storytype-counter-panel__logo') as HTMLImageElement;
+    expect(logo.getAttribute('src')).toBe(EXAMPLE_LOGO_URL);
+    await waitFor(() => expect(logo.naturalWidth).toBeGreaterThan(0));
+  },
+};
+
+/**
+ * Custom colors — set as CSS custom properties on any ancestor (here, the
+ * wrapper). Muted, so the story stays quiet.
+ */
+export const CustomColors: Story = {
+  name: 'Custom colors',
+  args: { ...trayBoardMutedMock },
+  render: args => ({
+    components: { TrayBoardScreen },
+    setup: () => ({ args, colors: trayBoardCustomColors }),
+    template: '<div :style="colors"><TrayBoardScreen v-bind="args" /></div>',
+  }),
+  play: async ({ canvasElement }) => {
+    const color = (selector: string, property: 'color' | 'backgroundColor') =>
+      getComputedStyle(canvasElement.querySelector(selector) as Element)[property];
+    expect(color('.storytype-counter-panel', 'backgroundColor')).toBe('rgb(30, 27, 75)');
+    expect(color('.storytype-counter-panel__title', 'color')).toBe('rgb(224, 231, 255)');
+    expect(
+      color('.storytype-counter-panel__counter--alert .storytype-counter-panel__digit', 'color')
+    ).toBe('rgb(253, 164, 175)');
+    expect(color('.storytype-connection-status__indicator', 'backgroundColor')).toBe(
+      'rgb(251, 113, 133)'
+    );
   },
 };
 

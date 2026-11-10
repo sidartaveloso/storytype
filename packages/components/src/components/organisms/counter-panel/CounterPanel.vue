@@ -221,10 +221,12 @@ function handleClick(event: MouseEvent): void {
 </script>
 
 <style scoped lang="scss">
-.storytype-counter-panel {
-  --storytype-counter-panel-fg: #fff;
-  --storytype-counter-panel-alert: #ef4444;
+/* Overridable from any ancestor: declared on the root, these would win over
+   the ancestor's values. */
+$fg: var(--storytype-counter-panel-fg, #fff);
+$alert: var(--storytype-counter-panel-alert, #ef4444);
 
+.storytype-counter-panel {
   display: inline-flex;
   flex-direction: row;
   align-items: stretch;
@@ -299,7 +301,7 @@ function handleClick(event: MouseEvent): void {
   &__title {
     font-size: 17px;
     font-weight: 800;
-    color: var(--storytype-counter-panel-fg);
+    color: $fg;
     letter-spacing: 0.8px;
     line-height: 1;
   }
@@ -347,7 +349,7 @@ function handleClick(event: MouseEvent): void {
   }
 
   &__status--alert :deep(.storytype-connection-status__text) {
-    color: var(--storytype-counter-panel-alert);
+    color: $alert;
   }
 
   /* ─── Counter ────────────────────────────────── */
@@ -403,14 +405,14 @@ function handleClick(event: MouseEvent): void {
     position: absolute;
     font-size: 22px;
     font-weight: 800;
-    color: var(--storytype-counter-panel-fg);
+    color: $fg;
     line-height: 1;
     font-variant-numeric: tabular-nums;
     text-align: center;
   }
 
   &__counter--alert &__digit {
-    color: var(--storytype-counter-panel-alert);
+    color: $alert;
   }
 
   /* ─── Timestamp ──────────────────────────────── */

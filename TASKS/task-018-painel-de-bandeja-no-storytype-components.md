@@ -100,6 +100,12 @@ depender de tokens de um design system de fora.
   informa a ativação (`navigator.userActivation`): o clique sintético do `play`
   de uma story marcava a interação, o Chrome não, e o `navigator.vibrate` do
   `AlarmAudio` saía bloqueado com aviso no console.
+- As cores do `CounterPanel`, do `ConnectionStatus` e do `ErrorMessage` eram
+  declaradas na raiz de cada componente, então um valor posto num ancestral
+  perdia para elas: só o fundo do painel mudava de fora. Agora as custom
+  properties entram por `var(--…, padrão)` e valem de qualquer ancestral. As
+  stories `With logo` e `Custom colors` do `TrayBoardScreen` cobrem o logo e as
+  cores.
 - Mocks no padrão do pacote (`generateMockData()` + mocks nomeados), com dados
   genéricos de uma fila de trabalho, e uma story `Custom labels (pt-BR)` em
   `ErrorMessage`, `CounterPanel` e `TrayBoardScreen`.
