@@ -106,6 +106,13 @@ depender de tokens de um design system de fora.
   properties entram por `var(--…, padrão)` e valem de qualquer ancestral. As
   stories `With logo` e `Custom colors` do `TrayBoardScreen` cobrem o logo e as
   cores.
+- Com pouco espaço, o navegador encolhia os contadores até 74px e um rótulo
+  longo (`IN PROGRESS`) quebrava em duas linhas, desalinhando o número dos
+  vizinhos. Agora a marca, os contadores e o horário não encolhem e os textos
+  não quebram: o painel fica com a largura natural e o evento `width` a
+  informa, para a janela da bandeja acompanhar. As stories `Responsive: …` do
+  `TrayBoardScreen` (container estreito, rótulos longos, um contador, muitos
+  contadores) conferem rótulos em uma linha e números alinhados.
 - Mocks no padrão do pacote (`generateMockData()` + mocks nomeados), com dados
   genéricos de uma fila de trabalho, e uma story `Custom labels (pt-BR)` em
   `ErrorMessage`, `CounterPanel` e `TrayBoardScreen`.

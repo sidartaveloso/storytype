@@ -11,8 +11,11 @@ import {
   trayBoardForbiddenMock,
   trayBoardLoadingMock,
   trayBoardLogoMock,
+  trayBoardLongLabelsMock,
+  trayBoardManyCountersMock,
   trayBoardMutedMock,
   trayBoardPortugueseMock,
+  trayBoardSingleCounterMock,
 } from './TrayBoardScreen.mock';
 import TrayBoardScreen from './TrayBoardScreen.vue';
 
@@ -140,6 +143,95 @@ export const CustomColors: Story = {
     expect(color('.storytype-connection-status__indicator', 'backgroundColor')).toBe(
       'rgb(251, 113, 133)'
     );
+  },
+};
+
+/* ─── Responsiveness ─────────────────────────────────────────────────────── */
+
+/**
+ * Renders the screen inside a container of the given width, narrower than the
+ * screen, drawn with a dashed outline so the overflow shows.
+ */
+const inContainer =
+  (width: number): Story['render'] =>
+  args => ({
+    components: { TrayBoardScreen },
+    setup: () => ({ args, width }),
+    template: `
+      <div>
+        <div :style="{ width: width + 'px', outline: '1px dashed rgba(255, 255, 255, 0.5)' }">
+          <TrayBoardScreen v-bind="args" />
+        </div>
+        <p style="margin:8px 0 0;color:#fff;font:12px system-ui">Container: {{ width }}px</p>
+      </div>
+    `,
+  });
+
+/** How many lines a text takes. */
+function lineCount(element: Element): number {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  return new Set([...range.getClientRects()].map(rect => Math.round(rect.top))).size;
+}
+
+/**
+ * The screen keeps its natural width: the title and every label on one line,
+ * and every number at the same height. Returns the screen's width.
+ */
+function expectOneLineAndAligned(canvasElement: HTMLElement): number {
+  const query = (selector: string) => [...canvasElement.querySelectorAll(selector)];
+  for (const text of query(
+    '.storytype-counter-panel__title, .storytype-counter-panel__counter-label'
+  )) {
+    expect(lineCount(text), text.textContent ?? '').toBe(1);
+  }
+  const tops = query('.storytype-counter-panel__counter-value').map(value =>
+    Math.round(value.getBoundingClientRect().top)
+  );
+  expect(new Set(tops).size).toBe(1);
+  const screen = canvasElement.querySelector('.storytype-tray-board-screen') as HTMLElement;
+  return screen.getBoundingClientRect().width;
+}
+
+/**
+ * Narrow container — less room than the screen needs. The screen does not
+ * squeeze its counters: it keeps its width (and reports it through `width`),
+ * so a tray window grows to fit instead of wrapping the labels.
+ */
+export const NarrowContainer: Story = {
+  name: 'Responsive: narrow container',
+  render: inContainer(320),
+  play: async ({ canvasElement }) => {
+    expect(expectOneLineAndAligned(canvasElement)).toBeGreaterThan(320);
+  },
+};
+
+/** Long title and labels: each counter grows to fit its label, on one line. */
+export const LongLabels: Story = {
+  name: 'Responsive: long labels',
+  args: { ...trayBoardLongLabelsMock },
+  render: inContainer(320),
+  play: async ({ canvasElement }) => {
+    expectOneLineAndAligned(canvasElement);
+  },
+};
+
+/** One counter: the screen shrinks to fit it. */
+export const SingleCounter: Story = {
+  name: 'Responsive: single counter',
+  args: { ...trayBoardSingleCounterMock },
+  play: async ({ canvasElement }) => {
+    expect(expectOneLineAndAligned(canvasElement)).toBeLessThan(400);
+  },
+};
+
+/** Many counters, one of them with four digits: the screen grows to fit them. */
+export const ManyCounters: Story = {
+  name: 'Responsive: many counters',
+  args: { ...trayBoardManyCountersMock },
+  render: inContainer(480),
+  play: async ({ canvasElement }) => {
+    expectOneLineAndAligned(canvasElement);
   },
 };
 

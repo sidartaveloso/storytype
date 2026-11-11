@@ -275,6 +275,24 @@ $alert: var(--storytype-counter-panel-alert, #ef4444);
   }
 
   /* ─── Brand (logo + title/state column) ──────── */
+  /* The brand, the counters and the timestamp never shrink, and their texts
+     never wrap: squeezed, a label broke into two lines and pushed its number
+     out of line with the others. The panel keeps its natural width, which the
+     tray screen reports through its `width` event. */
+  &__brand,
+  &__counter,
+  &__timestamp {
+    flex-shrink: 0;
+  }
+
+  &__title,
+  &__counter-label,
+  &__timestamp-time,
+  &__timestamp-date,
+  &__status :deep(.storytype-connection-status__text) {
+    white-space: nowrap;
+  }
+
   &__brand {
     display: flex;
     flex-direction: row;
