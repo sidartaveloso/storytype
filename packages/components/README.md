@@ -76,7 +76,11 @@ They back the tray panel: `AlarmAudio` (`atoms/alarm-audio`), `ErrorMessage`
 (`atoms/error-message`), `ConnectionStatus` (`molecules/connection-status`),
 `CounterPanel` (`organisms/counter-panel`) and `TrayBoardScreen`
 (`templates/tray-board-screen`). Every visible text comes from the props, with
-English defaults.
+English defaults. The logo comes from `logoUrl`. The colors are CSS custom
+properties, set on any ancestor: `--storytype-counter-panel-bg`, `-fg` and
+`-alert`, and `--storytype-connection-status-success`, `-warning`, `-danger` and
+`-info`. The panel is dark: its separators, labels and buttons are translucent
+white.
 
 ```ts
 import TrayBoardScreen from '@storytype/components/templates/tray-board-screen';

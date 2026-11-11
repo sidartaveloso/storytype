@@ -47,6 +47,62 @@ export const trayBoardPortugueseMock: TrayBoardScreenProps = {
   muted: true,
 };
 
+/** A long title and long labels: each counter grows to its label, on one line. */
+export const trayBoardLongLabelsMock: TrayBoardScreenProps = {
+  ...trayBoardMock,
+  title: 'OPERATIONS BOARD',
+  counters: [
+    { label: 'Waiting for review', value: 12 },
+    { label: 'In progress', value: 2 },
+    { label: 'Blocked by a dependency', value: 1, alert: true },
+  ],
+};
+
+export const trayBoardSingleCounterMock: TrayBoardScreenProps = {
+  ...trayBoardMock,
+  counters: [{ label: 'Queued', value: 7 }],
+};
+
+export const trayBoardManyCountersMock: TrayBoardScreenProps = {
+  ...trayBoardMock,
+  counters: [
+    { label: 'New', value: 4 },
+    { label: 'In progress', value: 2 },
+    { label: 'Queued', value: 7 },
+    { label: 'In review', value: 3 },
+    { label: 'Blocked', value: 0, alert: true },
+    { label: 'Failed', value: 0, alert: true },
+    { label: 'Done', value: 128, digits: 4 },
+  ],
+};
+
+/** A generic mark: a rounded square with a check, inline so the story needs no file. */
+export const EXAMPLE_LOGO_URL = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">' +
+    '<rect width="40" height="40" rx="9" fill="#2563eb"/>' +
+    '<path d="M12 21l5 5 11-12" fill="none" stroke="#fff" stroke-width="4" ' +
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>'
+)}`;
+
+export const trayBoardLogoMock: TrayBoardScreenProps = {
+  ...trayBoardMock,
+  logoUrl: EXAMPLE_LOGO_URL,
+};
+
+/**
+ * The colors a consumer can set from any ancestor of the screen. Dark, because
+ * the separators, labels and buttons are translucent white.
+ */
+export const trayBoardCustomColors: Record<string, string> = {
+  '--storytype-counter-panel-bg': '#1e1b4b',
+  '--storytype-counter-panel-fg': '#e0e7ff',
+  '--storytype-counter-panel-alert': '#fda4af',
+  '--storytype-connection-status-success': '#2dd4bf',
+  '--storytype-connection-status-warning': '#facc15',
+  '--storytype-connection-status-danger': '#fb7185',
+  '--storytype-connection-status-info': '#a5b4fc',
+};
+
 export const generateMockData = (): TrayBoardScreenType => {
   const props: TrayBoardScreenProps = { ...trayBoardMock };
   const models: TrayBoardScreenModels = {};
